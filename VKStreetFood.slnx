@@ -1,0 +1,20 @@
+<Solution>
+  <Folder Name="/src/" />
+  <Folder Name="/src/Client/">
+    <Project Path="src/Client/VK.Mobile/VK.Mobile.csproj" />
+  </Folder>
+  <Folder Name="/src/Server/">
+    <Project Path="src/Server/VK.API/VK.API.csproj" />
+    <Project Path="src/Server/VK.Core/VK.Core.csproj" />
+    <Project Path="src/Server/VK.Infrastructure/VK.Infrastructure.csproj" />
+    <Project Path="src/Server/VK.Web/VK.Web.csproj" />
+  </Folder>
+  <Folder Name="/src/Shared/">
+    <Project Path="src/Shared/VK.Contracts/VK.Contracts.csproj" />
+    <Project Path="src/Shared/VK.Shared/VK.Shared.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/VK.API.Tests/VK.API.Tests.csproj" />
+    <Project Path="tests/VK.Core.Tests/VK.Core.Tests.csproj" />
+  </Folder>
+</Solution>

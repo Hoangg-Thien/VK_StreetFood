@@ -1,0 +1,11 @@
+{
+  "version": 2,
+  "dgSpecHash": "zdii2WKBaM0=",
+  "success": true,
+  "projectFilePath": "D:\\VK_StreetFood\\src\\Server\\VK.API\\VK.API.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\ASUS\\.nuget\\packages\\microsoft.aspnetcore.openapi\\10.0.2\\microsoft.aspnetcore.openapi.10.0.2.nupkg.sha512",
+    "C:\\Users\\ASUS\\.nuget\\packages\\microsoft.openapi\\2.0.0\\microsoft.openapi.2.0.0.nupkg.sha512"
+  ],
+  "logs": []
+}

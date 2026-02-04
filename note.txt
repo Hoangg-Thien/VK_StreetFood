@@ -1,0 +1,27 @@
+1. Setup Solution & Projects
+Tạo Solution VKStreetFood
+Tạo 7 projects chính:
+VK.Core - Business logic và entities
+VK.Infrastructure - Data access layer
+VK.API - REST API cho mobile app
+VK.Web - Web MVC cho admin/vendor
+VK.Shared - Shared libraries (DTOs, Constants, Enums)
+VK.Contracts - API Contracts (Requests/Responses)
+VK.Mobile - MAUI mobile app
+Tạo 2 test projects
+Thiết lập dependencies giữa các projects
+2. Core Domain Models
+Đã tạo các entities chính:
+
+PointOfInterest - Điểm tham quan (gian hàng)
+AudioContent - Nội dung audio đa ngôn ngữ (vi, en, ko)
+Vendor - Người bán hàng
+Product - Sản phẩm của vendor
+Tourist - Du khách
+VisitLog - Lịch sử quét QR
+Và các supporting files:
+
+Constants (ngôn ngữ, API config, file settings)
+Enums (Language, UserRole, Status)
+DTOs (data transfer objects)
+Requests/Responses cho API
