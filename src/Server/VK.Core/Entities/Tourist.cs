@@ -17,6 +17,14 @@ public class Tourist : BaseEntity
 
     public DateTime? LastLocationUpdate { get; set; }
 
+    public Guid? UserId { get; set; }
+
+    public int TotalVisits { get; set; } = 0;
+
     // Navigation properties
+    public virtual User? User { get; set; }
     public virtual ICollection<VisitLog> VisitLogs { get; set; } = new List<VisitLog>();
+    public virtual ICollection<Favorite> Favorites { get; set; } = new List<Favorite>();
+    public virtual ICollection<Rating> Ratings { get; set; } = new List<Rating>();
+    public virtual ICollection<Analytics> Analytics { get; set; } = new List<Analytics>();
 }

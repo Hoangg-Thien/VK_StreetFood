@@ -1,0 +1,12 @@
+D:\VK_StreetFood\src\Server\VK.Core\bin\Debug\net10.0\VK.Core.deps.json
+D:\VK_StreetFood\src\Server\VK.Core\bin\Debug\net10.0\VK.Core.dll
+D:\VK_StreetFood\src\Server\VK.Core\bin\Debug\net10.0\VK.Core.pdb
+D:\VK_StreetFood\src\Server\VK.Core\obj\Debug\net10.0\VK.Core.GeneratedMSBuildEditorConfig.editorconfig
+D:\VK_StreetFood\src\Server\VK.Core\obj\Debug\net10.0\VK.Core.AssemblyInfoInputs.cache
+D:\VK_StreetFood\src\Server\VK.Core\obj\Debug\net10.0\VK.Core.AssemblyInfo.cs
+D:\VK_StreetFood\src\Server\VK.Core\obj\Debug\net10.0\VK.Core.csproj.CoreCompileInputs.cache
+D:\VK_StreetFood\src\Server\VK.Core\obj\Debug\net10.0\VK.Core.sourcelink.json
+D:\VK_StreetFood\src\Server\VK.Core\obj\Debug\net10.0\VK.Core.dll
+D:\VK_StreetFood\src\Server\VK.Core\obj\Debug\net10.0\refint\VK.Core.dll
+D:\VK_StreetFood\src\Server\VK.Core\obj\Debug\net10.0\VK.Core.pdb
+D:\VK_StreetFood\src\Server\VK.Core\obj\Debug\net10.0\ref\VK.Core.dll

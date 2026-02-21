@@ -1,0 +1,16 @@
+D:\VK_StreetFood\src\Shared\VK.Contracts\obj\Debug\net10.0\VK.Contracts.GeneratedMSBuildEditorConfig.editorconfig
+D:\VK_StreetFood\src\Shared\VK.Contracts\obj\Debug\net10.0\VK.Contracts.AssemblyInfoInputs.cache
+D:\VK_StreetFood\src\Shared\VK.Contracts\obj\Debug\net10.0\VK.Contracts.AssemblyInfo.cs
+D:\VK_StreetFood\src\Shared\VK.Contracts\obj\Debug\net10.0\VK.Contracts.csproj.CoreCompileInputs.cache
+D:\VK_StreetFood\src\Shared\VK.Contracts\obj\Debug\net10.0\VK.Contracts.sourcelink.json
+D:\VK_StreetFood\src\Shared\VK.Contracts\bin\Debug\net10.0\VK.Contracts.deps.json
+D:\VK_StreetFood\src\Shared\VK.Contracts\bin\Debug\net10.0\VK.Contracts.dll
+D:\VK_StreetFood\src\Shared\VK.Contracts\bin\Debug\net10.0\VK.Contracts.pdb
+D:\VK_StreetFood\src\Shared\VK.Contracts\bin\Debug\net10.0\VK.Shared.dll
+D:\VK_StreetFood\src\Shared\VK.Contracts\bin\Debug\net10.0\VK.Shared.pdb
+D:\VK_StreetFood\src\Shared\VK.Contracts\obj\Debug\net10.0\VK.Contracts.csproj.AssemblyReference.cache
+D:\VK_StreetFood\src\Shared\VK.Contracts\obj\Debug\net10.0\VK.Contr.FB0562D0.Up2Date
+D:\VK_StreetFood\src\Shared\VK.Contracts\obj\Debug\net10.0\VK.Contracts.dll
+D:\VK_StreetFood\src\Shared\VK.Contracts\obj\Debug\net10.0\refint\VK.Contracts.dll
+D:\VK_StreetFood\src\Shared\VK.Contracts\obj\Debug\net10.0\VK.Contracts.pdb
+D:\VK_StreetFood\src\Shared\VK.Contracts\obj\Debug\net10.0\ref\VK.Contracts.dll

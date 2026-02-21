@@ -2488,6 +2488,9 @@
       "VK.Contracts/1.0.0": {
         "type": "project",
         "framework": ".NETCoreApp,Version=v10.0",
+        "dependencies": {
+          "VK.Shared": "1.0.0"
+        },
         "compile": {
           "bin/placeholder/VK.Contracts.dll": {}
         },
@@ -4993,6 +4996,9 @@
       "VK.Contracts/1.0.0": {
         "type": "project",
         "framework": ".NETCoreApp,Version=v10.0",
+        "dependencies": {
+          "VK.Shared": "1.0.0"
+        },
         "compile": {
           "bin/placeholder/VK.Contracts.dll": {}
         },
@@ -7498,6 +7504,9 @@
       "VK.Contracts/1.0.0": {
         "type": "project",
         "framework": ".NETCoreApp,Version=v10.0",
+        "dependencies": {
+          "VK.Shared": "1.0.0"
+        },
         "compile": {
           "bin/placeholder/VK.Contracts.dll": {}
         },
@@ -10003,6 +10012,9 @@
       "VK.Contracts/1.0.0": {
         "type": "project",
         "framework": ".NETCoreApp,Version=v10.0",
+        "dependencies": {
+          "VK.Shared": "1.0.0"
+        },
         "compile": {
           "bin/placeholder/VK.Contracts.dll": {}
         },
@@ -12508,6 +12520,9 @@
       "VK.Contracts/1.0.0": {
         "type": "project",
         "framework": ".NETCoreApp,Version=v10.0",
+        "dependencies": {
+          "VK.Shared": "1.0.0"
+        },
         "compile": {
           "bin/placeholder/VK.Contracts.dll": {}
         },
@@ -15013,6 +15028,9 @@
       "VK.Contracts/1.0.0": {
         "type": "project",
         "framework": ".NETCoreApp,Version=v10.0",
+        "dependencies": {
+          "VK.Shared": "1.0.0"
+        },
         "compile": {
           "bin/placeholder/VK.Contracts.dll": {}
         },
@@ -15498,6 +15516,9 @@
       "VK.Contracts/1.0.0": {
         "type": "project",
         "framework": ".NETCoreApp,Version=v10.0",
+        "dependencies": {
+          "VK.Shared": "1.0.0"
+        },
         "compile": {
           "bin/placeholder/VK.Contracts.dll": {}
         },
@@ -15983,6 +16004,9 @@
       "VK.Contracts/1.0.0": {
         "type": "project",
         "framework": ".NETCoreApp,Version=v10.0",
+        "dependencies": {
+          "VK.Shared": "1.0.0"
+        },
         "compile": {
           "bin/placeholder/VK.Contracts.dll": {}
         },
@@ -16468,6 +16492,9 @@
       "VK.Contracts/1.0.0": {
         "type": "project",
         "framework": ".NETCoreApp,Version=v10.0",
+        "dependencies": {
+          "VK.Shared": "1.0.0"
+        },
         "compile": {
           "bin/placeholder/VK.Contracts.dll": {}
         },
@@ -16953,6 +16980,9 @@
       "VK.Contracts/1.0.0": {
         "type": "project",
         "framework": ".NETCoreApp,Version=v10.0",
+        "dependencies": {
+          "VK.Shared": "1.0.0"
+        },
         "compile": {
           "bin/placeholder/VK.Contracts.dll": {}
         },
@@ -17438,6 +17468,9 @@
       "VK.Contracts/1.0.0": {
         "type": "project",
         "framework": ".NETCoreApp,Version=v10.0",
+        "dependencies": {
+          "VK.Shared": "1.0.0"
+        },
         "compile": {
           "bin/placeholder/VK.Contracts.dll": {}
         },
@@ -17923,6 +17956,9 @@
       "VK.Contracts/1.0.0": {
         "type": "project",
         "framework": ".NETCoreApp,Version=v10.0",
+        "dependencies": {
+          "VK.Shared": "1.0.0"
+        },
         "compile": {
           "bin/placeholder/VK.Contracts.dll": {}
         },
@@ -18408,6 +18444,9 @@
       "VK.Contracts/1.0.0": {
         "type": "project",
         "framework": ".NETCoreApp,Version=v10.0",
+        "dependencies": {
+          "VK.Shared": "1.0.0"
+        },
         "compile": {
           "bin/placeholder/VK.Contracts.dll": {}
         },
@@ -18893,6 +18932,9 @@
       "VK.Contracts/1.0.0": {
         "type": "project",
         "framework": ".NETCoreApp,Version=v10.0",
+        "dependencies": {
+          "VK.Shared": "1.0.0"
+        },
         "compile": {
           "bin/placeholder/VK.Contracts.dll": {}
         },
@@ -19378,6 +19420,9 @@
       "VK.Contracts/1.0.0": {
         "type": "project",
         "framework": ".NETCoreApp,Version=v10.0",
+        "dependencies": {
+          "VK.Shared": "1.0.0"
+        },
         "compile": {
           "bin/placeholder/VK.Contracts.dll": {}
         },
@@ -19863,6 +19908,9 @@
       "VK.Contracts/1.0.0": {
         "type": "project",
         "framework": ".NETCoreApp,Version=v10.0",
+        "dependencies": {
+          "VK.Shared": "1.0.0"
+        },
         "compile": {
           "bin/placeholder/VK.Contracts.dll": {}
         },
@@ -20348,6 +20396,9 @@
       "VK.Contracts/1.0.0": {
         "type": "project",
         "framework": ".NETCoreApp,Version=v10.0",
+        "dependencies": {
+          "VK.Shared": "1.0.0"
+        },
         "compile": {
           "bin/placeholder/VK.Contracts.dll": {}
         },
@@ -20833,6 +20884,9 @@
       "VK.Contracts/1.0.0": {
         "type": "project",
         "framework": ".NETCoreApp,Version=v10.0",
+        "dependencies": {
+          "VK.Shared": "1.0.0"
+        },
         "compile": {
           "bin/placeholder/VK.Contracts.dll": {}
         },
@@ -21569,6 +21623,9 @@
       "VK.Contracts/1.0.0": {
         "type": "project",
         "framework": ".NETCoreApp,Version=v10.0",
+        "dependencies": {
+          "VK.Shared": "1.0.0"
+        },
         "compile": {
           "bin/placeholder/VK.Contracts.dll": {}
         },
@@ -22243,6 +22300,9 @@
       "VK.Contracts/1.0.0": {
         "type": "project",
         "framework": ".NETCoreApp,Version=v10.0",
+        "dependencies": {
+          "VK.Shared": "1.0.0"
+        },
         "compile": {
           "bin/placeholder/VK.Contracts.dll": {}
         },
@@ -22917,6 +22977,9 @@
       "VK.Contracts/1.0.0": {
         "type": "project",
         "framework": ".NETCoreApp,Version=v10.0",
+        "dependencies": {
+          "VK.Shared": "1.0.0"
+        },
         "compile": {
           "bin/placeholder/VK.Contracts.dll": {}
         },
@@ -23591,6 +23654,9 @@
       "VK.Contracts/1.0.0": {
         "type": "project",
         "framework": ".NETCoreApp,Version=v10.0",
+        "dependencies": {
+          "VK.Shared": "1.0.0"
+        },
         "compile": {
           "bin/placeholder/VK.Contracts.dll": {}
         },
@@ -24265,6 +24331,9 @@
       "VK.Contracts/1.0.0": {
         "type": "project",
         "framework": ".NETCoreApp,Version=v10.0",
+        "dependencies": {
+          "VK.Shared": "1.0.0"
+        },
         "compile": {
           "bin/placeholder/VK.Contracts.dll": {}
         },
@@ -24949,6 +25018,9 @@
       "VK.Contracts/1.0.0": {
         "type": "project",
         "framework": ".NETCoreApp,Version=v10.0",
+        "dependencies": {
+          "VK.Shared": "1.0.0"
+        },
         "compile": {
           "bin/placeholder/VK.Contracts.dll": {}
         },

@@ -1,11 +1,30 @@
 {
   "version": 3,
   "targets": {
-    "net10.0": {}
+    "net10.0": {
+      "VK.Shared/1.0.0": {
+        "type": "project",
+        "framework": ".NETCoreApp,Version=v10.0",
+        "compile": {
+          "bin/placeholder/VK.Shared.dll": {}
+        },
+        "runtime": {
+          "bin/placeholder/VK.Shared.dll": {}
+        }
+      }
+    }
   },
-  "libraries": {},
+  "libraries": {
+    "VK.Shared/1.0.0": {
+      "type": "project",
+      "path": "../VK.Shared/VK.Shared.csproj",
+      "msbuildProject": "../VK.Shared/VK.Shared.csproj"
+    }
+  },
   "projectFileDependencyGroups": {
-    "net10.0": []
+    "net10.0": [
+      "VK.Shared >= 1.0.0"
+    ]
   },
   "packageFolders": {
     "C:\\Users\\ASUS\\.nuget\\packages\\": {}
@@ -34,7 +53,11 @@
       "frameworks": {
         "net10.0": {
           "targetAlias": "net10.0",
-          "projectReferences": {}
+          "projectReferences": {
+            "D:\\VK_StreetFood\\src\\Shared\\VK.Shared\\VK.Shared.csproj": {
+              "projectPath": "D:\\VK_StreetFood\\src\\Shared\\VK.Shared\\VK.Shared.csproj"
+            }
+          }
         }
       },
       "warningProperties": {

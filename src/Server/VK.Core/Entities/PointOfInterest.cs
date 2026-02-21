@@ -28,7 +28,20 @@ public class PointOfInterest : BaseEntity
 
     public bool IsActive { get; set; } = true;
 
+    public Guid? CategoryId { get; set; }
+
+    public int ViewCount { get; set; } = 0;
+
+    public decimal AverageRating { get; set; } = 0;
+
+    public int TotalRatings { get; set; } = 0;
+
     // Navigation properties
+    public virtual Category? Category { get; set; }
     public virtual ICollection<AudioContent> AudioContents { get; set; } = new List<AudioContent>();
     public virtual ICollection<Vendor> Vendors { get; set; } = new List<Vendor>();
+    public virtual ICollection<Tag> Tags { get; set; } = new List<Tag>();
+    public virtual ICollection<Analytics> Analytics { get; set; } = new List<Analytics>();
+    public virtual ICollection<Rating> Ratings { get; set; } = new List<Rating>();
+    public virtual ICollection<Favorite> Favorites { get; set; } = new List<Favorite>();
 }

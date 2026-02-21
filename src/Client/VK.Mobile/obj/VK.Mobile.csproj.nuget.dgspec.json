@@ -1393,7 +1393,11 @@
         "frameworks": {
           "net10.0": {
             "targetAlias": "net10.0",
-            "projectReferences": {}
+            "projectReferences": {
+              "D:\\VK_StreetFood\\src\\Shared\\VK.Shared\\VK.Shared.csproj": {
+                "projectPath": "D:\\VK_StreetFood\\src\\Shared\\VK.Shared\\VK.Shared.csproj"
+              }
+            }
           }
         },
         "warningProperties": {
