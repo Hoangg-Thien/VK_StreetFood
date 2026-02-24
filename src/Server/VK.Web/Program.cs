@@ -1,7 +1,21 @@
+using Microsoft.EntityFrameworkCore;
+using VK.Infrastructure.Data;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
+
+// Add DbContext
+builder.Services.AddDbContext<VKStreetFoodDbContext>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+// Add HttpClient to call API
+builder.Services.AddHttpClient("VKAPI", client =>
+{
+    client.BaseAddress = new Uri("http://localhost:5089/api/");
+    client.Timeout = TimeSpan.FromSeconds(30);
+});
 
 var app = builder.Build();
 
