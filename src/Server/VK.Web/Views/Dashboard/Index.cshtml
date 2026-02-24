@@ -1,0 +1,221 @@
+@{
+    ViewData["Title"] = "Dashboard - VK Street Food Admin";
+}
+
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="h2">
+                <i class="bi bi-speedometer2"></i> Dashboard
+            </h1>
+            <p class="text-muted">Overview of VK Street Food Tour System</p>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <div class="bg-primary text-white rounded-circle p-3">
+                                <i class="bi bi-geo-alt-fill fs-4"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h6 class="text-muted mb-1">Total POIs</h6>
+                            <h3 class="mb-0">@ViewBag.TotalPOIs</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <div class="bg-success text-white rounded-circle p-3">
+                                <i class="bi bi-people-fill fs-4"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h6 class="text-muted mb-1">Total Tourists</h6>
+                            <h3 class="mb-0">@ViewBag.TotalTourists</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <div class="bg-info text-white rounded-circle p-3">
+                                <i class="bi bi-eye-fill fs-4"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h6 class="text-muted mb-1">Total Visits</h6>
+                            <h3 class="mb-0">@ViewBag.TotalVisits</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <div class="bg-warning text-white rounded-circle p-3">
+                                <i class="bi bi-star-fill fs-4"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h6 class="text-muted mb-1">Average Rating</h6>
+                            <h3 class="mb-0">@ViewBag.AverageRating ⭐</h3>
+                            <small class="text-muted">@ViewBag.TotalRatings ratings</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="row g-3">
+        <!-- Recent Visitors Chart -->
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-graph-up"></i> Visitors Trend (Last 7 Days)
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="visitorsChart" height="80"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Language Distribution -->
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-translate"></i> Language Distribution
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="languageChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Top POIs -->
+    <div class="row g-3 mt-3">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-trophy-fill text-warning"></i> Top 5 Most Visited POIs
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Rank</th>
+                                    <th>POI Name</th>
+                                    <th>Visit Count</th>
+                                    <th>Progress</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @{
+                                    int rank = 1;
+                                    var topPOIs = ViewBag.TopPOIs as List<dynamic>;
+                                    var maxVisits = topPOIs?.FirstOrDefault()?.VisitCount ?? 1;
+                                }
+                                @if (topPOIs != null)
+                                {
+                                    foreach (var poi in topPOIs)
+                                    {
+                                        var percentage = (int)((double)poi.VisitCount / maxVisits * 100);
+                                        <tr>
+                                            <td>
+                                                <span class="badge bg-primary">@rank</span>
+                                            </td>
+                                            <td>@poi.POIName</td>
+                                            <td>@poi.VisitCount visits</td>
+                                            <td>
+                                                <div class="progress" style="height: 8px;">
+                                                    <div class="progress-bar bg-success" role="progressbar" style="width: @percentage%" aria-valuenow="@percentage" aria-valuemin="0" aria-valuemax="100"></div>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        rank++;
+                                    }
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Visitors Chart
+    const visitorsData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(ViewBag.RecentVisitors));
+    new Chart(document.getElementById('visitorsChart'), {
+        type: 'line',
+        data: {
+            labels: visitorsData.map(d => new Date(d.date).toLocaleDateString()),
+            datasets: [{
+                label: 'Visitors',
+                data: visitorsData.map(d => d.count),
+                borderColor: '#0d6efd',
+                backgroundColor: 'rgba(13, 110, 253, 0.1)',
+                tension: 0.4,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: { display: false }
+            }
+        }
+    });
+
+    // Language Chart
+    const languageData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(ViewBag.LanguageStats));
+    new Chart(document.getElementById('languageChart'), {
+        type: 'doughnut',
+        data: {
+            labels: languageData.map(d => d.language),
+            datasets: [{
+                data: languageData.map(d => d.count),
+                backgroundColor: ['#0d6efd', '#198754', '#ffc107']
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true
+        }
+    });
+</script>
+}
