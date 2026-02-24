@@ -1,12 +1,17 @@
 using Microsoft.EntityFrameworkCore;
 using VK.Infrastructure.Data;
 using VK.API.Extensions;
+using VK.Core.Interfaces;
+using VK.Infrastructure.ExternalServices;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddDbContext<VKStreetFoodDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+// Register TTS Service
+builder.Services.AddScoped<ITtsService, GoogleCloudTtsService>();
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
@@ -34,6 +39,9 @@ if (app.Environment.IsDevelopment())
         c.RoutePrefix = "swagger"; // Swagger UI at /swagger
     });
 }
+
+// Serve static files (audio files)
+app.UseStaticFiles();
 
 app.UseHttpsRedirection();
 app.MapControllers();

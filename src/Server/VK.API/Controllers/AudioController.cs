@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using VK.Infrastructure.Data;
+using VK.Core.Interfaces;
 
 namespace VK.API.Controllers;
 
@@ -11,15 +12,18 @@ public class AudioController : ControllerBase
     private readonly VKStreetFoodDbContext _context;
     private readonly ILogger<AudioController> _logger;
     private readonly IWebHostEnvironment _environment;
+    private readonly ITtsService _ttsService;
 
     public AudioController(
         VKStreetFoodDbContext context, 
         ILogger<AudioController> logger,
-        IWebHostEnvironment environment)
+        IWebHostEnvironment environment,
+        ITtsService ttsService)
     {
         _context = context;
         _logger = logger;
         _environment = environment;
+        _ttsService = ttsService;
     }
 
     /// <summary>
@@ -106,37 +110,74 @@ public class AudioController : ControllerBase
     }
 
     /// <summary>
-    /// Generate audio using TTS (placeholder for Google Cloud TTS integration)
+    /// Generate audio using Google Cloud Text-to-Speech
     /// </summary>
     [HttpPost("generate")]
     public async Task<ActionResult> GenerateAudio([FromBody] GenerateAudioRequest request)
     {
-        // TODO: Integrate with Google Cloud Text-to-Speech API
-        // For now, return a placeholder response
-
-        var audio = await _context.AudioContents
-            .FirstOrDefaultAsync(a => 
-                a.PointOfInterestId == request.PoiId && 
-                a.LanguageCode == request.LanguageCode &&
-                !a.IsDeleted);
-
-        if (audio == null)
+        try
         {
-            return NotFound(new { message = "Audio content không tồn tại" });
+            var audio = await _context.AudioContents
+                .FirstOrDefaultAsync(a => 
+                    a.PointOfInterestId == request.PoiId && 
+                    a.LanguageCode == request.LanguageCode &&
+                    !a.IsDeleted);
+
+            if (audio == null)
+            {
+                return NotFound(new { message = "Audio content không tồn tại" });
+            }
+
+            // Map language codes to full locale and voice names
+            var (fullLanguageCode, defaultVoiceName) = request.LanguageCode switch
+            {
+                "vi" => ("vi-VN", "vi-VN-Wavenet-A"),
+                "en" => ("en-US", "en-US-Wavenet-C"),
+                "ko" => ("ko-KR", "ko-KR-Wavenet-A"),
+                _ => ("vi-VN", "vi-VN-Wavenet-A")
+            };
+
+            var voiceName = request.VoiceName ?? defaultVoiceName;
+
+            _logger.LogInformation(
+                "Generating audio for POI {PoiId}, Language {Language}, Voice {Voice}", 
+                request.PoiId, request.LanguageCode, voiceName);
+
+            // Generate audio using Google Cloud TTS
+            var audioFileUrl = await _ttsService.GenerateAudioAsync(
+                audio.TextContent, 
+                fullLanguageCode, 
+                voiceName);
+
+            // Estimate duration
+            var estimatedDuration = _ttsService.EstimateDuration(audio.TextContent);
+
+            // Update audio record
+            audio.AudioFileUrl = audioFileUrl;
+            audio.DurationInSeconds = estimatedDuration;
+            audio.IsGenerated = true;
+            audio.UpdatedAt = DateTime.UtcNow;
+
+            await _context.SaveChangesAsync();
+
+            _logger.LogInformation("Audio generated successfully: {Url}", audioFileUrl);
+
+            return Ok(new
+            {
+                success = true,
+                message = "Audio generated successfully",
+                audioId = audio.Id,
+                audioUrl = audioFileUrl,
+                durationInSeconds = estimatedDuration,
+                languageCode = request.LanguageCode,
+                voiceUsed = voiceName
+            });
         }
-
-        // Mark as generated (will be replaced with actual TTS generation)
-        audio.IsGenerated = true;
-        audio.UpdatedAt = DateTime.UtcNow;
-        await _context.SaveChangesAsync();
-
-        return Ok(new
+        catch (Exception ex)
         {
-            success = true,
-            message = "Audio generation queued (TTS integration pending)",
-            audioId = audio.Id,
-            audioUrl = audio.AudioFileUrl
-        });
+            _logger.LogError(ex, "Error generating audio for POI {PoiId}", request.PoiId);
+            return StatusCode(500, new { message = "Lỗi khi tạo audio", error = ex.Message });
+        }
     }
 
     private string GetLanguageName(string languageCode)
