@@ -5,7 +5,7 @@ namespace VK.Core.Entities;
 public class AudioContent : BaseEntity
 {
     [Required]
-    public Guid PointOfInterestId { get; set; }
+    public int PointOfInterestId { get; set; }
 
     [Required]
     [MaxLength(10)]

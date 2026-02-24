@@ -27,7 +27,7 @@ public class Vendor : BaseEntity
     public bool IsActive { get; set; } = true;
 
     [Required]
-    public Guid PointOfInterestId { get; set; }
+    public int PointOfInterestId { get; set; }
 
     public decimal AverageRating { get; set; } = 0;
 

@@ -37,7 +37,7 @@ public class Tag : BaseEntity
 public class OpeningHours : BaseEntity
 {
     [Required]
-    public Guid VendorId { get; set; }
+    public int VendorId { get; set; }
 
     [Required]
     [Range(0, 6)] // 0 = Sunday, 6 = Saturday

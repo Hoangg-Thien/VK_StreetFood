@@ -17,9 +17,9 @@ public class Tourist : BaseEntity
 
     public DateTime? LastLocationUpdate { get; set; }
 
-    public Guid? UserId { get; set; }
-
     public int TotalVisits { get; set; } = 0;
+
+    public int? UserId { get; set; }
 
     // Navigation properties
     public virtual User? User { get; set; }

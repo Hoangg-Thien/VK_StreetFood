@@ -16,3 +16,5 @@ D:\VK_StreetFood\src\Server\VK.Infrastructure\obj\Debug\net10.0\refint\VK.Infras
 D:\VK_StreetFood\src\Server\VK.Infrastructure\obj\Debug\net10.0\VK.Infrastructure.pdb
 D:\VK_StreetFood\src\Server\VK.Infrastructure\obj\Debug\net10.0\VK.Infrastructure.genruntimeconfig.cache
 D:\VK_StreetFood\src\Server\VK.Infrastructure\obj\Debug\net10.0\ref\VK.Infrastructure.dll
+D:\VK_StreetFood\src\Server\VK.Infrastructure\bin\Debug\net10.0\VK.Shared.dll
+D:\VK_StreetFood\src\Server\VK.Infrastructure\bin\Debug\net10.0\VK.Shared.pdb

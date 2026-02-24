@@ -18,10 +18,7 @@ public class User : BaseEntity
     [MaxLength(20)]
     public string Role { get; set; } = "Tourist"; // Tourist, Vendor, Admin
 
-    public Guid? VendorId { get; set; }
-
-    public bool IsActive { get; set; } = true;
-
+    public int? VendorId { get; set; }
     public DateTime? LastLoginAt { get; set; }
 
     // Navigation properties
@@ -31,11 +28,10 @@ public class User : BaseEntity
 public class Favorite : BaseEntity
 {
     [Required]
-    public Guid TouristId { get; set; }
-
+    public int TouristId { get; set; }
+    
     [Required]
-    public Guid PointOfInterestId { get; set; }
-
+    public int PointOfInterestId { get; set; }
     [MaxLength(500)]
     public string? Note { get; set; }
 

@@ -12,13 +12,13 @@ public record ApiResponse<T>
 
 public record PointOfInterestResponse
 {
-    public PointOfInterestDto PointOfInterest { get; init; } = null!;
+    public POIListItemDto PointOfInterest { get; init; } = null!;
     public double DistanceInMeters { get; init; }
 }
 
 public record QRCodeScanResponse
 {
-    public PointOfInterestDto PointOfInterest { get; init; } = null!;
+    public QRScanResponseDto PointOfInterest { get; init; } = null!;
     public AudioContentDto? AudioContent { get; init; }
     public bool IsNearby { get; init; }
     public double DistanceInMeters { get; init; }

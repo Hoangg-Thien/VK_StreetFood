@@ -18,7 +18,7 @@ public class Product : BaseEntity
     public bool IsAvailable { get; set; } = true;
 
     [Required]
-    public Guid VendorId { get; set; }
+    public int VendorId { get; set; }
 
     // Navigation properties
     public virtual Vendor Vendor { get; set; } = null!;

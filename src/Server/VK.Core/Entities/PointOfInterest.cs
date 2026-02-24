@@ -28,9 +28,7 @@ public class PointOfInterest : BaseEntity
 
     public bool IsActive { get; set; } = true;
 
-    public Guid? CategoryId { get; set; }
-
-    public int ViewCount { get; set; } = 0;
+    public int? CategoryId { get; set; }
 
     public decimal AverageRating { get; set; } = 0;
 

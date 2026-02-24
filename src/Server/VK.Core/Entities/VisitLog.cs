@@ -5,10 +5,10 @@ namespace VK.Core.Entities;
 public class VisitLog : BaseEntity
 {
     [Required]
-    public Guid TouristId { get; set; }
+    public int TouristId { get; set; }
 
     [Required]
-    public Guid PointOfInterestId { get; set; }
+    public int PointOfInterestId { get; set; }
 
     public DateTime VisitedAt { get; set; } = DateTime.UtcNow;
 
@@ -20,6 +20,8 @@ public class VisitLog : BaseEntity
     public string LanguageUsed { get; set; } = string.Empty;
 
     public bool AudioPlayed { get; set; } = false;
+
+    public int DurationMinutes { get; set; } = 0;
 
     // Navigation properties
     public virtual Tourist Tourist { get; set; } = null!;

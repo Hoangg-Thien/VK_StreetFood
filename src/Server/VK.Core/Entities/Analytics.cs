@@ -5,9 +5,9 @@ namespace VK.Core.Entities;
 public class Analytics : BaseEntity
 {
     [Required]
-    public Guid PointOfInterestId { get; set; }
+    public int PointOfInterestId { get; set; }
 
-    public Guid? TouristId { get; set; }
+    public int? TouristId { get; set; }
 
     [Required]
     [MaxLength(50)]
@@ -38,9 +38,9 @@ public class Analytics : BaseEntity
 public class Rating : BaseEntity
 {
     [Required]
-    public Guid PointOfInterestId { get; set; }
+    public int PointOfInterestId { get; set; }
 
-    public Guid? TouristId { get; set; }
+    public int? TouristId { get; set; }
 
     [Required]
     [Range(1, 5)]

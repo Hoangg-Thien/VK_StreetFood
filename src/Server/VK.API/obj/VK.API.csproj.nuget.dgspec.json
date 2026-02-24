@@ -871,6 +871,9 @@
             "projectReferences": {
               "D:\\VK_StreetFood\\src\\Server\\VK.Core\\VK.Core.csproj": {
                 "projectPath": "D:\\VK_StreetFood\\src\\Server\\VK.Core\\VK.Core.csproj"
+              },
+              "D:\\VK_StreetFood\\src\\Shared\\VK.Shared\\VK.Shared.csproj": {
+                "projectPath": "D:\\VK_StreetFood\\src\\Shared\\VK.Shared\\VK.Shared.csproj"
               }
             }
           }
@@ -897,15 +900,15 @@
               "target": "Package",
               "version": "[10.0.3, )"
             },
-            "Microsoft.EntityFrameworkCore.SqlServer": {
-              "target": "Package",
-              "version": "[10.0.3, )"
-            },
             "Microsoft.EntityFrameworkCore.Tools": {
               "include": "Runtime, Build, Native, ContentFiles, Analyzers, BuildTransitive",
               "suppressParent": "All",
               "target": "Package",
               "version": "[10.0.3, )"
+            },
+            "Npgsql.EntityFrameworkCore.PostgreSQL": {
+              "target": "Package",
+              "version": "[10.0.0, )"
             }
           },
           "imports": [
