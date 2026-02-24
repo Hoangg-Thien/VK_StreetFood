@@ -309,3 +309,94 @@ fail: Microsoft.AspNetCore.Diagnostics.DeveloperExceptionPageMiddleware[1]
          at Microsoft.AspNetCore.Authorization.AuthorizationMiddleware.Invoke(HttpContext context)
          at Microsoft.AspNetCore.Authentication.AuthenticationMiddleware.Invoke(HttpContext context)
          at Microsoft.AspNetCore.Diagnostics.DeveloperExceptionPageMiddlewareImpl.Invoke(HttpContext context)
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (59ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT count(*)::int
+      FROM "PointsOfInterest" AS p
+      WHERE NOT (p."IsDeleted")
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (64ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT count(*)::int
+      FROM "Tourists" AS t
+      WHERE NOT (t."IsDeleted")
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (60ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT count(*)::int
+      FROM "VisitLogs" AS v
+      WHERE NOT (v."IsDeleted")
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (58ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT count(*)::int
+      FROM "Ratings" AS r
+      WHERE NOT (r."IsDeleted")
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (57ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT avg(r."Score"::double precision)
+      FROM "Ratings" AS r
+      WHERE NOT (r."IsDeleted")
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (59ms) [Parameters=[@last7Days='?' (DbType = DateTime)], CommandType='Text', CommandTimeout='30']
+      SELECT v0."Key" AS "Date", count(*)::int AS "Count"
+      FROM (
+          SELECT date_trunc('day', v."VisitedAt", 'UTC') AS "Key"
+          FROM "VisitLogs" AS v
+          WHERE NOT (v."IsDeleted") AND NOT (v."IsDeleted") AND v."VisitedAt" >= @last7Days
+      ) AS v0
+      GROUP BY v0."Key"
+      ORDER BY v0."Key"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (60ms) [Parameters=[@p='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      SELECT p0."Name" AS "POIName", count(*)::int AS "VisitCount"
+      FROM "VisitLogs" AS v
+      INNER JOIN (
+          SELECT p."Id", p."Name"
+          FROM "PointsOfInterest" AS p
+          WHERE NOT (p."IsDeleted")
+      ) AS p0 ON v."PointOfInterestId" = p0."Id"
+      WHERE NOT (v."IsDeleted")
+      GROUP BY v."PointOfInterestId", p0."Name"
+      ORDER BY count(*)::int DESC
+      LIMIT @p
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (66ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT t."PreferredLanguage" AS "Language", count(*)::int AS "Count"
+      FROM "Tourists" AS t
+      WHERE NOT (t."IsDeleted")
+      GROUP BY t."PreferredLanguage"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (60ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT p."Id", p."Address", p."AverageRating", p."CategoryId", p."CreatedAt", p."DeletedAt", p."Description", p."ImageUrl", p."IsActive", p."IsDeleted", p."Latitude", p."Longitude", p."Name", p."QRCode", p."TotalRatings", p."UpdatedAt", c0."Id", c0."CreatedAt", c0."DeletedAt", c0."Description", c0."DisplayOrder", c0."IconUrl", c0."IsActive", c0."IsDeleted", c0."Name", c0."UpdatedAt"
+      FROM "PointsOfInterest" AS p
+      LEFT JOIN (
+          SELECT c."Id", c."CreatedAt", c."DeletedAt", c."Description", c."DisplayOrder", c."IconUrl", c."IsActive", c."IsDeleted", c."Name", c."UpdatedAt"
+          FROM "Categories" AS c
+          WHERE NOT (c."IsDeleted")
+      ) AS c0 ON p."CategoryId" = c0."Id"
+      WHERE NOT (p."IsDeleted")
+      ORDER BY p."Name"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (58ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT c."Id", c."CreatedAt", c."DeletedAt", c."Description", c."DisplayOrder", c."IconUrl", c."IsActive", c."IsDeleted", c."Name", c."UpdatedAt"
+      FROM "Categories" AS c
+      WHERE NOT (c."IsDeleted")
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (58ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT c."Id", c."CreatedAt", c."DeletedAt", c."Description", c."DisplayOrder", c."IconUrl", c."IsActive", c."IsDeleted", c."Name", c."UpdatedAt"
+      FROM "Categories" AS c
+      WHERE NOT (c."IsDeleted")
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (62ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT p."Id", p."Address", p."AverageRating", p."CategoryId", p."CreatedAt", p."DeletedAt", p."Description", p."ImageUrl", p."IsActive", p."IsDeleted", p."Latitude", p."Longitude", p."Name", p."QRCode", p."TotalRatings", p."UpdatedAt", c0."Id", c0."CreatedAt", c0."DeletedAt", c0."Description", c0."DisplayOrder", c0."IconUrl", c0."IsActive", c0."IsDeleted", c0."Name", c0."UpdatedAt"
+      FROM "PointsOfInterest" AS p
+      LEFT JOIN (
+          SELECT c."Id", c."CreatedAt", c."DeletedAt", c."Description", c."DisplayOrder", c."IconUrl", c."IsActive", c."IsDeleted", c."Name", c."UpdatedAt"
+          FROM "Categories" AS c
+          WHERE NOT (c."IsDeleted")
+      ) AS c0 ON p."CategoryId" = c0."Id"
+      WHERE NOT (p."IsDeleted")
+      ORDER BY p."Name"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (57ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT c."Id", c."CreatedAt", c."DeletedAt", c."Description", c."DisplayOrder", c."IconUrl", c."IsActive", c."IsDeleted", c."Name", c."UpdatedAt"
+      FROM "Categories" AS c
+      WHERE NOT (c."IsDeleted")
