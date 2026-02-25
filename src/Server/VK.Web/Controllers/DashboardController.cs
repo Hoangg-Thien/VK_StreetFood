@@ -43,7 +43,7 @@ public class DashboardController : Controller
 
             var averageRating = await _context.Ratings
                 .Where(r => !r.IsDeleted)
-                .AverageAsync(r => (double?)r.Score) ?? 0;
+                .AverageAsync(r => (double?)r.RatingValue) ?? 0;
 
             // Recent visitors (last 7 days)
             var last7Days = DateTime.UtcNow.AddDays(-7);

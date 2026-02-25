@@ -8,8 +8,7 @@ public class HomeController : Controller
 {
     public IActionResult Index()
     {
-        // Redirect to Dashboard instead of Home page
-        return RedirectToAction("Index", "Dashboard");
+        return View();
     }
 
     public IActionResult Privacy()
