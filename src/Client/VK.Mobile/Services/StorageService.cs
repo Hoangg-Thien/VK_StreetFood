@@ -1,3 +1,6 @@
+using System.Text.Json;
+using VK.Mobile.Models;
+
 namespace VK.Mobile.Services;
 
 public interface IStorageService
@@ -58,7 +61,7 @@ public class StorageService : IStorageService
     }
 
     // Helper methods
-    public async Task<int?> GetTouristIdAsync() 
+    public async Task<int?> GetTouristIdAsync()
     {
         var result = await GetAsync<int>(TouristIdKey);
         return result == 0 ? null : result;
@@ -70,4 +73,29 @@ public class StorageService : IStorageService
 
     public Task<string?> GetPreferredLanguageAsync() => GetAsync<string>(PreferredLanguageKey);
     public Task SetPreferredLanguageAsync(string lang) => SetAsync(PreferredLanguageKey, lang);
+
+    // Tourist model storage
+    private const string TouristKey = "tourist";
+
+    public async Task<TouristModel?> GetTouristAsync()
+    {
+        try
+        {
+            var json = await SecureStorage.GetAsync(TouristKey);
+            if (string.IsNullOrEmpty(json))
+                return null;
+
+            return JsonSerializer.Deserialize<TouristModel>(json);
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    public async Task SetTouristAsync(TouristModel tourist)
+    {
+        var json = JsonSerializer.Serialize(tourist);
+        await SecureStorage.SetAsync(TouristKey, json);
+    }
 }

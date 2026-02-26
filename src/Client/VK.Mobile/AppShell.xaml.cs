@@ -9,7 +9,7 @@ public partial class AppShell : Shell
 		InitializeComponent();
 
 		// Register routes for navigation
-		Routing.RegisterRoute("poidetail", typeof(POIDetailPage));
-		Routing.RegisterRoute("qrscan", typeof(QRScanPage));
+		Routing.RegisterRoute("POIDetail", typeof(POIDetailPage));
+		Routing.RegisterRoute("QRScan", typeof(QRScanPage));
 	}
 }

@@ -209,5 +209,3 @@ VK.Mobile/
 5. Social sharing
 
 ---
-
-**Happy Testing! 🎉**

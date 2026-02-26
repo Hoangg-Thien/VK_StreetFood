@@ -77,6 +77,26 @@ build_metadata.AdditionalFiles.NoWarn =
 build_metadata.AdditionalFiles.EnableDiagnostics = 
 build_metadata.AdditionalFiles.LineInfo = 
 
+[D:/VK_StreetFood/src/Client/VK.Mobile/Views/FavoritesPage.xaml]
+build_metadata.AdditionalFiles.GenKind = Xaml
+build_metadata.AdditionalFiles.ManifestResourceName = VK.Mobile.Views.FavoritesPage.xaml
+build_metadata.AdditionalFiles.TargetPath = Views\FavoritesPage.xaml
+build_metadata.AdditionalFiles.RelativePath = Views\FavoritesPage.xaml
+build_metadata.AdditionalFiles.Inflator = Runtime
+build_metadata.AdditionalFiles.NoWarn = 
+build_metadata.AdditionalFiles.EnableDiagnostics = 
+build_metadata.AdditionalFiles.LineInfo = 
+
+[D:/VK_StreetFood/src/Client/VK.Mobile/Views/HistoryPage.xaml]
+build_metadata.AdditionalFiles.GenKind = Xaml
+build_metadata.AdditionalFiles.ManifestResourceName = VK.Mobile.Views.HistoryPage.xaml
+build_metadata.AdditionalFiles.TargetPath = Views\HistoryPage.xaml
+build_metadata.AdditionalFiles.RelativePath = Views\HistoryPage.xaml
+build_metadata.AdditionalFiles.Inflator = Runtime
+build_metadata.AdditionalFiles.NoWarn = 
+build_metadata.AdditionalFiles.EnableDiagnostics = 
+build_metadata.AdditionalFiles.LineInfo = 
+
 [D:/VK_StreetFood/src/Client/VK.Mobile/Views/MainMapPage.xaml]
 build_metadata.AdditionalFiles.GenKind = Xaml
 build_metadata.AdditionalFiles.ManifestResourceName = VK.Mobile.Views.MainMapPage.xaml
@@ -97,11 +117,41 @@ build_metadata.AdditionalFiles.NoWarn =
 build_metadata.AdditionalFiles.EnableDiagnostics = 
 build_metadata.AdditionalFiles.LineInfo = 
 
+[D:/VK_StreetFood/src/Client/VK.Mobile/Views/ProfilePage.xaml]
+build_metadata.AdditionalFiles.GenKind = Xaml
+build_metadata.AdditionalFiles.ManifestResourceName = VK.Mobile.Views.ProfilePage.xaml
+build_metadata.AdditionalFiles.TargetPath = Views\ProfilePage.xaml
+build_metadata.AdditionalFiles.RelativePath = Views\ProfilePage.xaml
+build_metadata.AdditionalFiles.Inflator = Runtime
+build_metadata.AdditionalFiles.NoWarn = 
+build_metadata.AdditionalFiles.EnableDiagnostics = 
+build_metadata.AdditionalFiles.LineInfo = 
+
 [D:/VK_StreetFood/src/Client/VK.Mobile/Views/QRScanPage.xaml]
 build_metadata.AdditionalFiles.GenKind = Xaml
 build_metadata.AdditionalFiles.ManifestResourceName = VK.Mobile.Views.QRScanPage.xaml
 build_metadata.AdditionalFiles.TargetPath = Views\QRScanPage.xaml
 build_metadata.AdditionalFiles.RelativePath = Views\QRScanPage.xaml
+build_metadata.AdditionalFiles.Inflator = Runtime
+build_metadata.AdditionalFiles.NoWarn = 
+build_metadata.AdditionalFiles.EnableDiagnostics = 
+build_metadata.AdditionalFiles.LineInfo = 
+
+[D:/VK_StreetFood/src/Client/VK.Mobile/Views/SettingsPage.xaml]
+build_metadata.AdditionalFiles.GenKind = Xaml
+build_metadata.AdditionalFiles.ManifestResourceName = VK.Mobile.Views.SettingsPage.xaml
+build_metadata.AdditionalFiles.TargetPath = Views\SettingsPage.xaml
+build_metadata.AdditionalFiles.RelativePath = Views\SettingsPage.xaml
+build_metadata.AdditionalFiles.Inflator = Runtime
+build_metadata.AdditionalFiles.NoWarn = 
+build_metadata.AdditionalFiles.EnableDiagnostics = 
+build_metadata.AdditionalFiles.LineInfo = 
+
+[D:/VK_StreetFood/src/Client/VK.Mobile/Views/WelcomePage.xaml]
+build_metadata.AdditionalFiles.GenKind = Xaml
+build_metadata.AdditionalFiles.ManifestResourceName = VK.Mobile.Views.WelcomePage.xaml
+build_metadata.AdditionalFiles.TargetPath = Views\WelcomePage.xaml
+build_metadata.AdditionalFiles.RelativePath = Views\WelcomePage.xaml
 build_metadata.AdditionalFiles.Inflator = Runtime
 build_metadata.AdditionalFiles.NoWarn = 
 build_metadata.AdditionalFiles.EnableDiagnostics = 

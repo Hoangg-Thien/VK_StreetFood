@@ -5,11 +5,78 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     xmlns:local="clr-namespace:VK.Mobile.Views"
     Shell.FlyoutBehavior="Disabled"
-    Shell.NavBarIsVisible="False">
+    Shell.TabBarBackgroundColor="{StaticResource TabBarBackground}"
+    Shell.TabBarForegroundColor="{StaticResource TabBarSelected}"
+    Shell.TabBarUnselectedColor="{StaticResource TabBarUnselected}">
 
+    <!-- Welcome Page (No TabBar) -->
     <ShellContent
-        Title="Home"
-        ContentTemplate="{DataTemplate local:MainMapPage}"
-        Route="mainmap"/>
+        Route="Welcome"
+        ContentTemplate="{DataTemplate local:WelcomePage}"
+        Shell.TabBarIsVisible="False"
+        Shell.NavBarIsVisible="False"/>
+
+    <!-- Main TabBar -->
+    <TabBar>
+        <!-- Home Tab -->
+        <ShellContent
+            Title="Bản đồ"
+            Route="MainMap"
+            ContentTemplate="{DataTemplate local:MainMapPage}">
+            <ShellContent.Icon>
+                <FontImageSource Glyph="🗺️"
+                        FontFamily="OpenSansRegular"
+                        Size="24"/>
+            </ShellContent.Icon>
+        </ShellContent>
+
+        <!-- Favorites Tab -->
+        <ShellContent
+            Title="Yêu thích"
+            Route="Favorites"
+            ContentTemplate="{DataTemplate local:FavoritesPage}">
+            <ShellContent.Icon>
+                <FontImageSource Glyph="❤️"
+                        FontFamily="OpenSansRegular"
+                        Size="24"/>
+            </ShellContent.Icon>
+        </ShellContent>
+
+        <!-- History Tab -->
+        <ShellContent
+            Title="Lịch sử"
+            Route="History"
+            ContentTemplate="{DataTemplate local:HistoryPage}">
+            <ShellContent.Icon>
+                <FontImageSource Glyph="📜"
+                        FontFamily="OpenSansRegular"
+                        Size="24"/>
+            </ShellContent.Icon>
+        </ShellContent>
+
+        <!-- Profile Tab -->
+        <ShellContent
+            Title="Hồ sơ"
+            Route="Profile"
+            ContentTemplate="{DataTemplate local:ProfilePage}">
+            <ShellContent.Icon>
+                <FontImageSource Glyph="👤"
+                        FontFamily="OpenSansRegular"
+                        Size="24"/>
+            </ShellContent.Icon>
+        </ShellContent>
+
+        <!-- Settings Tab -->
+        <ShellContent
+            Title="Cài đặt"
+            Route="Settings"
+            ContentTemplate="{DataTemplate local:SettingsPage}">
+            <ShellContent.Icon>
+                <FontImageSource Glyph="⚙️"
+                        FontFamily="OpenSansRegular"
+                        Size="24"/>
+            </ShellContent.Icon>
+        </ShellContent>
+    </TabBar>
 
 </Shell>

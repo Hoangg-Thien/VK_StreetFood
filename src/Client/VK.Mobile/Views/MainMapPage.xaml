@@ -32,7 +32,7 @@
                     TitleColor="White"
                     WidthRequest="120"
                     Margin="10,0"
-                    SelectionChanged="OnLanguageChanged">
+                    SelectedIndexChanged="OnLanguageChanged">
                 <Picker.ItemsSource>
                     <x:Array Type="{x:Type x:String}">
                         <x:String>Tiếng Việt</x:String>
@@ -42,12 +42,13 @@
                 </Picker.ItemsSource>
             </Picker>
 
-            <ImageButton Grid.Column="2"
-                         Source="qr_scan.png"
-                         BackgroundColor="Transparent"
-                         WidthRequest="40"
-                         HeightRequest="40"
-                         Clicked="OnQRScanClicked"/>
+            <Button Grid.Column="2"
+                    Text="📷"
+                    FontSize="24"
+                    BackgroundColor="Transparent"
+                    WidthRequest="44"
+                    HeightRequest="44"
+                    Clicked="OnQRScanClicked"/>
         </Grid>
 
         <!-- Map Container -->
@@ -72,10 +73,9 @@
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
 
-            <Image Grid.Column="0"
-                   Source="location_icon.png"
-                   WidthRequest="24"
-                   HeightRequest="24"
+            <Label Grid.Column="0"
+                   Text="📍"
+                   FontSize="24"
                    VerticalOptions="Center"/>
 
             <StackLayout Grid.Column="1"

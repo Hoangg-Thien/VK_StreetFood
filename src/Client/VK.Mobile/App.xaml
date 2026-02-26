@@ -17,6 +17,8 @@
             <converters:BoolToFavoriteColorConverter x:Key="BoolToFavoriteColorConverter"/>
             <converters:BoolToPlayButtonTextConverter x:Key="BoolToPlayButtonTextConverter"/>
             <converters:CountToBoolConverter x:Key="CountToBoolConverter"/>
+            <converters:InvertedBoolConverter x:Key="InvertedBoolConverter"/>
+            <converters:NullToBoolConverter x:Key="NullToBoolConverter"/>
         </ResourceDictionary>
     </Application.Resources>
 </Application>

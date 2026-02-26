@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:VK.Mobile.ViewModels"
+             xmlns:models="clr-namespace:VK.Mobile.Models"
+             x:Class="VK.Mobile.Views.FavoritesPage"
+             x:DataType="vm:FavoritesViewModel"
+             Title="Yêu thích"
+             BackgroundColor="{StaticResource PageBackground}">
+
+    <Grid RowDefinitions="*">
+
+        <!-- Loading Indicator -->
+        <ActivityIndicator IsRunning="{Binding IsLoading}"
+                           IsVisible="{Binding IsLoading}"
+                           Color="{StaticResource Primary}"
+                           VerticalOptions="Center"
+                           HorizontalOptions="Center"/>
+
+        <!-- Empty State -->
+        <VerticalStackLayout IsVisible="{Binding IsEmpty}"
+                             VerticalOptions="Center"
+                             Padding="40"
+                             Spacing="16">
+            <Label Text="❤️"
+                   FontSize="64"
+                   HorizontalOptions="Center"/>
+            <Label Text="Chưa có địa điểm yêu thích"
+                   FontSize="20"
+                   FontAttributes="Bold"
+                   HorizontalTextAlignment="Center"
+                   TextColor="{StaticResource TextPrimary}"/>
+            <Label Text="Thêm các địa điểm bạn thích vào danh sách để dễ dàng tìm lại"
+                   FontSize="14"
+                   HorizontalTextAlignment="Center"
+                   TextColor="{StaticResource TextSecondary}"/>
+        </VerticalStackLayout>
+
+        <!-- Favorites List -->
+        <CollectionView ItemsSource="{Binding Favorites}"
+                        SelectionMode="None"
+                        IsVisible="{Binding IsEmpty, Converter={StaticResource InvertedBoolConverter}}"
+                        Margin="16,8">
+
+            <CollectionView.ItemTemplate>
+                <DataTemplate x:DataType="models:POIModel">
+                    <Frame Margin="0,8"
+                           Padding="0"
+                           BackgroundColor="{StaticResource CardBackground}"
+                           BorderColor="Transparent"
+                           CornerRadius="12">
+
+                        <Frame.GestureRecognizers>
+                            <TapGestureRecognizer Command="{Binding Source={RelativeSource AncestorType={x:Type vm:FavoritesViewModel}}, Path=NavigateToPOICommand}"
+                                                  CommandParameter="{Binding .}"/>
+                        </Frame.GestureRecognizers>
+
+                        <Grid ColumnDefinitions="100,*,Auto"
+                                Padding="0">
+
+                            <!-- POI Image -->
+                            <Image Grid.Column="0"
+                                   Source="{Binding ImageUrl}"
+                                   Aspect="AspectFill"
+                                   HeightRequest="100"
+                                   WidthRequest="100"/>
+
+                            <!-- POI Info -->
+                            <VerticalStackLayout Grid.Column="1"
+                                    Padding="12"
+                                    Spacing="4">
+                                <Label Text="{Binding Name}"
+                                       FontSize="16"
+                                       FontAttributes="Bold"
+                                       TextColor="{StaticResource TextPrimary}"
+                                       MaxLines="2"/>
+
+                                <Label Text="{Binding Description}"
+                                       FontSize="14"
+                                       TextColor="{StaticResource TextSecondary}"
+                                       MaxLines="2"/>
+
+                                <HorizontalStackLayout Spacing="4">
+                                    <Label Text="⭐"
+                                           FontSize="14"/>
+                                    <Label Text="{Binding AverageRating, StringFormat='{0:F1}'}"
+                                           FontSize="14"
+                                           TextColor="{StaticResource TextSecondary}"/>
+                                </HorizontalStackLayout>
+                            </VerticalStackLayout>
+
+                            <!-- Remove Button -->
+                            <Button Grid.Column="2"
+                                    Text="❌"
+                                    FontSize="20"
+                                    BackgroundColor="Transparent"
+                                    Command="{Binding Source={RelativeSource AncestorType={x:Type vm:FavoritesViewModel}}, Path=RemoveFavoriteCommand}"
+                                    CommandParameter="{Binding .}"
+                                    WidthRequest="56"
+                                    HeightRequest="56"
+                                    VerticalOptions="Start"
+                                    Margin="0,8,8,0"/>
+
+                        </Grid>
+                    </Frame>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+
+    </Grid>
+</ContentPage>

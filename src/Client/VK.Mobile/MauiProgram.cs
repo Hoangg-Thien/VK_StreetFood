@@ -39,14 +39,24 @@ public static class MauiProgram
 		builder.Services.AddSingleton<HttpClient>();
 
 		// Register ViewModels
+		builder.Services.AddTransient<WelcomeViewModel>();
 		builder.Services.AddTransient<MainMapViewModel>();
 		builder.Services.AddTransient<POIDetailViewModel>();
 		builder.Services.AddTransient<QRScanViewModel>();
+		builder.Services.AddTransient<FavoritesViewModel>();
+		builder.Services.AddTransient<HistoryViewModel>();
+		builder.Services.AddTransient<SettingsViewModel>();
+		builder.Services.AddTransient<ProfileViewModel>();
 
 		// Register Views
+		builder.Services.AddTransient<WelcomePage>();
 		builder.Services.AddTransient<MainMapPage>();
 		builder.Services.AddTransient<POIDetailPage>();
 		builder.Services.AddTransient<QRScanPage>();
+		builder.Services.AddTransient<FavoritesPage>();
+		builder.Services.AddTransient<HistoryPage>();
+		builder.Services.AddTransient<SettingsPage>();
+		builder.Services.AddTransient<ProfilePage>();
 
 		return builder.Build();
 	}

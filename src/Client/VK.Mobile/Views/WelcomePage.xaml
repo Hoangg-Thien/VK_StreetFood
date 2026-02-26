@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:VK.Mobile.ViewModels"
+             x:Class="VK.Mobile.Views.WelcomePage"
+             x:DataType="vm:WelcomeViewModel"
+             BackgroundColor="{StaticResource PageBackground}"
+             Shell.NavBarIsVisible="False">
+
+    <Grid>
+        <!-- Gradient Background -->
+        <BoxView>
+            <BoxView.Background>
+                <LinearGradientBrush StartPoint="0,0"
+                        EndPoint="1,1">
+                    <GradientStop Color="{StaticResource Primary}"
+                            Offset="0.0"/>
+                    <GradientStop Color="{StaticResource Secondary}"
+                            Offset="1.0"/>
+                </LinearGradientBrush>
+            </BoxView.Background>
+        </BoxView>
+
+        <!-- Content -->
+        <VerticalStackLayout VerticalOptions="Center"
+                Padding="40"
+                Spacing="30">
+
+            <!-- App Icon/Logo -->
+            <Border StrokeShape="RoundRectangle 80"
+                    BackgroundColor="White"
+                    HeightRequest="160"
+                    WidthRequest="160"
+                    HorizontalOptions="Center"
+                    Shadow="{StaticResource Shadow}">
+                <Label Text="🍜"
+                       FontSize="80"
+                       HorizontalOptions="Center"
+                       VerticalOptions="Center"/>
+            </Border>
+
+            <!-- App Name -->
+            <Label Text="VK Street Food"
+                   FontSize="36"
+                   FontAttributes="Bold"
+                   TextColor="White"
+                   HorizontalTextAlignment="Center"/>
+
+            <!-- Tagline -->
+            <Label Text="Khám phá ẩm thực đường phố Sài Gòn"
+                   FontSize="18"
+                   TextColor="White"
+                   Opacity="0.9"
+                   HorizontalTextAlignment="Center"/>
+
+            <!-- Features List -->
+            <VerticalStackLayout Spacing="15"
+                    Margin="0,20,0,0">
+                <HorizontalStackLayout Spacing="15">
+                    <Label Text="📍"
+                            FontSize="24"/>
+                    <Label Text="Tìm kiếm địa điểm gần bạn"
+                           TextColor="White"
+                           FontSize="16"
+                           VerticalOptions="Center"/>
+                </HorizontalStackLayout>
+
+                <HorizontalStackLayout Spacing="15">
+                    <Label Text="🎧"
+                            FontSize="24"/>
+                    <Label Text="Nghe hướng dẫn đa ngôn ngữ"
+                           TextColor="White"
+                           FontSize="16"
+                           VerticalOptions="Center"/>
+                </HorizontalStackLayout>
+
+                <HorizontalStackLayout Spacing="15">
+                    <Label Text="📱"
+                            FontSize="24"/>
+                    <Label Text="Quét QR để nhận ưu đãi"
+                           TextColor="White"
+                           FontSize="16"
+                           VerticalOptions="Center"/>
+                </HorizontalStackLayout>
+            </VerticalStackLayout>
+
+            <!-- Get Started Button -->
+            <Button Text="BẮT ĐẦU KHÁM PHÁ"
+                    Command="{Binding GetStartedCommand}"
+                    BackgroundColor="White"
+                    TextColor="{StaticResource Primary}"
+                    FontSize="18"
+                    FontAttributes="Bold"
+                    HeightRequest="56"
+                    CornerRadius="28"
+                    Margin="0,30,0,0"
+                    Shadow="{StaticResource Shadow}"/>
+
+        </VerticalStackLayout>
+    </Grid>
+</ContentPage>
