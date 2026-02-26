@@ -30,62 +30,93 @@ public partial class MainMapPage : ContentPage
 
     private async void OnPageLoaded(object? sender, EventArgs e)
     {
-        InitializeMap();
-        await _viewModel.InitializeCommand.ExecuteAsync(null);
-
-        // Subscribe to POI changes
-        _viewModel.Pois.CollectionChanged += (s, e) => UpdatePOIMarkers();
-
-        // Subscribe to location changes
-        _viewModel.PropertyChanged += (s, e) =>
+        try
         {
-            if (e.PropertyName == nameof(_viewModel.CurrentLocation))
+            InitializeMap();
+
+            // Initialize ViewModel (with error handling inside)
+            try
             {
-                UpdateCurrentLocationMarker();
+                await _viewModel.InitializeCommand.ExecuteAsync(null);
             }
-        };
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error initializing ViewModel: {ex}");
+                // Continue anyway, app should still work in offline mode
+            }
+
+            // Subscribe to POI changes
+            _viewModel.Pois.CollectionChanged += (s, e) => UpdatePOIMarkers();
+
+            // Subscribe to location changes
+            _viewModel.PropertyChanged += (s, e) =>
+            {
+                if (e.PropertyName == nameof(_viewModel.CurrentLocation))
+                {
+                    UpdateCurrentLocationMarker();
+                }
+            };
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error in OnPageLoaded: {ex}");
+            await DisplayAlert("Error", "Failed to initialize map. Please try again.", "OK");
+        }
     }
 
     private void InitializeMap()
     {
-        _mapControl = new MapControl();
-
-        // Create map
-        var map = new Mapsui.Map();
-
-        // Add OpenStreetMap layer
-        map.Layers.Add(OpenStreetMap.CreateTileLayer());
-
-        // Add POI layer
-        _poiLayer = new WritableLayer
+        try
         {
-            Name = "POIs",
-            Style = null
-        };
-        map.Layers.Add(_poiLayer);
+            _mapControl = new MapControl();
 
-        // Add location layer
-        _locationLayer = new WritableLayer
+            // Create map
+            var map = new Mapsui.Map();
+
+            // Add OpenStreetMap layer
+            map.Layers.Add(OpenStreetMap.CreateTileLayer());
+
+            // Add POI layer
+            _poiLayer = new WritableLayer
+            {
+                Name = "POIs",
+                Style = null
+            };
+            map.Layers.Add(_poiLayer);
+
+            // Add location layer
+            _locationLayer = new WritableLayer
+            {
+                Name = "Location",
+                Style = null
+            };
+            map.Layers.Add(_locationLayer);
+
+            // Set initial position (Vinh Khanh Food Street)
+            var center = SphericalMercator.FromLonLat(
+                AppSettings.DefaultLongitude,
+                AppSettings.DefaultLatitude);
+
+            _mapControl.Map = map;
+            _mapControl.Map.Navigator.CenterOn(center.ToMPoint());
+            _mapControl.Map.Navigator.ZoomTo(AppSettings.DefaultZoomLevel);
+
+            // Handle marker clicks
+            _mapControl.Info += MapControl_Info;
+
+            MapContainer.Content = _mapControl;
+        }
+        catch (Exception ex)
         {
-            Name = "Location",
-            Style = null
-        };
-        map.Layers.Add(_locationLayer);
-
-        // Set initial position (Vinh Khanh Food Street)
-        var center = SphericalMercator.FromLonLat(
-            AppSettings.DefaultLongitude,
-            AppSettings.DefaultLatitude);
-        // map.Home = n => n.CenterOnAndZoomTo(center, AppSettings.DefaultZoomLevel);
-
-        _mapControl.Map = map;
-        _mapControl.Map.Navigator.CenterOn(center.ToMPoint());
-        _mapControl.Map.Navigator.ZoomTo(AppSettings.DefaultZoomLevel);
-
-        // Handle marker clicks
-        _mapControl.Info += MapControl_Info;
-
-        MapContainer.Content = _mapControl;
+            System.Diagnostics.Debug.WriteLine($"Error initializing map: {ex}");
+            // Create a simple label as fallback
+            MapContainer.Content = new Label
+            {
+                Text = "Map initialization failed. Please restart the app.",
+                HorizontalOptions = LayoutOptions.Center,
+                VerticalOptions = LayoutOptions.Center
+            };
+        }
     }
 
     private void UpdatePOIMarkers()

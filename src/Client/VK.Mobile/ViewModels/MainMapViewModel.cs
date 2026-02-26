@@ -59,22 +59,54 @@ public partial class MainMapViewModel : ObservableObject
         {
             IsLoading = true;
 
-            // Initialize tourist
-            await InitializeTouristAsync();
+            // Initialize tourist (don't fail if API is down)
+            try
+            {
+                await InitializeTouristAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to initialize tourist, continuing anyway");
+            }
 
-            // Get current location
-            CurrentLocation = await _locationService.GetCurrentLocationAsync();
+            // Get current location (with fallback to default)
+            try
+            {
+                CurrentLocation = await _locationService.GetCurrentLocationAsync();
+                if (CurrentLocation == null)
+                {
+                    _logger.LogWarning("Could not get current location, using default");
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to get location, using default");
+            }
 
-            // Load POIs
-            await LoadPOIsAsync();
+            // Load POIs (best effort)
+            try
+            {
+                await LoadPOIsAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to load POIs");
+            }
 
-            // Start tracking
-            await StartTrackingAsync();
+            // Start tracking (non-blocking)
+            try
+            {
+                await StartTrackingAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to start tracking");
+            }
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error initializing");
-            await Shell.Current.DisplayAlert("Error", "Failed to initialize app", "OK");
+            // Don't show error dialog, just log it
         }
         finally
         {
@@ -87,18 +119,27 @@ public partial class MainMapViewModel : ObservableObject
     {
         try
         {
-            List<POIModel> poiList;
+            List<POIModel> poiList = new();
 
-            if (CurrentLocation != null)
+            // Try to load POIs from API
+            try
             {
-                poiList = await _apiService.GetNearbyPOIsAsync(
-                    CurrentLocation.Latitude,
-                    CurrentLocation.Longitude,
-                    5.0); // 5km radius
+                if (CurrentLocation != null)
+                {
+                    poiList = await _apiService.GetNearbyPOIsAsync(
+                        CurrentLocation.Latitude,
+                        CurrentLocation.Longitude,
+                        5.0); // 5km radius
+                }
+                else
+                {
+                    poiList = await _apiService.GetAllPOIsAsync();
+                }
             }
-            else
+            catch (Exception ex)
             {
-                poiList = await _apiService.GetAllPOIsAsync();
+                _logger.LogWarning(ex, "API not available, using empty POI list");
+                // Continue with empty list
             }
 
             Pois.Clear();
@@ -198,20 +239,40 @@ public partial class MainMapViewModel : ObservableObject
                 // Generate new device ID
                 deviceId = Guid.NewGuid().ToString();
 
-                var location = await _locationService.GetCurrentLocationAsync();
-
-                var tourist = await _apiService.RegisterTouristAsync(
-                    deviceId,
-                    language,
-                    location?.Latitude,
-                    location?.Longitude);
-
-                if (tourist != null)
+                Location? location = null;
+                try
                 {
-                    await _storageService.SetTouristIdAsync(tourist.Id);
-                    await _storageService.SetDeviceIdAsync(deviceId);
-                    CurrentTourist = tourist;
-                    _logger.LogInformation("New tourist registered: {Id}", tourist.Id);
+                    location = await _locationService.GetCurrentLocationAsync();
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Could not get location for tourist registration");
+                }
+
+                try
+                {
+                    var tourist = await _apiService.RegisterTouristAsync(
+                        deviceId,
+                        language,
+                        location?.Latitude,
+                        location?.Longitude);
+
+                    if (tourist != null)
+                    {
+                        await _storageService.SetTouristIdAsync(tourist.Id);
+                        await _storageService.SetDeviceIdAsync(deviceId);
+                        CurrentTourist = tourist;
+                        _logger.LogInformation("New tourist registered: {Id}", tourist.Id);
+                    }
+                    else
+                    {
+                        _logger.LogWarning("API returned null for tourist registration");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Could not register tourist via API (offline mode)");
+                    // Continue without tourist registration
                 }
             }
             else
@@ -227,6 +288,7 @@ public partial class MainMapViewModel : ObservableObject
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error initializing tourist");
+            throw;
         }
     }
 

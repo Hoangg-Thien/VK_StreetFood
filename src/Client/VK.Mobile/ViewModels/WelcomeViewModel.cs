@@ -8,6 +8,6 @@ public partial class WelcomeViewModel : ObservableObject
     [RelayCommand]
     async Task GetStarted()
     {
-        await Shell.Current.GoToAsync("///MainMap");
+        await Shell.Current.GoToAsync("//MainMap");
     }
 }
