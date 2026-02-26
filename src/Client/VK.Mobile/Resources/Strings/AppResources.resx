@@ -112,6 +112,9 @@
   <data name="TabProfile" xml:space="preserve">
     <value>Hồ sơ</value>
   </data>
+  <data name="TabSettings" xml:space="preserve">
+    <value>Cài đặt</value>
+  </data>
   
   <!-- Common -->
   <data name="Loading" xml:space="preserve">

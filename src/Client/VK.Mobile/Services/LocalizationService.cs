@@ -16,21 +16,9 @@ public class LocalizationService : ILocalizationService
 
     public void SetCulture(string languageCode)
     {
-        var culture = languageCode switch
-        {
-            "vi" => new CultureInfo("vi-VN"),
-            "en" => new CultureInfo("en-US"),
-            "ko" => new CultureInfo("ko-KR"),
-            _ => new CultureInfo("vi-VN")
-        };
-
-        CurrentCulture = culture;
-        CultureInfo.CurrentCulture = culture;
-        CultureInfo.CurrentUICulture = culture;
-        CultureInfo.DefaultThreadCurrentCulture = culture;
-        CultureInfo.DefaultThreadCurrentUICulture = culture;
-
-        AppResources.Culture = culture;
+        // Đổi cả LocalizationResourceManager (XAML binding) lẫn CultureInfo
+        LocalizationResourceManager.Instance.SetLanguage(languageCode);
+        CurrentCulture = CultureInfo.CurrentCulture;
     }
 
     public string GetString(string key)

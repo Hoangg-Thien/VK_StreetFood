@@ -39,6 +39,21 @@ public partial class MainMapViewModel : ObservableObject
     [ObservableProperty]
     private string _selectedLanguage = "vi";
 
+    /// <summary>Picker index tương ứng: 0=vi, 1=en, 2=ko</summary>
+    public int SelectedLanguageIndex
+    {
+        get => _selectedLanguage switch { "en" => 1, "ko" => 2, _ => 0 };
+        set
+        {
+            var code = value switch { 1 => "en", 2 => "ko", _ => "vi" };
+            if (code != _selectedLanguage)
+                _ = ChangeLanguageCommand.ExecuteAsync(code);
+        }
+    }
+
+    partial void OnSelectedLanguageChanged(string value)
+        => OnPropertyChanged(nameof(SelectedLanguageIndex));
+
     [ObservableProperty]
     private TouristModel? _currentTourist;
 
@@ -224,6 +239,9 @@ public partial class MainMapViewModel : ObservableObject
     {
         SelectedLanguage = languageCode;
         await _storageService.SetPreferredLanguageAsync(languageCode);
+
+        // Cập nhật LocalizationResourceManager → XAML tự cập nhật
+        LocalizationResourceManager.Instance.SetLanguage(languageCode);
 
         if (CurrentTourist != null)
         {
