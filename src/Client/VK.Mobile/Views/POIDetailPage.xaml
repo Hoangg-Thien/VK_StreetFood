@@ -1,0 +1,218 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:VK.Mobile.ViewModels"
+             x:Class="VK.Mobile.Views.POIDetailPage"
+             x:DataType="vm:POIDetailViewModel"
+             Title="{Binding Poi.Name}">
+
+    <ScrollView>
+        <StackLayout Padding="0"
+                Spacing="0">
+
+            <!-- Header Image -->
+            <Grid HeightRequest="250">
+                <Image Source="{Binding Poi.ImageUrl}"
+                       Aspect="AspectFill"/>
+
+                <BoxView Color="#80000000"
+                         VerticalOptions="End"
+                         HeightRequest="60"/>
+
+                <StackLayout VerticalOptions="End"
+                             Padding="15,10">
+                    <Label Text="{Binding Poi.Name}"
+                           FontSize="24"
+                           FontAttributes="Bold"
+                           TextColor="White"/>
+                    <Label Text="{Binding Poi.CategoryName}"
+                           FontSize="14"
+                           TextColor="White"
+                           Opacity="0.8"/>
+                </StackLayout>
+
+                <Button Text="←"
+                        FontSize="24"
+                        TextColor="White"
+                        BackgroundColor="Transparent"
+                        WidthRequest="50"
+                        HeightRequest="50"
+                        HorizontalOptions="Start"
+                        VerticalOptions="Start"
+                        Margin="10"
+                        Command="{Binding GoBackCommand}"/>
+
+                <Button Text="♥"
+                        FontSize="24"
+                        TextColor="{Binding IsFavorite, Converter={StaticResource BoolToFavoriteColorConverter}}"
+                        BackgroundColor="Transparent"
+                        WidthRequest="50"
+                        HeightRequest="50"
+                        HorizontalOptions="End"
+                        VerticalOptions="Start"
+                        Margin="10"
+                        Command="{Binding ToggleFavoriteCommand}"/>
+            </Grid>
+
+            <!-- Info Section -->
+            <StackLayout Padding="15"
+                         Spacing="15">
+
+                <!-- Description -->
+                <Frame Padding="15"
+                       BackgroundColor="White"
+                       CornerRadius="10"
+                       HasShadow="True">
+                    <StackLayout Spacing="10">
+                        <Label Text="Description"
+                               FontSize="18"
+                               FontAttributes="Bold"/>
+                        <Label Text="{Binding Poi.Description}"
+                               FontSize="14"
+                               LineBreakMode="WordWrap"/>
+                    </StackLayout>
+                </Frame>
+
+                <!-- Address -->
+                <Frame Padding="15"
+                       BackgroundColor="White"
+                       CornerRadius="10"
+                       HasShadow="True">
+                    <StackLayout Spacing="5">
+                        <Label Text="📍 Address"
+                               FontSize="16"
+                               FontAttributes="Bold"/>
+                        <Label Text="{Binding Poi.Address}"
+                               FontSize="14"/>
+                    </StackLayout>
+                </Frame>
+
+                <!-- Audio Player -->
+                <Frame Padding="15"
+                       BackgroundColor="#FF5722"
+                       CornerRadius="10"
+                       HasShadow="True">
+                    <StackLayout Spacing="10">
+                        <Label Text="🎧 Audio Guide"
+                               FontSize="16"
+                               FontAttributes="Bold"
+                               TextColor="White"/>
+
+                        <Grid ColumnDefinitions="*,Auto,Auto"
+                              ColumnSpacing="10">
+
+                            <Picker Grid.Column="0"
+                                    Title="Select Language"
+                                    ItemsSource="{Binding Poi.AudioContents}"
+                                    ItemDisplayBinding="{Binding LanguageCode}"
+                                    SelectedItem="{Binding SelectedAudio}"
+                                    TextColor="White"
+                                    TitleColor="White"/>
+
+                            <Button Grid.Column="1"
+                                    Text="{Binding IsPlayingAudio, Converter={StaticResource BoolToPlayButtonTextConverter}}"
+                                    Command="{Binding PlayAudioCommand}"
+                                    BackgroundColor="White"
+                                    TextColor="#FF5722"
+                                    CornerRadius="20"
+                                    WidthRequest="80"/>
+
+                            <Button Grid.Column="2"
+                                    Text="⏹"
+                                    Command="{Binding StopAudioCommand}"
+                                    BackgroundColor="White"
+                                    TextColor="#FF5722"
+                                    CornerRadius="20"
+                                    WidthRequest="50"/>
+                        </Grid>
+                    </StackLayout>
+                </Frame>
+
+                <!-- Rating -->
+                <Frame Padding="15"
+                       BackgroundColor="White"
+                       CornerRadius="10"
+                       HasShadow="True">
+                    <StackLayout Spacing="10">
+                        <Label Text="⭐ Rate this place"
+                               FontSize="16"
+                               FontAttributes="Bold"/>
+
+                        <FlexLayout Direction="Row"
+                                    JustifyContent="SpaceEvenly">
+                            <Button Text="1⭐"
+                                    Command="{Binding SubmitRatingCommand}"
+                                    CommandParameter="1"
+                                    BackgroundColor="#FFC107"
+                                    TextColor="White"/>
+                            <Button Text="2⭐"
+                                    Command="{Binding SubmitRatingCommand}"
+                                    CommandParameter="2"
+                                    BackgroundColor="#FFC107"
+                                    TextColor="White"/>
+                            <Button Text="3⭐"
+                                    Command="{Binding SubmitRatingCommand}"
+                                    CommandParameter="3"
+                                    BackgroundColor="#FFC107"
+                                    TextColor="White"/>
+                            <Button Text="4⭐"
+                                    Command="{Binding SubmitRatingCommand}"
+                                    CommandParameter="4"
+                                    BackgroundColor="#FFC107"
+                                    TextColor="White"/>
+                            <Button Text="5⭐"
+                                    Command="{Binding SubmitRatingCommand}"
+                                    CommandParameter="5"
+                                    BackgroundColor="#FFC107"
+                                    TextColor="White"/>
+                        </FlexLayout>
+
+                        <Label Text="{Binding Poi.AverageRating, StringFormat='Average: {0:F1} ⭐'}"
+                               FontSize="14"
+                               HorizontalOptions="Center"/>
+                    </StackLayout>
+                </Frame>
+
+                <!-- Vendors -->
+                <Frame Padding="15"
+                       BackgroundColor="White"
+                       CornerRadius="10"
+                       HasShadow="True"
+                       IsVisible="{Binding Poi.Vendors.Count, Converter={StaticResource CountToBoolConverter}}">
+                    <StackLayout Spacing="10">
+                        <Label Text="🍽️ Vendors"
+                               FontSize="16"
+                               FontAttributes="Bold"/>
+
+                        <CollectionView ItemsSource="{Binding Poi.Vendors}">
+                            <CollectionView.ItemTemplate>
+                                <DataTemplate>
+                                    <StackLayout Padding="0,5"
+                                                 Spacing="5">
+                                        <Label Text="{Binding Name}"
+                                               FontSize="14"
+                                               FontAttributes="Bold"/>
+                                        <Label Text="{Binding ContactPhone}"
+                                               FontSize="12"
+                                               TextColor="Gray"/>
+                                    </StackLayout>
+                                </DataTemplate>
+                            </CollectionView.ItemTemplate>
+                        </CollectionView>
+                    </StackLayout>
+                </Frame>
+
+            </StackLayout>
+
+            <!-- Loading Indicator -->
+            <ActivityIndicator IsRunning="{Binding IsLoading}"
+                               IsVisible="{Binding IsLoading}"
+                               Color="#FF5722"
+                               VerticalOptions="Center"
+                               HorizontalOptions="Center"
+                               Margin="0,50,0,0"/>
+
+        </StackLayout>
+    </ScrollView>
+
+</ContentPage>

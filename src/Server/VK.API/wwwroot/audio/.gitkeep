@@ -1,0 +1,2 @@
+# This folder stores generated audio files from Google Cloud TTS
+# Audio files are generated via POST /api/admin/generate-all-audio

@@ -3,7 +3,9 @@ D:\VK_StreetFood\src\Server\VK.Infrastructure\bin\Debug\net10.0\VK.Infrastructur
 D:\VK_StreetFood\src\Server\VK.Infrastructure\bin\Debug\net10.0\VK.Infrastructure.dll
 D:\VK_StreetFood\src\Server\VK.Infrastructure\bin\Debug\net10.0\VK.Infrastructure.pdb
 D:\VK_StreetFood\src\Server\VK.Infrastructure\bin\Debug\net10.0\VK.Core.dll
+D:\VK_StreetFood\src\Server\VK.Infrastructure\bin\Debug\net10.0\VK.Shared.dll
 D:\VK_StreetFood\src\Server\VK.Infrastructure\bin\Debug\net10.0\VK.Core.pdb
+D:\VK_StreetFood\src\Server\VK.Infrastructure\bin\Debug\net10.0\VK.Shared.pdb
 D:\VK_StreetFood\src\Server\VK.Infrastructure\obj\Debug\net10.0\VK.Infrastructure.csproj.AssemblyReference.cache
 D:\VK_StreetFood\src\Server\VK.Infrastructure\obj\Debug\net10.0\VK.Infrastructure.GeneratedMSBuildEditorConfig.editorconfig
 D:\VK_StreetFood\src\Server\VK.Infrastructure\obj\Debug\net10.0\VK.Infrastructure.AssemblyInfoInputs.cache
@@ -16,5 +18,3 @@ D:\VK_StreetFood\src\Server\VK.Infrastructure\obj\Debug\net10.0\refint\VK.Infras
 D:\VK_StreetFood\src\Server\VK.Infrastructure\obj\Debug\net10.0\VK.Infrastructure.pdb
 D:\VK_StreetFood\src\Server\VK.Infrastructure\obj\Debug\net10.0\VK.Infrastructure.genruntimeconfig.cache
 D:\VK_StreetFood\src\Server\VK.Infrastructure\obj\Debug\net10.0\ref\VK.Infrastructure.dll
-D:\VK_StreetFood\src\Server\VK.Infrastructure\bin\Debug\net10.0\VK.Shared.dll
-D:\VK_StreetFood\src\Server\VK.Infrastructure\bin\Debug\net10.0\VK.Shared.pdb

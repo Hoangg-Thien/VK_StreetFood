@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:VK.Mobile.ViewModels"
+             xmlns:zxing="clr-namespace:ZXing.Net.Maui.Controls;assembly=ZXing.Net.MAUI.Controls"
+             x:Class="VK.Mobile.Views.QRScanPage"
+             x:DataType="vm:QRScanViewModel"
+             Title="Scan QR Code">
+
+    <Grid RowDefinitions="*,Auto,Auto">
+
+        <!-- Camera View -->
+        <zxing:CameraBarcodeReaderView x:Name="BarcodeReaderView"
+                                       Grid.Row="0"
+                                       IsDetecting="{Binding IsScanning}"
+                                       BarcodesDetected="OnBarcodesDetected"
+                                       CameraLocation="Rear"/>
+
+        <!-- Overlay Frame -->
+        <Frame Grid.Row="0"
+               BorderColor="White"
+               BackgroundColor="Transparent"
+               CornerRadius="20"
+               Padding="0"
+               Margin="50"
+               VerticalOptions="Center"
+               HorizontalOptions="Center"
+               WidthRequest="250"
+               HeightRequest="250"/>
+
+        <!-- Status Message -->
+        <Frame Grid.Row="1"
+               BackgroundColor="#80000000"
+               CornerRadius="10"
+               Padding="20,10"
+               Margin="20"
+               HasShadow="False">
+            <StackLayout Spacing="10">
+                <Label Text="{Binding StatusMessage}"
+                       TextColor="White"
+                       FontSize="16"
+                       HorizontalTextAlignment="Center"/>
+
+                <ActivityIndicator IsRunning="{Binding IsProcessing}"
+                                   IsVisible="{Binding IsProcessing}"
+                                   Color="White"
+                                   HorizontalOptions="Center"/>
+            </StackLayout>
+        </Frame>
+
+        <!-- Cancel Button -->
+        <Button Grid.Row="2"
+                Text="Cancel"
+                Command="{Binding CancelCommand}"
+                BackgroundColor="#FF5722"
+                TextColor="White"
+                CornerRadius="25"
+                HeightRequest="50"
+                Margin="20,0,20,20"/>
+
+    </Grid>
+
+</ContentPage>
