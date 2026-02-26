@@ -28,5 +28,28 @@
 	</array>
 	<key>XSAppIconAssets</key>
 	<string>Assets.xcassets/appicon.appiconset</string>
+
+	<!-- Background GPS tracking -->
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>location</string>
+		<string>audio</string>
+	</array>
+
+	<!-- Location usage descriptions (required by App Store) -->
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>VK Street Food cần vị trí của bạn để hiển thị các điểm ẩm thực gần nhất.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>VK Street Food cần theo dõi vị trí liên tục (kể cả khi app ở nền) để tự động phát thuyết minh khi bạn đến gần điểm tham quan.</string>
+	<key>NSLocationAlwaysUsageDescription</key>
+	<string>VK Street Food cần theo dõi vị trí liên tục để tự động phát thuyết minh khi bạn đến gần điểm tham quan.</string>
+
+	<!-- Camera for QR scanning -->
+	<key>NSCameraUsageDescription</key>
+	<string>VK Street Food dùng camera để quét mã QR tại các điểm tham quan.</string>
+
+	<!-- Microphone (required by ZXing on some builds) -->
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Không sử dụng mic, chỉ cần quyền này cho thư viện quét mã QR.</string>
 </dict>
 </plist>

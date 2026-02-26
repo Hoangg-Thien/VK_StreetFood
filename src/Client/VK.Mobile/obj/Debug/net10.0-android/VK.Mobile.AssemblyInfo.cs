@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("VK.Mobile")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0+983dcec489fb748dab0bb4e942582249527161d3")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0+dde379f76fdf1f8b4c5ec7b80a43471ac0b9e8fc")]
 [assembly: System.Reflection.AssemblyProductAttribute("VK.Mobile")]
 [assembly: System.Reflection.AssemblyTitleAttribute("VK.Mobile")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

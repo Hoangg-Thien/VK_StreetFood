@@ -36,6 +36,13 @@ public partial class AnalyticsViewModel : ObservableObject
     [ObservableProperty]
     private ObservableCollection<TopPOIModel> _topPOIs = new();
 
+    // ---- Heatmap ----
+    [ObservableProperty]
+    private List<HeatmapPoint> _heatmapPoints = new();
+
+    [ObservableProperty]
+    private int _heatmapPointCount;
+
     // ---- State ----
     [ObservableProperty] private bool _isLoading;
     [ObservableProperty] private bool _hasError;
@@ -85,6 +92,11 @@ public partial class AnalyticsViewModel : ObservableObject
             TopPOIs.Clear();
             foreach (var poi in topPOIs)
                 TopPOIs.Add(poi);
+
+            // Tải heatmap từ local storage (dữ liệu ẩn danh)
+            var pts = _storageService.GetLocationHistory();
+            HeatmapPoints = pts;
+            HeatmapPointCount = pts.Count;
         }
         catch (Exception ex)
         {

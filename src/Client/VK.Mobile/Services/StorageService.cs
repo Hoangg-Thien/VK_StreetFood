@@ -98,4 +98,38 @@ public class StorageService : IStorageService
         var json = JsonSerializer.Serialize(tourist);
         await SecureStorage.SetAsync(TouristKey, json);
     }
+
+    // ── Lịch sử vị trí ẩn danh (dùng cho heatmap) ─────────────────────────────
+    private const string LocationHistoryKey = "location_history";
+    private const int MaxLocationHistory = 2000;
+
+    /// <summary>Lưu một điểm vị trí ẩn danh vào lịch sử.</summary>
+    public void AppendLocation(double latitude, double longitude)
+    {
+        try
+        {
+            var json = Preferences.Default.Get(LocationHistoryKey, "[]");
+            var list = JsonSerializer.Deserialize<List<HeatmapPoint>>(json) ?? new();
+            list.Add(new HeatmapPoint(latitude, longitude));
+            if (list.Count > MaxLocationHistory)
+                list = list.GetRange(list.Count - MaxLocationHistory, MaxLocationHistory);
+            Preferences.Default.Set(LocationHistoryKey, JsonSerializer.Serialize(list));
+        }
+        catch { /* best effort – không̀ làm gián đoạn app */ }
+    }
+
+    /// <summary>Lấy toàn bộ lịch sử vị trí.</summary>
+    public List<HeatmapPoint> GetLocationHistory()
+    {
+        try
+        {
+            var json = Preferences.Default.Get(LocationHistoryKey, "[]");
+            return JsonSerializer.Deserialize<List<HeatmapPoint>>(json) ?? new();
+        }
+        catch { return new(); }
+    }
+
+    /// <summary>Xóa toàn bộ lịch sử vị trí.</summary>
+    public void ClearLocationHistory()
+        => Preferences.Default.Remove(LocationHistoryKey);
 }

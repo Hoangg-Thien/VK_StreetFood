@@ -11,6 +11,8 @@ public interface ILocationService
     Task StopTrackingAsync();
     bool IsTracking { get; }
     double CalculateDistance(double lat1, double lon1, double lat2, double lon2);
+    /// <summary>Cập nhật interval GPS (ms) động theo tốc độ di chuyển.</summary>
+    void SetUpdateInterval(int intervalMs);
 }
 
 public class LocationChangedEventArgs : EventArgs
@@ -25,6 +27,11 @@ public class LocationService : ILocationService
     private readonly IApiService _apiService;
     private CancellationTokenSource? _cts;
     private bool _isTracking;
+    private int _updateIntervalMs = AppSettings.LocationUpdateIntervalSeconds * 1000;
+
+    // Battery optimization: theo dõi vị trí cuối để tính speed
+    private Location? _lastLocation;
+    private DateTime _lastLocationTime;
 
     public event EventHandler<LocationChangedEventArgs>? LocationChanged;
     public bool IsTracking => _isTracking;
@@ -33,6 +40,12 @@ public class LocationService : ILocationService
     {
         _logger = logger;
         _apiService = apiService;
+    }
+
+    public void SetUpdateInterval(int intervalMs)
+    {
+        _updateIntervalMs = Math.Max(3000, intervalMs); // tối thiểu 3 giây
+        _logger.LogInformation("GPS update interval set to {Ms}ms", _updateIntervalMs);
     }
 
     public async Task<Location?> GetCurrentLocationAsync()
@@ -90,6 +103,16 @@ public class LocationService : ILocationService
         if (_isTracking)
             return;
 
+        // Yêu cầu quyền background location trước khi bắt đầu
+        await RequestBackgroundLocationPermissionAsync();
+
+        // Khởi động Android Foreground Service (persistent notification, tránh bị OS kill)
+#if ANDROID
+        VK.Mobile.Platforms.Android.LocationForegroundService.Start(
+            global::Android.App.Application.Context);
+        _logger.LogInformation("Android LocationForegroundService started");
+#endif
+
         _isTracking = true;
         _cts = new CancellationTokenSource();
 
@@ -130,7 +153,9 @@ public class LocationService : ILocationService
                         }
                     }
 
-                    await Task.Delay(AppSettings.LocationUpdateIntervalSeconds * 1000, _cts.Token);
+                    // Battery optimization: tự điều chỉnh interval theo tốc độ
+                    AdaptUpdateInterval(location);
+                    await Task.Delay(_updateIntervalMs, _cts.Token);
                 }
                 catch (TaskCanceledException)
                 {
@@ -151,7 +176,79 @@ public class LocationService : ILocationService
     {
         _cts?.Cancel();
         _isTracking = false;
+
+        // Dừng Android Foreground Service
+#if ANDROID
+        VK.Mobile.Platforms.Android.LocationForegroundService.Stop(
+            global::Android.App.Application.Context);
+        _logger.LogInformation("Android LocationForegroundService stopped");
+#endif
+
         return Task.CompletedTask;
+    }
+
+    // ── Private helpers ──────────────────────────────────────────────────────
+
+    private static async Task RequestBackgroundLocationPermissionAsync()
+    {
+        // Foreground first
+        var status = await Permissions.CheckStatusAsync<Permissions.LocationWhenInUse>();
+        if (status != PermissionStatus.Granted)
+            await Permissions.RequestAsync<Permissions.LocationWhenInUse>();
+
+#if ANDROID
+        // Android 10+ yêu cầu quyền background riêng (phải xin sau foreground)
+        if (global::Android.OS.Build.VERSION.SdkInt >= global::Android.OS.BuildVersionCodes.Q)
+        {
+            var bgStatus = await Permissions.CheckStatusAsync<Permissions.LocationAlways>();
+            if (bgStatus != PermissionStatus.Granted)
+                await Permissions.RequestAsync<Permissions.LocationAlways>();
+        }
+#endif
+
+#if IOS
+        // iOS: request Always authorization để background tracking
+        var bgStatus = await Permissions.CheckStatusAsync<Permissions.LocationAlways>();
+        if (bgStatus != PermissionStatus.Granted)
+            await Permissions.RequestAsync<Permissions.LocationAlways>();
+#endif
+    }
+
+    /// <summary>
+    /// Điều chỉnh GPS polling interval theo tốc độ di chuyển:
+    /// - Đứng yên / chậm (&lt;1 km/h): 30s → tiết kiệm pin
+    /// - Đi bộ (1-5 km/h): 10s
+    /// - Di chuyển nhanh (>5 km/h): 5s
+    /// </summary>
+    private void AdaptUpdateInterval(Location? newLocation)
+    {
+        if (newLocation == null || _lastLocation == null)
+        {
+            _lastLocation = newLocation;
+            _lastLocationTime = DateTime.UtcNow;
+            return;
+        }
+
+        var elapsed = (DateTime.UtcNow - _lastLocationTime).TotalHours;
+        if (elapsed <= 0) return;
+
+        var distanceKm = CalculateDistance(
+            _lastLocation.Latitude, _lastLocation.Longitude,
+            newLocation.Latitude, newLocation.Longitude);
+
+        var speedKmh = distanceKm / elapsed;
+
+        _updateIntervalMs = speedKmh switch
+        {
+            < 1.0 => 30_000,  // đứng yên
+            < 5.0 => 10_000,  // đi bộ
+            _ => 5_000   // di chuyển
+        };
+
+        _lastLocation = newLocation;
+        _lastLocationTime = DateTime.UtcNow;
+
+        _logger.LogDebug("Speed {Speed:F1} km/h → GPS interval {Ms}ms", speedKmh, _updateIntervalMs);
     }
 
     public double CalculateDistance(double lat1, double lon1, double lat2, double lon2)

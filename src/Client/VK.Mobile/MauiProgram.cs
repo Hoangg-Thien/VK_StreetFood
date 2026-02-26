@@ -32,6 +32,7 @@ public static class MauiProgram
 		builder.Services.AddSingleton<IApiService, ApiService>();
 		builder.Services.AddSingleton<ILocationService, LocationService>();
 		builder.Services.AddSingleton<IAudioService, AudioService>();
+		builder.Services.AddSingleton<ITTSService, TTSService>();
 		builder.Services.AddSingleton<StorageService>();
 		builder.Services.AddSingleton(AudioManager.Current);
 
@@ -47,6 +48,7 @@ public static class MauiProgram
 		builder.Services.AddTransient<HistoryViewModel>();
 		builder.Services.AddTransient<SettingsViewModel>();
 		builder.Services.AddTransient<ProfileViewModel>();
+		builder.Services.AddTransient<AnalyticsViewModel>();
 
 		// Register Views
 		builder.Services.AddTransient<WelcomePage>();
@@ -57,6 +59,7 @@ public static class MauiProgram
 		builder.Services.AddTransient<HistoryPage>();
 		builder.Services.AddTransient<SettingsPage>();
 		builder.Services.AddTransient<ProfilePage>();
+		builder.Services.AddTransient<AnalyticsPage>();
 
 		return builder.Build();
 	}

@@ -15,6 +15,12 @@ public class POIModel
     public double? AverageRating { get; set; }
     public double DistanceKm { get; set; }
 
+    /// <summary>
+    /// Mức ưu tiên thuyết minh khi nhiều POI cùng vào geofence.
+    /// Cao hơn = ưu tiên hơn. Mặc định 0.
+    /// </summary>
+    public int Priority { get; set; } = 0;
+
     // Audio info
     public AudioInfo? Audio { get; set; }
 }
@@ -58,6 +64,22 @@ public class RatingInfo
     public int RatingValue { get; set; }
     public string? Comment { get; set; }
     public DateTime CreatedAt { get; set; }
+}
+
+/// <summary>Một điểm vị trí ẩn danh dùng cho heatmap.</summary>
+public class HeatmapPoint
+{
+    public HeatmapPoint() { }
+    public HeatmapPoint(double latitude, double longitude)
+    {
+        Latitude = latitude;
+        Longitude = longitude;
+        Timestamp = DateTime.UtcNow;
+    }
+
+    public double Latitude { get; set; }
+    public double Longitude { get; set; }
+    public DateTime Timestamp { get; set; }
 }
 
 public class TopPOIModel

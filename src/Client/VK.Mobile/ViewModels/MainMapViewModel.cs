@@ -12,8 +12,14 @@ public partial class MainMapViewModel : ObservableObject
     private readonly IApiService _apiService;
     private readonly ILocationService _locationService;
     private readonly IAudioService _audioService;
+    private readonly ITTSService _ttsService;
     private readonly StorageService _storageService;
     private readonly ILogger<MainMapViewModel> _logger;
+
+    // Debounce: bỏ qua các trigger ngay sau khi khởi động
+    private DateTime _trackingStartTime = DateTime.MaxValue;
+    // Cooldown: theo dõi lần cuối mỗi POI được trigger
+    private readonly Dictionary<int, DateTime> _geofenceLastTriggered = new();
 
     [ObservableProperty]
     private ObservableCollection<POIModel> _pois = new();
@@ -40,12 +46,14 @@ public partial class MainMapViewModel : ObservableObject
         IApiService apiService,
         ILocationService locationService,
         IAudioService audioService,
+        ITTSService ttsService,
         StorageService storageService,
         ILogger<MainMapViewModel> logger)
     {
         _apiService = apiService;
         _locationService = locationService;
         _audioService = audioService;
+        _ttsService = ttsService;
         _storageService = storageService;
         _logger = logger;
 
@@ -163,6 +171,8 @@ public partial class MainMapViewModel : ObservableObject
         {
             await _locationService.StartTrackingAsync();
             IsTracking = true;
+            // Ghi nhớ thời điểm bắt đầu để debounce các trigger quá sớm
+            _trackingStartTime = DateTime.UtcNow;
             _logger.LogInformation("Location tracking started");
         }
         catch (Exception ex)
@@ -296,6 +306,9 @@ public partial class MainMapViewModel : ObservableObject
     {
         CurrentLocation = e.Location;
 
+        // Lưu vị trí ẩn danh để vẽ heatmap (không gắn với tourist ID)
+        _storageService.AppendLocation(e.Location.Latitude, e.Location.Longitude);
+
         // Update location on server
         if (CurrentTourist != null)
         {
@@ -307,7 +320,11 @@ public partial class MainMapViewModel : ObservableObject
 
         // Update nearby POIs
         NearbyPOIs.Clear();
-        foreach (var poi in e.NearbyPOIs)
+
+        // Sắp xếp POI theo Priority giảm dần trước khi xử lý geofence
+        var sortedPOIs = e.NearbyPOIs.OrderByDescending(p => p.Priority).ToList();
+
+        foreach (var poi in sortedPOIs)
         {
             NearbyPOIs.Add(poi);
 
@@ -329,6 +346,30 @@ public partial class MainMapViewModel : ObservableObject
     {
         try
         {
+            var now = DateTime.UtcNow;
+
+            // --- Debounce: bỏ qua trigger trong vài giây đầu sau khi bắt đầu tracking ---
+            if ((now - _trackingStartTime).TotalMilliseconds < AppSettings.GeofenceDebounceMs)
+            {
+                _logger.LogDebug("Geofence debounced for POI {Id} (too soon after start)", poi.Id);
+                return;
+            }
+
+            // --- Cooldown: mỗi POI chỉ trigger lại sau X phút ---
+            if (_geofenceLastTriggered.TryGetValue(poi.Id, out var lastTrigger))
+            {
+                var cooldownEnd = lastTrigger.AddMinutes(AppSettings.GeofenceCooldownMinutes);
+                if (now < cooldownEnd)
+                {
+                    _logger.LogDebug("Geofence cooldown active for POI {Name}, next trigger in {Remaining:F0}s",
+                        poi.Name, (cooldownEnd - now).TotalSeconds);
+                    return;
+                }
+            }
+
+            // Ghi nhớ thời điểm trigger để cooldown lần sau
+            _geofenceLastTriggered[poi.Id] = now;
+
             _logger.LogInformation("Geofence triggered for POI: {Name}", poi.Name);
 
             // Log visit
@@ -355,11 +396,8 @@ public partial class MainMapViewModel : ObservableObject
                 $"You are near: {poi.Name}",
                 "OK");
 
-            // Auto-play audio if available
-            if (poi.Audio?.AudioFileUrl != null)
-            {
-                await _audioService.PlayAudioAsync(poi.Audio.AudioFileUrl);
-            }
+            // Phát thuyết minh qua TTSService (pre-recorded → Google TTS → MAUI TTS)
+            await _ttsService.SpeakPOIAsync(poi, SelectedLanguage);
         }
         catch (Exception ex)
         {
