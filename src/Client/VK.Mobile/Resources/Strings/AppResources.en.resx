@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  
+  <data name="AppName" xml:space="preserve">
+    <value>VK Street Food</value>
+  </data>
+  <data name="WelcomeTagline" xml:space="preserve">
+    <value>Discover Saigon Street Food</value>
+  </data>
+  <data name="GetStarted" xml:space="preserve">
+    <value>GET STARTED</value>
+  </data>
+  <data name="FeatureFindNearby" xml:space="preserve">
+    <value>Find places near you</value>
+  </data>
+  <data name="FeatureAudioGuide" xml:space="preserve">
+    <value>Listen to multilingual guides</value>
+  </data>
+  <data name="FeatureQRScan" xml:space="preserve">
+    <value>Scan QR for offers</value>
+  </data>
+  
+  <data name="MapTitle" xml:space="preserve">
+    <value>VK Street Food Tour</value>
+  </data>
+  <data name="Language" xml:space="preserve">
+    <value>Language</value>
+  </data>
+  <data name="POIsLabel" xml:space="preserve">
+    <value>Places</value>
+  </data>
+  <data name="NearbyLabel" xml:space="preserve">
+    <value>Nearby</value>
+  </data>
+  <data name="Tracking" xml:space="preserve">
+    <value>Tracking</value>
+  </data>
+  <data name="NotTracking" xml:space="preserve">
+    <value>Not Tracking</value>
+  </data>
+  
+  <data name="TabMap" xml:space="preserve">
+    <value>Map</value>
+  </data>
+  <data name="TabFavorites" xml:space="preserve">
+    <value>Favorites</value>
+  </data>
+  <data name="TabHistory" xml:space="preserve">
+    <value>History</value>
+  </data>
+  <data name="TabProfile" xml:space="preserve">
+    <value>Profile</value>
+  </data>
+  
+  <data name="Loading" xml:space="preserve">
+    <value>Loading...</value>
+  </data>
+  <data name="Error" xml:space="preserve">
+    <value>Error</value>
+  </data>
+  <data name="OK" xml:space="preserve">
+    <value>OK</value>
+  </data>
+  <data name="Cancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+</root>

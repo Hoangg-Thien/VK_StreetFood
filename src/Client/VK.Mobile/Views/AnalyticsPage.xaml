@@ -1,0 +1,318 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:VK.Mobile.ViewModels"
+             xmlns:models="clr-namespace:VK.Mobile.Models"
+             x:Class="VK.Mobile.Views.AnalyticsPage"
+             x:DataType="vm:AnalyticsViewModel"
+             Title="Thống kê"
+             BackgroundColor="{StaticResource PageBackground}">
+
+    <RefreshView IsRefreshing="{Binding IsLoading}"
+                 Command="{Binding LoadCommand}">
+        <ScrollView>
+            <VerticalStackLayout Spacing="0"
+                                 Padding="0,0,0,20">
+
+                <!-- Header banner -->
+                <Grid HeightRequest="80"
+                      Margin="16,16,16,0">
+                    <Grid.Background>
+                        <LinearGradientBrush StartPoint="0,0"
+                                             EndPoint="1,1">
+                            <GradientStop Color="#FF5722"
+                                          Offset="0"/>
+                            <GradientStop Color="#FF8A65"
+                                          Offset="1"/>
+                        </LinearGradientBrush>
+                    </Grid.Background>
+                    <VerticalStackLayout VerticalOptions="Center"
+                                         Margin="16,0">
+                        <Label Text="📊 Hành trình của bạn"
+                               FontSize="20"
+                               FontAttributes="Bold"
+                               TextColor="White"/>
+                        <Label Text="Khám phá ẩm thực đường phố Vĩnh Khánh"
+                               FontSize="12"
+                               TextColor="#FFCCBC"/>
+                    </VerticalStackLayout>
+                </Grid>
+
+                <!-- Error state -->
+                <Frame IsVisible="{Binding HasError}"
+                       Margin="16,16,16,0"
+                       Padding="16"
+                       BackgroundColor="#FFF3E0"
+                       BorderColor="#FF8A00"
+                       CornerRadius="12">
+                    <VerticalStackLayout Spacing="8">
+                        <Label Text="{Binding ErrorMessage}"
+                               TextColor="#E65100"
+                               FontSize="14"/>
+                        <Button Text="Thử lại"
+                                Command="{Binding RetryCommand}"
+                                BackgroundColor="#FF5722"
+                                TextColor="White"
+                                HeightRequest="40"
+                                CornerRadius="8"/>
+                    </VerticalStackLayout>
+                </Frame>
+
+                <!-- ===== Thống kê cá nhân ===== -->
+                <Label Text="🙋 Thống kê của tôi"
+                       FontSize="16"
+                       FontAttributes="Bold"
+                       TextColor="{StaticResource TextPrimary}"
+                       Margin="20,20,16,8"/>
+
+                <Grid ColumnDefinitions="*,*"
+                      RowDefinitions="Auto,Auto"
+                      Margin="16,0"
+                      ColumnSpacing="12"
+                      RowSpacing="12">
+
+                    <!-- Lượt thăm -->
+                    <Frame Grid.Row="0"
+                           Grid.Column="0"
+                           Padding="12"
+                           CornerRadius="12"
+                           BackgroundColor="{StaticResource CardBackground}"
+                           BorderColor="Transparent">
+                        <VerticalStackLayout Spacing="4">
+                            <Label Text="🗺️"
+                                   FontSize="24"
+                                   HorizontalOptions="Center"/>
+                            <Label Text="{Binding TotalVisits}"
+                                   FontSize="28"
+                                   FontAttributes="Bold"
+                                   TextColor="{StaticResource Primary}"
+                                   HorizontalOptions="Center"/>
+                            <Label Text="Lượt thăm"
+                                   FontSize="12"
+                                   TextColor="{StaticResource TextSecondary}"
+                                   HorizontalOptions="Center"/>
+                        </VerticalStackLayout>
+                    </Frame>
+
+                    <!-- Nghe audio -->
+                    <Frame Grid.Row="0"
+                           Grid.Column="1"
+                           Padding="12"
+                           CornerRadius="12"
+                           BackgroundColor="{StaticResource CardBackground}"
+                           BorderColor="Transparent">
+                        <VerticalStackLayout Spacing="4">
+                            <Label Text="🎧"
+                                   FontSize="24"
+                                   HorizontalOptions="Center"/>
+                            <Label Text="{Binding TotalAudioPlays}"
+                                   FontSize="28"
+                                   FontAttributes="Bold"
+                                   TextColor="{StaticResource Primary}"
+                                   HorizontalOptions="Center"/>
+                            <Label Text="Lần nghe"
+                                   FontSize="12"
+                                   TextColor="{StaticResource TextSecondary}"
+                                   HorizontalOptions="Center"/>
+                        </VerticalStackLayout>
+                    </Frame>
+
+                    <!-- QR Scan -->
+                    <Frame Grid.Row="1"
+                           Grid.Column="0"
+                           Padding="12"
+                           CornerRadius="12"
+                           BackgroundColor="{StaticResource CardBackground}"
+                           BorderColor="Transparent">
+                        <VerticalStackLayout Spacing="4">
+                            <Label Text="📷"
+                                   FontSize="24"
+                                   HorizontalOptions="Center"/>
+                            <Label Text="{Binding TotalQRScans}"
+                                   FontSize="28"
+                                   FontAttributes="Bold"
+                                   TextColor="{StaticResource Primary}"
+                                   HorizontalOptions="Center"/>
+                            <Label Text="QR quét"
+                                   FontSize="12"
+                                   TextColor="{StaticResource TextSecondary}"
+                                   HorizontalOptions="Center"/>
+                        </VerticalStackLayout>
+                    </Frame>
+
+                    <!-- Thời gian nghe -->
+                    <Frame Grid.Row="1"
+                           Grid.Column="1"
+                           Padding="12"
+                           CornerRadius="12"
+                           BackgroundColor="{StaticResource CardBackground}"
+                           BorderColor="Transparent">
+                        <VerticalStackLayout Spacing="4">
+                            <Label Text="⏱️"
+                                   FontSize="24"
+                                   HorizontalOptions="Center"/>
+                            <Label Text="{Binding TotalAudioTime}"
+                                   FontSize="18"
+                                   FontAttributes="Bold"
+                                   TextColor="{StaticResource Primary}"
+                                   HorizontalOptions="Center"/>
+                            <Label Text="Đã nghe"
+                                   FontSize="12"
+                                   TextColor="{StaticResource TextSecondary}"
+                                   HorizontalOptions="Center"/>
+                        </VerticalStackLayout>
+                    </Frame>
+                </Grid>
+
+                <!-- Chi tiết thêm -->
+                <Frame Margin="16,12,16,0"
+                       Padding="16"
+                       CornerRadius="12"
+                       BackgroundColor="{StaticResource CardBackground}"
+                       BorderColor="Transparent">
+                    <VerticalStackLayout Spacing="10">
+                        <Grid ColumnDefinitions="Auto,*,Auto">
+                            <Label Text="📍"
+                                   Grid.Column="0"
+                                   FontSize="18"
+                                   VerticalOptions="Center"/>
+                            <Label Text="Điểm nghe nhiều nhất"
+                                   Grid.Column="1"
+                                   Margin="8,0"
+                                   TextColor="{StaticResource TextSecondary}"
+                                   VerticalOptions="Center"/>
+                            <Label Text="{Binding MostVisitedPOI}"
+                                   Grid.Column="2"
+                                   FontAttributes="Bold"
+                                   TextColor="{StaticResource TextPrimary}"
+                                   VerticalOptions="Center"/>
+                        </Grid>
+                        <BoxView HeightRequest="1"
+                                 Color="{StaticResource Border}"/>
+                        <Grid ColumnDefinitions="Auto,*,Auto">
+                            <Label Text="🌐"
+                                   Grid.Column="0"
+                                   FontSize="18"
+                                   VerticalOptions="Center"/>
+                            <Label Text="Ngôn ngữ yêu thích"
+                                   Grid.Column="1"
+                                   Margin="8,0"
+                                   TextColor="{StaticResource TextSecondary}"
+                                   VerticalOptions="Center"/>
+                            <Label Text="{Binding FavoriteLanguage}"
+                                   Grid.Column="2"
+                                   FontAttributes="Bold"
+                                   TextColor="{StaticResource TextPrimary}"
+                                   VerticalOptions="Center"/>
+                        </Grid>
+                        <BoxView HeightRequest="1"
+                                 Color="{StaticResource Border}"/>
+                        <Grid ColumnDefinitions="Auto,*,Auto">
+                            <Label Text="📡"
+                                   Grid.Column="0"
+                                   FontSize="18"
+                                   VerticalOptions="Center"/>
+                            <Label Text="Geofence enter"
+                                   Grid.Column="1"
+                                   Margin="8,0"
+                                   TextColor="{StaticResource TextSecondary}"
+                                   VerticalOptions="Center"/>
+                            <Label Text="{Binding TotalGeofenceEnters}"
+                                   Grid.Column="2"
+                                   FontAttributes="Bold"
+                                   TextColor="{StaticResource TextPrimary}"
+                                   VerticalOptions="Center"/>
+                        </Grid>
+                    </VerticalStackLayout>
+                </Frame>
+
+                <!-- ===== Top POIs ===== -->
+                <Label Text="🏆 Top điểm tham quan"
+                       FontSize="16"
+                       FontAttributes="Bold"
+                       TextColor="{StaticResource TextPrimary}"
+                       Margin="20,24,16,8"/>
+
+                <!-- Empty state -->
+                <Label Text="Chưa có dữ liệu thống kê"
+                       IsVisible="{Binding TopPOIs.Count, Converter={StaticResource IntToBoolInvertedConverter}}"
+                       HorizontalOptions="Center"
+                       TextColor="{StaticResource TextSecondary}"
+                       Margin="0,20"/>
+
+                <CollectionView ItemsSource="{Binding TopPOIs}"
+                                Margin="16,0"
+                                SelectionMode="None">
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate x:DataType="models:TopPOIModel">
+                            <Frame Margin="0,0,0,10"
+                                   Padding="12"
+                                   CornerRadius="12"
+                                   BackgroundColor="{StaticResource CardBackground}"
+                                   BorderColor="Transparent">
+                                <Grid ColumnDefinitions="Auto,*,Auto"
+                                      ColumnSpacing="12">
+                                    <!-- Rank badge -->
+                                    <Frame Grid.Column="0"
+                                           WidthRequest="40"
+                                           HeightRequest="40"
+                                           BackgroundColor="#FFF3E0"
+                                           BorderColor="Transparent"
+                                           CornerRadius="20"
+                                           Padding="0">
+                                        <Label Text="{Binding VisitCount}"
+                                               FontSize="14"
+                                               FontAttributes="Bold"
+                                               TextColor="#FF5722"
+                                               HorizontalOptions="Center"
+                                               VerticalOptions="Center"/>
+                                    </Frame>
+
+                                    <!-- Info -->
+                                    <VerticalStackLayout Grid.Column="1"
+                                                         Spacing="2"
+                                                         VerticalOptions="Center">
+                                        <Label Text="{Binding Name}"
+                                               FontSize="15"
+                                               FontAttributes="Bold"
+                                               TextColor="{StaticResource TextPrimary}"
+                                               LineBreakMode="TailTruncation"/>
+                                        <Label Text="{Binding CategoryName}"
+                                               FontSize="12"
+                                               TextColor="{StaticResource TextSecondary}"/>
+                                        <Label FontSize="11"
+                                               TextColor="{StaticResource TextSecondary}">
+                                            <Label.FormattedText>
+                                                <FormattedString>
+                                                    <Span Text="🎧 "/>
+                                                    <Span Text="{Binding AudioPlayCount}"/>
+                                                    <Span Text=" lần nghe · ⭐ "/>
+                                                    <Span Text="{Binding AverageRating, StringFormat='{0:F1}'}"/>
+                                                </FormattedString>
+                                            </Label.FormattedText>
+                                        </Label>
+                                    </VerticalStackLayout>
+
+                                    <!-- Avg listen time -->
+                                    <VerticalStackLayout Grid.Column="2"
+                                                         VerticalOptions="Center">
+                                        <Label Text="{Binding AverageListenMinutes, StringFormat='{0:F1}m'}"
+                                               FontSize="14"
+                                               FontAttributes="Bold"
+                                               TextColor="{StaticResource Primary}"
+                                               HorizontalOptions="End"/>
+                                        <Label Text="avg"
+                                               FontSize="10"
+                                               TextColor="{StaticResource TextSecondary}"
+                                               HorizontalOptions="End"/>
+                                    </VerticalStackLayout>
+                                </Grid>
+                            </Frame>
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                </CollectionView>
+
+            </VerticalStackLayout>
+        </ScrollView>
+    </RefreshView>
+</ContentPage>

@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("VK.API.Tests")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+9cd1020909891b60327907bf64682f9cd16a570b")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+983dcec489fb748dab0bb4e942582249527161d3")]
 [assembly: System.Reflection.AssemblyProductAttribute("VK.API.Tests")]
 [assembly: System.Reflection.AssemblyTitleAttribute("VK.API.Tests")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

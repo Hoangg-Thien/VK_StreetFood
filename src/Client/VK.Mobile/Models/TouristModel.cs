@@ -26,3 +26,14 @@ public class FavoriteModel
     public POIModel? Poi { get; set; }
     public DateTime CreatedAt { get; set; }
 }
+
+public class TouristStatsModel
+{
+    public int TotalVisits { get; set; }
+    public int TotalAudioPlays { get; set; }
+    public int TotalQRScans { get; set; }
+    public int TotalGeofenceEnters { get; set; }
+    public double TotalAudioMinutes { get; set; }
+    public string? MostVisitedPOI { get; set; }
+    public string? FavoriteLanguage { get; set; }
+}

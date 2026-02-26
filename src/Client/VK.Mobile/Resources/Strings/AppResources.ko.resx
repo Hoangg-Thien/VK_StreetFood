@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  
+  <data name="AppName" xml:space="preserve">
+    <value>VK Street Food</value>
+  </data>
+  <data name="WelcomeTagline" xml:space="preserve">
+    <value>사이공 길거리 음식 탐험</value>
+  </data>
+  <data name="GetStarted" xml:space="preserve">
+    <value>시작하기</value>
+  </data>
+  <data name="FeatureFindNearby" xml:space="preserve">
+    <value>근처 장소 찾기</value>
+  </data>
+  <data name="FeatureAudioGuide" xml:space="preserve">
+    <value>다국어 가이드 듣기</value>
+  </data>
+  <data name="FeatureQRScan" xml:space="preserve">
+    <value>QR 스캔으로 할인받기</value>
+  </data>
+  
+  <data name="MapTitle" xml:space="preserve">
+    <value>VK Street Food Tour</value>
+  </data>
+  <data name="Language" xml:space="preserve">
+    <value>언어</value>
+  </data>
+  <data name="POIsLabel" xml:space="preserve">
+    <value>장소</value>
+  </data>
+  <data name="NearbyLabel" xml:space="preserve">
+    <value>근처</value>
+  </data>
+  <data name="Tracking" xml:space="preserve">
+    <value>추적 중</value>
+  </data>
+  <data name="NotTracking" xml:space="preserve">
+    <value>추적 안 함</value>
+  </data>
+  
+  <data name="TabMap" xml:space="preserve">
+    <value>지도</value>
+  </data>
+  <data name="TabFavorites" xml:space="preserve">
+    <value>즐겨찾기</value>
+  </data>
+  <data name="TabHistory" xml:space="preserve">
+    <value>기록</value>
+  </data>
+  <data name="TabProfile" xml:space="preserve">
+    <value>프로필</value>
+  </data>
+  
+  <data name="Loading" xml:space="preserve">
+    <value>로딩 중...</value>
+  </data>
+  <data name="Error" xml:space="preserve">
+    <value>오류</value>
+  </data>
+  <data name="OK" xml:space="preserve">
+    <value>확인</value>
+  </data>
+  <data name="Cancel" xml:space="preserve">
+    <value>취소</value>
+  </data>
+</root>

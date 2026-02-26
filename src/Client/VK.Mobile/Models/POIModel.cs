@@ -59,3 +59,14 @@ public class RatingInfo
     public string? Comment { get; set; }
     public DateTime CreatedAt { get; set; }
 }
+
+public class TopPOIModel
+{
+    public int Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string? CategoryName { get; set; }
+    public int VisitCount { get; set; }
+    public int AudioPlayCount { get; set; }
+    public double AverageRating { get; set; }
+    public double AverageListenMinutes { get; set; }
+}

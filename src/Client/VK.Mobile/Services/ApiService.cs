@@ -30,6 +30,8 @@ public interface IApiService
 
     // Analytics
     Task<bool> TrackEventAsync(int? touristId, int poiId, string eventType, string? languageCode = null, int? durationSeconds = null);
+    Task<TouristStatsModel?> GetMyStatsAsync(int touristId);
+    Task<List<TopPOIModel>> GetTopPOIsAsync(int count = 10);
 }
 
 public class ApiService : IApiService
@@ -236,6 +238,32 @@ public class ApiService : IApiService
         {
             _logger.LogError(ex, "Error tracking event");
             return false;
+        }
+    }
+
+    public async Task<TouristStatsModel?> GetMyStatsAsync(int touristId)
+    {
+        try
+        {
+            return await _httpClient.GetFromJsonAsync<TouristStatsModel>($"tourist/{touristId}/stats");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting tourist stats");
+            return null;
+        }
+    }
+
+    public async Task<List<TopPOIModel>> GetTopPOIsAsync(int count = 10)
+    {
+        try
+        {
+            return await _httpClient.GetFromJsonAsync<List<TopPOIModel>>($"analytics/top-pois?count={count}") ?? new List<TopPOIModel>();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting top POIs");
+            return new List<TopPOIModel>();
         }
     }
 }
