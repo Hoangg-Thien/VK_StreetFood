@@ -177,6 +177,9 @@
   </data>
 
   <!-- Profile Page -->
+  <data name="ProfileTouristTitle" xml:space="preserve">
+    <value>Du khách VK Street Food</value>
+  </data>
   <data name="ProfileVisitedPlaces" xml:space="preserve">
     <value>Địa điểm đã ghé</value>
   </data>
@@ -211,5 +214,13 @@
   </data>
   <data name="Cancel" xml:space="preserve">
     <value>Hủy</value>
+  </data>
+
+  <!-- POI List -->
+  <data name="POIListTitle" xml:space="preserve">
+    <value>Danh sách địa điểm</value>
+  </data>
+  <data name="ListenAudio" xml:space="preserve">
+    <value>Nghe</value>
   </data>
 </root>

@@ -41,7 +41,7 @@
                     </Border>
 
                     <!-- Tourist ID -->
-                    <Label Text="Du khách VK Street Food"
+                    <Label Text="{Binding Source={x:Static loc:LocalizationResourceManager.Instance}, Path=[ProfileTouristTitle]}"
                            FontSize="20"
                            FontAttributes="Bold"
                            TextColor="White"

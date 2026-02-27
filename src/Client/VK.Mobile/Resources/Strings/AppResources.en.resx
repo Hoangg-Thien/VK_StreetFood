@@ -167,4 +167,14 @@
   <data name="Cancel" xml:space="preserve">
     <value>Cancel</value>
   </data>
+
+  <data name="ProfileTouristTitle" xml:space="preserve">
+    <value>VK Street Food Tourist</value>
+  </data>
+  <data name="POIListTitle" xml:space="preserve">
+    <value>Places</value>
+  </data>
+  <data name="ListenAudio" xml:space="preserve">
+    <value>Listen</value>
+  </data>
 </root>

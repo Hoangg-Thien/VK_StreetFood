@@ -1,12 +1,10 @@
-using Mapsui;
+﻿using Mapsui;
 using Mapsui.Extensions;
 using Mapsui.Layers;
-using Mapsui.Nts;
 using Mapsui.Projections;
 using Mapsui.Styles;
 using Mapsui.Tiling;
 using Mapsui.UI.Maui;
-using NetTopologySuite.Geometries;
 using VK.Mobile.ViewModels;
 using VK.Mobile.Models;
 
@@ -18,13 +16,17 @@ public partial class MainMapPage : ContentPage
     private MapControl? _mapControl;
     private WritableLayer? _poiLayer;
     private WritableLayer? _locationLayer;
+    private bool _hasCenteredOnUser = false;
+
+    // OSM resolution for zoom level: 156543.03392804062 / 2^z
+    private static double ZoomResolution(int level) =>
+        156543.03392804062 / Math.Pow(2, level);
 
     public MainMapPage(MainMapViewModel viewModel)
     {
         InitializeComponent();
         _viewModel = viewModel;
         BindingContext = _viewModel;
-
         Loaded += OnPageLoaded;
     }
 
@@ -34,33 +36,31 @@ public partial class MainMapPage : ContentPage
         {
             InitializeMap();
 
-            // Initialize ViewModel (with error handling inside)
-            try
-            {
-                await _viewModel.InitializeCommand.ExecuteAsync(null);
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Error initializing ViewModel: {ex}");
-                // Continue anyway, app should still work in offline mode
-            }
+            try { await _viewModel.InitializeCommand.ExecuteAsync(null); }
+            catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"VM init error: {ex}"); }
 
-            // Subscribe to POI changes
-            _viewModel.Pois.CollectionChanged += (s, e) => UpdatePOIMarkers();
-
-            // Subscribe to location changes
-            _viewModel.PropertyChanged += (s, e) =>
+            // Wire up collection / property changes
+            _viewModel.Pois.CollectionChanged += (_, _) => UpdatePOIMarkers();
+            _viewModel.PropertyChanged += (_, args) =>
             {
-                if (e.PropertyName == nameof(_viewModel.CurrentLocation))
-                {
+                if (args.PropertyName == nameof(_viewModel.CurrentLocation))
                     UpdateCurrentLocationMarker();
-                }
             };
+
+            // Draw any POIs that were loaded during InitializeAsync
+            if (_viewModel.Pois.Count > 0)
+                UpdatePOIMarkers();
+
+            // Auto-start tracking
+            if (!_viewModel.IsTracking)
+            {
+                try { await _viewModel.StartTrackingCommand.ExecuteAsync(null); }
+                catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"Tracking error: {ex}"); }
+            }
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Error in OnPageLoaded: {ex}");
-            await DisplayAlert("Error", "Failed to initialize map. Please try again.", "OK");
+            System.Diagnostics.Debug.WriteLine($"OnPageLoaded error: {ex}");
         }
     }
 
@@ -69,82 +69,117 @@ public partial class MainMapPage : ContentPage
         try
         {
             _mapControl = new MapControl();
-
-            // Create map
             var map = new Mapsui.Map();
 
-            // Add OpenStreetMap layer
+            // Tile layer (OpenStreetMap)
             map.Layers.Add(OpenStreetMap.CreateTileLayer());
 
-            // Add POI layer
-            _poiLayer = new WritableLayer
-            {
-                Name = "POIs",
-                Style = null
-            };
+            // POI markers layer
+            _poiLayer = new WritableLayer { Name = "POIs", Style = null };
             map.Layers.Add(_poiLayer);
 
-            // Add location layer
-            _locationLayer = new WritableLayer
-            {
-                Name = "Location",
-                Style = null
-            };
+            // User location layer
+            _locationLayer = new WritableLayer { Name = "Location", Style = null };
             map.Layers.Add(_locationLayer);
 
-            // Set initial position (Vinh Khanh Food Street)
-            var center = SphericalMercator.FromLonLat(
-                AppSettings.DefaultLongitude,
-                AppSettings.DefaultLatitude);
-
             _mapControl.Map = map;
-            _mapControl.Map.Navigator.CenterOn(center.ToMPoint());
-            _mapControl.Map.Navigator.ZoomTo(AppSettings.DefaultZoomLevel);
-
-            // Handle marker clicks
+            _mapControl.SizeChanged += OnMapControlSizeChanged;
             _mapControl.Info += MapControl_Info;
 
             MapContainer.Content = _mapControl;
+            System.Diagnostics.Debug.WriteLine("Map initialized successfully");
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Error initializing map: {ex}");
-            // Create a simple label as fallback
+            System.Diagnostics.Debug.WriteLine($"InitializeMap error: {ex}");
             MapContainer.Content = new Label
             {
-                Text = "Map initialization failed. Please restart the app.",
+                Text = $"Map load failed: {ex.Message}",
                 HorizontalOptions = LayoutOptions.Center,
-                VerticalOptions = LayoutOptions.Center
+                VerticalOptions = LayoutOptions.Center,
+                TextColor = Colors.Red
             };
         }
     }
 
-    private void UpdatePOIMarkers()
+    private void OnMapControlSizeChanged(object? sender, EventArgs e)
     {
-        if (_poiLayer == null || _mapControl?.Map == null)
+        if (_mapControl == null || _mapControl.Width <= 0 || _mapControl.Height <= 0)
             return;
 
-        _poiLayer.Clear();
+        // Only fire once
+        _mapControl.SizeChanged -= OnMapControlSizeChanged;
 
-        foreach (var poi in _viewModel.Pois)
+        MainThread.BeginInvokeOnMainThread(() =>
         {
-            var point = SphericalMercator.FromLonLat(poi.Longitude, poi.Latitude);
-            var feature = new PointFeature(point.ToMPoint());
-
-            feature["poi_id"] = poi.Id;
-            feature["poi_name"] = poi.Name;
-
-            feature.Styles.Add(new SymbolStyle
+            try
             {
-                SymbolScale = 0.7,
-                Fill = new Mapsui.Styles.Brush(Mapsui.Styles.Color.FromString("#FF5722")),
-                Outline = new Pen(Mapsui.Styles.Color.FromString("#FFFFFF"), 2)
-            });
+                var lat = _viewModel.CurrentLocation?.Latitude ?? AppSettings.DefaultLatitude;
+                var lon = _viewModel.CurrentLocation?.Longitude ?? AppSettings.DefaultLongitude;
+                var center = SphericalMercator.FromLonLat(lon, lat).ToMPoint();
+                var resolution = ZoomResolution(AppSettings.DefaultZoomLevel);
 
-            _poiLayer.Add(feature);
-        }
+                _mapControl.Map.Navigator.CenterOnAndZoomTo(center, resolution);
+                _hasCenteredOnUser = _viewModel.CurrentLocation != null;
 
-        _mapControl.Map.Refresh();
+                System.Diagnostics.Debug.WriteLine($"Map centered on ({lat:F4}, {lon:F4}) res={resolution:F2}");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Navigator error: {ex}");
+            }
+        });
+    }
+
+    private void UpdatePOIMarkers()
+    {
+        if (_poiLayer == null || _mapControl?.Map == null) return;
+
+        MainThread.BeginInvokeOnMainThread(() =>
+        {
+            try
+            {
+                _poiLayer.Clear();
+
+                foreach (var poi in _viewModel.Pois)
+                {
+                    var point = SphericalMercator.FromLonLat(poi.Longitude, poi.Latitude);
+                    var feature = new PointFeature(point.ToMPoint());
+
+                    feature["poi_id"] = poi.Id;
+                    feature["poi_name"] = poi.Name;
+
+                    // Orange marker
+                    feature.Styles.Add(new SymbolStyle
+                    {
+                        SymbolScale = 0.8,
+                        Fill = new Mapsui.Styles.Brush(Mapsui.Styles.Color.FromString("#FF5722")),
+                        Outline = new Pen(Mapsui.Styles.Color.White, 2),
+                        SymbolType = SymbolType.Ellipse
+                    });
+
+                    // Label below marker
+                    feature.Styles.Add(new LabelStyle
+                    {
+                        Text = poi.Name,
+                        ForeColor = Mapsui.Styles.Color.FromString("#333333"),
+                        BackColor = new Mapsui.Styles.Brush(new Mapsui.Styles.Color(255, 255, 255, 200)),
+                        Font = new Mapsui.Styles.Font { Size = 10 },
+                        HorizontalAlignment = LabelStyle.HorizontalAlignmentEnum.Center,
+                        Offset = new Offset(0, -20)
+                    });
+
+                    _poiLayer.Add(feature);
+                }
+
+                _mapControl.Map.Refresh();
+                System.Diagnostics.Debug.WriteLine($"Updated {_viewModel.Pois.Count} POI markers");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"UpdatePOIMarkers error: {ex}");
+            }
+        });
     }
 
     private void UpdateCurrentLocationMarker()
@@ -152,55 +187,110 @@ public partial class MainMapPage : ContentPage
         if (_locationLayer == null || _mapControl?.Map == null || _viewModel.CurrentLocation == null)
             return;
 
-        _locationLayer.Clear();
-
-        var point = SphericalMercator.FromLonLat(
-            _viewModel.CurrentLocation.Longitude,
-            _viewModel.CurrentLocation.Latitude);
-
-        var feature = new PointFeature(point.ToMPoint());
-
-        feature.Styles.Add(new SymbolStyle
+        MainThread.BeginInvokeOnMainThread(() =>
         {
-            SymbolScale = 0.5,
-            Fill = new Mapsui.Styles.Brush(Mapsui.Styles.Color.FromString("#2196F3")),
-            Outline = new Pen(Mapsui.Styles.Color.FromString("#FFFFFF"), 2)
+            try
+            {
+                _locationLayer.Clear();
+
+                var point = SphericalMercator.FromLonLat(
+                    _viewModel.CurrentLocation.Longitude,
+                    _viewModel.CurrentLocation.Latitude);
+                var mpoint = point.ToMPoint();
+
+                // Outer ring
+                var outerFeature = new PointFeature(mpoint);
+                outerFeature.Styles.Add(new SymbolStyle
+                {
+                    SymbolScale = 1.2,
+                    Fill = new Mapsui.Styles.Brush(new Mapsui.Styles.Color(33, 150, 243, 40)),
+                    Outline = new Pen(Mapsui.Styles.Color.FromString("#2196F3"), 1),
+                    SymbolType = SymbolType.Ellipse
+                });
+                _locationLayer.Add(outerFeature);
+
+                // Blue dot
+                var dotFeature = new PointFeature(mpoint);
+                dotFeature.Styles.Add(new SymbolStyle
+                {
+                    SymbolScale = 0.4,
+                    Fill = new Mapsui.Styles.Brush(Mapsui.Styles.Color.FromString("#2196F3")),
+                    Outline = new Pen(Mapsui.Styles.Color.White, 3),
+                    SymbolType = SymbolType.Ellipse
+                });
+                _locationLayer.Add(dotFeature);
+
+                _mapControl.Map.Refresh();
+
+                // Center on user first time
+                if (!_hasCenteredOnUser)
+                {
+                    _hasCenteredOnUser = true;
+                    var res = ZoomResolution(16);
+                    _mapControl.Map.Navigator.CenterOnAndZoomTo(mpoint, res);
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"UpdateLocationMarker error: {ex}");
+            }
         });
-
-        _locationLayer.Add(feature);
-        _mapControl.Map.Refresh();
-
-        // Center map on location (first time only)
-        if (_viewModel.Pois.Count == 0)
-        {
-            _mapControl.Map.Navigator.CenterOn(point.ToMPoint());
-        }
     }
 
     private async void MapControl_Info(object? sender, MapInfoEventArgs e)
     {
-        // Try to get feature from the POI layer
-        if (_poiLayer == null)
-            return;
+        if (_poiLayer == null || _mapControl == null) return;
 
-        var features = _poiLayer.GetFeatures();
-        foreach (var feature in features)
+        try
         {
-            if (feature is PointFeature pointFeature)
+            var screenPos = e.ScreenPosition;
+            var worldPos = _mapControl.Map.Navigator.Viewport.ScreenToWorld(screenPos.X, screenPos.Y);
+
+            PointFeature? closest = null;
+            double minDist = double.MaxValue;
+
+            foreach (var f in _poiLayer.GetFeatures())
             {
-                var poiId = pointFeature["poi_id"];
-                if (poiId is int id)
+                if (f is PointFeature pf)
                 {
-                    var poi = _viewModel.Pois.FirstOrDefault(p => p.Id == id);
-                    if (poi != null)
+                    var dx = pf.Point.X - worldPos.X;
+                    var dy = pf.Point.Y - worldPos.Y;
+                    var dist = Math.Sqrt(dx * dx + dy * dy);
+                    if (dist < 300 && dist < minDist)
                     {
-                        // Check if clicked near this feature
-                        // For simplicity, just open the first feature for now
-                        await _viewModel.POISelectedCommand.ExecuteAsync(poi);
-                        return;
+                        minDist = dist;
+                        closest = pf;
                     }
                 }
             }
+
+            if (closest?["poi_id"] is int closestId)
+            {
+                var poi = _viewModel.Pois.FirstOrDefault(p => p.Id == closestId);
+                if (poi != null)
+                {
+                    // Show popup with audio test option
+                    var action = await DisplayActionSheet(
+                        poi.Name,
+                        "Đóng",
+                        null,
+                        " Nghe thuyết minh",
+                        " Xem chi tiết");
+
+                    if (action == " Nghe thuyết minh")
+                    {
+                        await _viewModel.TestAudioCommand.ExecuteAsync(poi);
+                    }
+                    else if (action == " Xem chi tiết")
+                    {
+                        await _viewModel.POISelectedCommand.ExecuteAsync(poi);
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"MapControl_Info error: {ex}");
         }
     }
 
@@ -211,7 +301,7 @@ public partial class MainMapPage : ContentPage
 
     private async void OnLanguageChanged(object sender, EventArgs e)
     {
-        if (sender is Picker picker && picker.SelectedItem is string language)
+        if (sender is Picker picker && picker.SelectedIndex >= 0)
         {
             var langCode = AppSettings.SupportedLanguages[picker.SelectedIndex];
             await _viewModel.ChangeLanguageCommand.ExecuteAsync(langCode);

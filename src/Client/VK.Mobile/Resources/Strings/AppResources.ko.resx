@@ -167,4 +167,14 @@
   <data name="Cancel" xml:space="preserve">
     <value>취소</value>
   </data>
+
+  <data name="ProfileTouristTitle" xml:space="preserve">
+    <value>VK 스트리트 푸드 관광객</value>
+  </data>
+  <data name="POIListTitle" xml:space="preserve">
+    <value>장소 목록</value>
+  </data>
+  <data name="ListenAudio" xml:space="preserve">
+    <value>듣기</value>
+  </data>
 </root>

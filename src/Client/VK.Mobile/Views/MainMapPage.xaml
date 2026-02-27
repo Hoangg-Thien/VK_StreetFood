@@ -3,6 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:vm="clr-namespace:VK.Mobile.ViewModels"
              xmlns:loc="clr-namespace:VK.Mobile.Services"
+             xmlns:models="clr-namespace:VK.Mobile.Models"
              x:Class="VK.Mobile.Views.MainMapPage"
              x:DataType="vm:MainMapViewModel"
              Title="VK Street Food">
@@ -52,9 +53,63 @@
                     Clicked="OnQRScanClicked"/>
         </Grid>
 
-        <!-- Map Container -->
-        <ContentView x:Name="MapContainer"
-                     Grid.Row="1"/>
+        <!-- Map + POI List -->
+        <Grid Grid.Row="1">
+            <!-- Map Container -->
+            <ContentView x:Name="MapContainer"/>
+
+            <!-- POI List Drawer (Bottom) -->
+            <Frame VerticalOptions="End"
+                   Margin="8,0,8,8"
+                   Padding="0"
+                   CornerRadius="12"
+                   BackgroundColor="White"
+                   HasShadow="True"
+                   MaximumHeightRequest="200"
+                   IsVisible="{Binding HasPOIs}">
+                <VerticalStackLayout>
+                    <Label Text="{Binding Source={x:Static loc:LocalizationResourceManager.Instance}, Path=[POIListTitle]}"
+                           FontSize="14"
+                           FontAttributes="Bold"
+                           Padding="12,8,12,4"
+                           TextColor="#333"/>
+                    <CollectionView ItemsSource="{Binding Pois}"
+                                    HeightRequest="150">
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate x:DataType="models:POIModel">
+                                <Grid ColumnDefinitions="*,Auto"
+                                      Padding="12,6"
+                                      ColumnSpacing="8">
+                                    <VerticalStackLayout Grid.Column="0"
+                                                         VerticalOptions="Center">
+                                        <Label Text="{Binding Name}"
+                                               FontSize="14"
+                                               FontAttributes="Bold"
+                                               TextColor="#333"
+                                               LineBreakMode="TailTruncation"/>
+                                        <Label Text="{Binding Address}"
+                                               FontSize="11"
+                                               TextColor="#888"
+                                               LineBreakMode="TailTruncation"/>
+                                    </VerticalStackLayout>
+                                    <Button Grid.Column="1"
+                                            Text="🔊"
+                                            FontSize="18"
+                                            BackgroundColor="#FF5722"
+                                            TextColor="White"
+                                            CornerRadius="20"
+                                            WidthRequest="40"
+                                            HeightRequest="40"
+                                            Padding="0"
+                                            Command="{Binding Source={RelativeSource AncestorType={x:Type vm:MainMapViewModel}}, Path=TestAudioCommand}"
+                                            CommandParameter="{Binding .}"/>
+                                </Grid>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
+                </VerticalStackLayout>
+            </Frame>
+        </Grid>
 
         <!-- Loading Indicator -->
         <ActivityIndicator Grid.Row="1"
@@ -93,7 +148,7 @@
                     </Label.FormattedText>
                 </Label>
                 <Label FontSize="12"
-                        TextColor="Gray">
+                       TextColor="Gray">
                     <Label.FormattedText>
                         <FormattedString>
                             <Span Text="{Binding Source={x:Static loc:LocalizationResourceManager.Instance}, Path=[NearbyLabel]}"/>
