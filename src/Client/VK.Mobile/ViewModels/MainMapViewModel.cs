@@ -73,6 +73,13 @@ public partial class MainMapViewModel : ObservableObject
         _logger = logger;
 
         _locationService.LocationChanged += OnLocationChanged;
+
+        // Sync SelectedLanguageIndex khi ngôn ngữ đổi từ trang khác (SettingsPage)
+        LocalizationResourceManager.Instance.PropertyChanged += (_, _) =>
+        {
+            _selectedLanguage = LocalizationResourceManager.Instance.CurrentLanguage;
+            OnPropertyChanged(nameof(SelectedLanguageIndex));
+        };
     }
 
     [RelayCommand]

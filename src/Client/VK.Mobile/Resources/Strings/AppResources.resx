@@ -115,7 +115,90 @@
   <data name="TabSettings" xml:space="preserve">
     <value>Cài đặt</value>
   </data>
-  
+
+  <!-- Settings Page -->
+  <data name="SettingsLanguageSection" xml:space="preserve">
+    <value>🌐 Ngôn ngữ</value>
+  </data>
+  <data name="SettingsSaveLanguage" xml:space="preserve">
+    <value>Lưu ngôn ngữ</value>
+  </data>
+  <data name="SettingsNotifications" xml:space="preserve">
+    <value>🔔 Thông báo</value>
+  </data>
+  <data name="SettingsEnableNotifications" xml:space="preserve">
+    <value>Kích hoạt thông báo</value>
+  </data>
+  <data name="SettingsAudio" xml:space="preserve">
+    <value>🎧 Âm thanh</value>
+  </data>
+  <data name="SettingsAutoPlayAudio" xml:space="preserve">
+    <value>Tự động phát audio</value>
+  </data>
+  <data name="SettingsLocation" xml:space="preserve">
+    <value>📍 Vị trí</value>
+  </data>
+  <data name="SettingsGeofenceLabel" xml:space="preserve">
+    <value>Bán kính geofence:</value>
+  </data>
+  <data name="SettingsLocationUpdateLabel" xml:space="preserve">
+    <value>Cập nhật vị trí:</value>
+  </data>
+  <data name="SettingsSaveLocation" xml:space="preserve">
+    <value>Lưu cài đặt vị trí</value>
+  </data>
+  <data name="SettingsStorage" xml:space="preserve">
+    <value>💾 Bộ nhớ</value>
+  </data>
+  <data name="SettingsClearCache" xml:space="preserve">
+    <value>Xóa bộ nhớ đệm</value>
+  </data>
+  <data name="SettingsAccount" xml:space="preserve">
+    <value>👤 Tài khoản</value>
+  </data>
+  <data name="SettingsLogout" xml:space="preserve">
+    <value>Đăng xuất</value>
+  </data>
+
+  <!-- Favorites Page -->
+  <data name="FavoritesEmptyTitle" xml:space="preserve">
+    <value>Chưa có địa điểm yêu thích</value>
+  </data>
+  <data name="FavoritesEmptyDesc" xml:space="preserve">
+    <value>Thêm các địa điểm bạn thích vào danh sách để dễ dàng tìm lại</value>
+  </data>
+
+  <!-- History Page -->
+  <data name="HistoryEmptyTitle" xml:space="preserve">
+    <value>Chưa có lịch sử tham quan</value>
+  </data>
+  <data name="HistoryEmptyDesc" xml:space="preserve">
+    <value>Các địa điểm bạn đã ghé thăm sẽ xuất hiện ở đây</value>
+  </data>
+
+  <!-- Profile Page -->
+  <data name="ProfileVisitedPlaces" xml:space="preserve">
+    <value>Địa điểm đã ghé</value>
+  </data>
+  <data name="ProfileVisitHistory" xml:space="preserve">
+    <value>Lịch sử tham quan</value>
+  </data>
+  <data name="ProfileVisitHistoryDesc" xml:space="preserve">
+    <value>Xem các địa điểm đã ghé thăm</value>
+  </data>
+  <data name="ProfileFavoritePlaces" xml:space="preserve">
+    <value>Địa điểm yêu thích</value>
+  </data>
+  <data name="ProfileFavoritePlacesDesc" xml:space="preserve">
+    <value>Danh sách địa điểm đã lưu</value>
+  </data>
+  <data name="ProfileSettingsDesc" xml:space="preserve">
+    <value>Ngôn ngữ, thông báo, vị trí</value>
+  </data>
+  <data name="AppVersion" xml:space="preserve">
+    <value>Phiên bản 1.0.0</value>
+  </data>
+
   <!-- Common -->
   <data name="Loading" xml:space="preserve">
     <value>Đang tải...</value>

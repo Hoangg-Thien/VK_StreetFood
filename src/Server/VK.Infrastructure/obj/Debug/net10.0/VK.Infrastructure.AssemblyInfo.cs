@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("VK.Infrastructure")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+0b946bf4964e19ab3c16a069f3fce14c1e1f4d0b")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+45b248ae907d55622ac818ea2eadc9461a4f7916")]
 [assembly: System.Reflection.AssemblyProductAttribute("VK.Infrastructure")]
 [assembly: System.Reflection.AssemblyTitleAttribute("VK.Infrastructure")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

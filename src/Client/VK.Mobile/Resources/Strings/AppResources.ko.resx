@@ -71,7 +71,90 @@
   <data name="TabSettings" xml:space="preserve">
     <value>설정</value>
   </data>
-  
+
+  <!-- Settings Page -->
+  <data name="SettingsLanguageSection" xml:space="preserve">
+    <value>🌐 언어</value>
+  </data>
+  <data name="SettingsSaveLanguage" xml:space="preserve">
+    <value>언어 저장</value>
+  </data>
+  <data name="SettingsNotifications" xml:space="preserve">
+    <value>🔔 알림</value>
+  </data>
+  <data name="SettingsEnableNotifications" xml:space="preserve">
+    <value>알림 활성화</value>
+  </data>
+  <data name="SettingsAudio" xml:space="preserve">
+    <value>🎧 오디오</value>
+  </data>
+  <data name="SettingsAutoPlayAudio" xml:space="preserve">
+    <value>오디오 자동 재생</value>
+  </data>
+  <data name="SettingsLocation" xml:space="preserve">
+    <value>📍 위치</value>
+  </data>
+  <data name="SettingsGeofenceLabel" xml:space="preserve">
+    <value>지오펜스 반경:</value>
+  </data>
+  <data name="SettingsLocationUpdateLabel" xml:space="preserve">
+    <value>위치 업데이트:</value>
+  </data>
+  <data name="SettingsSaveLocation" xml:space="preserve">
+    <value>위치 설정 저장</value>
+  </data>
+  <data name="SettingsStorage" xml:space="preserve">
+    <value>💾 저장소</value>
+  </data>
+  <data name="SettingsClearCache" xml:space="preserve">
+    <value>캐시 지우기</value>
+  </data>
+  <data name="SettingsAccount" xml:space="preserve">
+    <value>👤 계정</value>
+  </data>
+  <data name="SettingsLogout" xml:space="preserve">
+    <value>로그아웃</value>
+  </data>
+
+  <!-- Favorites Page -->
+  <data name="FavoritesEmptyTitle" xml:space="preserve">
+    <value>즐겨찾기가 없습니다</value>
+  </data>
+  <data name="FavoritesEmptyDesc" xml:space="preserve">
+    <value>좋아하는 장소를 목록에 추가하세요</value>
+  </data>
+
+  <!-- History Page -->
+  <data name="HistoryEmptyTitle" xml:space="preserve">
+    <value>방문 기록 없음</value>
+  </data>
+  <data name="HistoryEmptyDesc" xml:space="preserve">
+    <value>방문한 장소가 여기에 표시됩니다</value>
+  </data>
+
+  <!-- Profile Page -->
+  <data name="ProfileVisitedPlaces" xml:space="preserve">
+    <value>방문한 장소</value>
+  </data>
+  <data name="ProfileVisitHistory" xml:space="preserve">
+    <value>방문 기록</value>
+  </data>
+  <data name="ProfileVisitHistoryDesc" xml:space="preserve">
+    <value>방문한 장소 보기</value>
+  </data>
+  <data name="ProfileFavoritePlaces" xml:space="preserve">
+    <value>즐겨찾기 장소</value>
+  </data>
+  <data name="ProfileFavoritePlacesDesc" xml:space="preserve">
+    <value>저장된 장소 목록</value>
+  </data>
+  <data name="ProfileSettingsDesc" xml:space="preserve">
+    <value>언어, 알림, 위치</value>
+  </data>
+  <data name="AppVersion" xml:space="preserve">
+    <value>버전 1.0.0</value>
+  </data>
+
   <data name="Loading" xml:space="preserve">
     <value>로딩 중...</value>
   </data>

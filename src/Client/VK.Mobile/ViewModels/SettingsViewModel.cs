@@ -8,11 +8,21 @@ namespace VK.Mobile.ViewModels;
 public partial class SettingsViewModel : ObservableObject
 {
     private readonly StorageService _storageService;
+    private static readonly string[] LanguageCodes = { "vi", "en", "ko" };
+
+    public string[] LanguageDisplayNames { get; } = { "Tiếng Việt", "English", "한국어" };
 
     public SettingsViewModel(StorageService storageService)
     {
         _storageService = storageService;
         LoadSettings();
+
+        // Sync khi ngôn ngữ được đổi từ trang khác (ví dụ MainMapPage)
+        LocalizationResourceManager.Instance.PropertyChanged += (_, _) =>
+        {
+            _selectedLanguage = LocalizationResourceManager.Instance.CurrentLanguage;
+            OnPropertyChanged(nameof(SelectedLanguageDisplayIndex));
+        };
     }
 
     [ObservableProperty]
@@ -30,13 +40,20 @@ public partial class SettingsViewModel : ObservableObject
     [ObservableProperty]
     private int _locationUpdateInterval = AppSettings.LocationUpdateIntervalSeconds;
 
-    public string[] AvailableLanguages { get; } = AppSettings.SupportedLanguages;
-
-    public Dictionary<string, string> LanguageNames => AppSettings.LanguageNames;
+    /// <summary>Index trong LanguageDisplayNames để bind Picker.SelectedIndex</summary>
+    public int SelectedLanguageDisplayIndex
+    {
+        get => Array.IndexOf(LanguageCodes, LocalizationResourceManager.Instance.CurrentLanguage);
+        set
+        {
+            if (value >= 0 && value < LanguageCodes.Length)
+                SelectedLanguage = LanguageCodes[value];
+        }
+    }
 
     void LoadSettings()
     {
-        SelectedLanguage = Preferences.Get("Language", "vi");
+        SelectedLanguage = LocalizationResourceManager.Instance.CurrentLanguage;
         NotificationsEnabled = Preferences.Get("NotificationsEnabled", true);
         AutoPlayAudio = Preferences.Get("AutoPlayAudio", true);
         GeofenceRadius = Preferences.Get("GeofenceRadius", AppSettings.GeofenceRadiusMeters);
@@ -46,8 +63,8 @@ public partial class SettingsViewModel : ObservableObject
     [RelayCommand]
     void SaveLanguage()
     {
-        Preferences.Set("Language", SelectedLanguage);
-        // TODO: Notify app of language change
+        // Gọi LocalizationResourceManager để đổi ngôn ngữ toàn app
+        LocalizationResourceManager.Instance.SetLanguage(SelectedLanguage);
     }
 
     [RelayCommand]
@@ -78,14 +95,17 @@ public partial class SettingsViewModel : ObservableObject
     async Task ClearCache()
     {
         bool confirm = await Application.Current!.MainPage!.DisplayAlert(
-            "Xóa bộ nhớ đệm",
+            LocalizationResourceManager.Instance["SettingsClearCache"],
             "Bạn có chắc muốn xóa toàn bộ bộ nhớ đệm?",
-            "Xóa", "Hủy");
+            LocalizationResourceManager.Instance["OK"],
+            LocalizationResourceManager.Instance["Cancel"]);
 
         if (confirm)
         {
-            // TODO: Clear cache
-            await Application.Current.MainPage.DisplayAlert("Thành công", "Đã xóa bộ nhớ đệm", "OK");
+            await Application.Current.MainPage.DisplayAlert(
+                LocalizationResourceManager.Instance["OK"],
+                "Đã xóa bộ nhớ đệm",
+                LocalizationResourceManager.Instance["OK"]);
         }
     }
 
@@ -93,9 +113,10 @@ public partial class SettingsViewModel : ObservableObject
     async Task Logout()
     {
         bool confirm = await Application.Current!.MainPage!.DisplayAlert(
-            "Đăng xuất",
+            LocalizationResourceManager.Instance["SettingsLogout"],
             "Bạn có chắc muốn đăng xuất?",
-            "Đăng xuất", "Hủy");
+            LocalizationResourceManager.Instance["SettingsLogout"],
+            LocalizationResourceManager.Instance["Cancel"]);
 
         if (confirm)
         {

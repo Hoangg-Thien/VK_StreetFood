@@ -2,166 +2,176 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:vm="clr-namespace:VK.Mobile.ViewModels"
+             xmlns:loc="clr-namespace:VK.Mobile.Services"
              x:Class="VK.Mobile.Views.SettingsPage"
              x:DataType="vm:SettingsViewModel"
-             Title="Cài đặt"
              BackgroundColor="{StaticResource PageBackground}">
 
-    <ScrollView>
-        <VerticalStackLayout Spacing="0"
-                Padding="0">
+        <ScrollView>
+                <VerticalStackLayout Spacing="0"
+                                     Padding="0">
 
-            <!-- Language Section -->
-            <Frame Margin="16,16,16,0"
-                    Padding="16"
-                    BackgroundColor="{StaticResource CardBackground}"
-                    BorderColor="Transparent"
-                    CornerRadius="12">
-                <VerticalStackLayout Spacing="12">
-                    <Label Text="🌐 Ngôn ngữ"
-                            FontSize="18"
-                            FontAttributes="Bold"
-                            TextColor="{StaticResource TextPrimary}"/>
+                        <!-- Language Section -->
+                        <Frame Margin="16,16,16,0"
+                               Padding="16"
+                               BackgroundColor="{StaticResource CardBackground}"
+                               BorderColor="Transparent"
+                               CornerRadius="12">
+                                <VerticalStackLayout Spacing="12">
+                                        <Label Text="{Binding Source={x:Static loc:LocalizationResourceManager.Instance}, Path=[SettingsLanguageSection]}"
+                                               FontSize="18"
+                                               FontAttributes="Bold"
+                                               TextColor="{StaticResource TextPrimary}"/>
 
-                    <Picker ItemsSource="{Binding AvailableLanguages}"
-                            SelectedItem="{Binding SelectedLanguage}"
-                            BackgroundColor="{StaticResource PageBackground}"
-                            TextColor="{StaticResource TextPrimary}"/>
+                                        <Picker ItemsSource="{Binding LanguageDisplayNames}"
+                                                SelectedIndex="{Binding SelectedLanguageDisplayIndex}"
+                                                BackgroundColor="{StaticResource PageBackground}"
+                                                TextColor="{StaticResource TextPrimary}"/>
 
-                    <Button Text="Lưu ngôn ngữ"
-                            Command="{Binding SaveLanguageCommand}"
-                            BackgroundColor="{StaticResource Primary}"
-                            TextColor="White"
-                            HeightRequest="44"
-                            CornerRadius="8"/>
+                                        <Button Text="{Binding Source={x:Static loc:LocalizationResourceManager.Instance}, Path=[SettingsSaveLanguage]}"
+                                                Command="{Binding SaveLanguageCommand}"
+                                                BackgroundColor="{StaticResource Primary}"
+                                                TextColor="White"
+                                                HeightRequest="44"
+                                                CornerRadius="8"/>
+                                </VerticalStackLayout>
+                        </Frame>
+
+                        <!-- Notifications Section -->
+                        <Frame Margin="16,16,16,0"
+                               Padding="16"
+                               BackgroundColor="{StaticResource CardBackground}"
+                               BorderColor="Transparent"
+                               CornerRadius="12">
+                                <VerticalStackLayout Spacing="12">
+                                        <Label Text="{Binding Source={x:Static loc:LocalizationResourceManager.Instance}, Path=[SettingsNotifications]}"
+                                               FontSize="18"
+                                               FontAttributes="Bold"
+                                               TextColor="{StaticResource TextPrimary}"/>
+                                        <Grid ColumnDefinitions="*,Auto">
+                                                <Label Text="{Binding Source={x:Static loc:LocalizationResourceManager.Instance}, Path=[SettingsEnableNotifications]}"
+                                                       VerticalOptions="Center"
+                                                       TextColor="{StaticResource TextPrimary}"/>
+                                                <Switch Grid.Column="1"
+                                                        IsToggled="{Binding NotificationsEnabled}"
+                                                        OnColor="{StaticResource Primary}"/>
+                                        </Grid>
+                                </VerticalStackLayout>
+                        </Frame>
+
+                        <!-- Audio Section -->
+                        <Frame Margin="16,16,16,0"
+                               Padding="16"
+                               BackgroundColor="{StaticResource CardBackground}"
+                               BorderColor="Transparent"
+                               CornerRadius="12">
+                                <VerticalStackLayout Spacing="12">
+                                        <Label Text="{Binding Source={x:Static loc:LocalizationResourceManager.Instance}, Path=[SettingsAudio]}"
+                                               FontSize="18"
+                                               FontAttributes="Bold"
+                                               TextColor="{StaticResource TextPrimary}"/>
+                                        <Grid ColumnDefinitions="*,Auto">
+                                                <Label Text="{Binding Source={x:Static loc:LocalizationResourceManager.Instance}, Path=[SettingsAutoPlayAudio]}"
+                                                       VerticalOptions="Center"
+                                                       TextColor="{StaticResource TextPrimary}"/>
+                                                <Switch Grid.Column="1"
+                                                        IsToggled="{Binding AutoPlayAudio}"
+                                                        OnColor="{StaticResource Primary}"/>
+                                        </Grid>
+                                </VerticalStackLayout>
+                        </Frame>
+
+                        <!-- Location Section -->
+                        <Frame Margin="16,16,16,0"
+                               Padding="16"
+                               BackgroundColor="{StaticResource CardBackground}"
+                               BorderColor="Transparent"
+                               CornerRadius="12">
+                                <VerticalStackLayout Spacing="12">
+                                        <Label Text="{Binding Source={x:Static loc:LocalizationResourceManager.Instance}, Path=[SettingsLocation]}"
+                                               FontSize="18"
+                                               FontAttributes="Bold"
+                                               TextColor="{StaticResource TextPrimary}"/>
+
+                                        <Label TextColor="{StaticResource TextSecondary}">
+                                                <Label.FormattedText>
+                                                        <FormattedString>
+                                                                <Span Text="{Binding Source={x:Static loc:LocalizationResourceManager.Instance}, Path=[SettingsGeofenceLabel]}"/>
+                                                                <Span Text=" "/>
+                                                                <Span Text="{Binding GeofenceRadius, StringFormat='{0:F0}m'}"/>
+                                                        </FormattedString>
+                                                </Label.FormattedText>
+                                        </Label>
+                                        <Slider Minimum="20"
+                                                Maximum="200"
+                                                Value="{Binding GeofenceRadius}"
+                                                MinimumTrackColor="{StaticResource Primary}"
+                                                MaximumTrackColor="{StaticResource Border}"/>
+
+                                        <Label TextColor="{StaticResource TextSecondary}">
+                                                <Label.FormattedText>
+                                                        <FormattedString>
+                                                                <Span Text="{Binding Source={x:Static loc:LocalizationResourceManager.Instance}, Path=[SettingsLocationUpdateLabel]}"/>
+                                                                <Span Text=" "/>
+                                                                <Span Text="{Binding LocationUpdateInterval, StringFormat='{0}s'}"/>
+                                                        </FormattedString>
+                                                </Label.FormattedText>
+                                        </Label>
+                                        <Slider Minimum="1"
+                                                Maximum="30"
+                                                Value="{Binding LocationUpdateInterval}"
+                                                MinimumTrackColor="{StaticResource Primary}"
+                                                MaximumTrackColor="{StaticResource Border}"/>
+
+                                        <Button Text="{Binding Source={x:Static loc:LocalizationResourceManager.Instance}, Path=[SettingsSaveLocation]}"
+                                                Command="{Binding SaveGeofenceRadiusCommand}"
+                                                BackgroundColor="{StaticResource Primary}"
+                                                TextColor="White"
+                                                HeightRequest="44"
+                                                CornerRadius="8"/>
+                                </VerticalStackLayout>
+                        </Frame>
+
+                        <!-- Storage Section -->
+                        <Frame Margin="16,16,16,0"
+                               Padding="16"
+                               BackgroundColor="{StaticResource CardBackground}"
+                               BorderColor="Transparent"
+                               CornerRadius="12">
+                                <VerticalStackLayout Spacing="12">
+                                        <Label Text="{Binding Source={x:Static loc:LocalizationResourceManager.Instance}, Path=[SettingsStorage]}"
+                                               FontSize="18"
+                                               FontAttributes="Bold"
+                                               TextColor="{StaticResource TextPrimary}"/>
+                                        <Button Text="{Binding Source={x:Static loc:LocalizationResourceManager.Instance}, Path=[SettingsClearCache]}"
+                                                Command="{Binding ClearCacheCommand}"
+                                                BackgroundColor="{StaticResource Warning}"
+                                                TextColor="White"
+                                                HeightRequest="44"
+                                                CornerRadius="8"/>
+                                </VerticalStackLayout>
+                        </Frame>
+
+                        <!-- Account Section -->
+                        <Frame Margin="16,16,16,16"
+                               Padding="16"
+                               BackgroundColor="{StaticResource CardBackground}"
+                               BorderColor="Transparent"
+                               CornerRadius="12">
+                                <VerticalStackLayout Spacing="12">
+                                        <Label Text="{Binding Source={x:Static loc:LocalizationResourceManager.Instance}, Path=[SettingsAccount]}"
+                                               FontSize="18"
+                                               FontAttributes="Bold"
+                                               TextColor="{StaticResource TextPrimary}"/>
+                                        <Button Text="{Binding Source={x:Static loc:LocalizationResourceManager.Instance}, Path=[SettingsLogout]}"
+                                                Command="{Binding LogoutCommand}"
+                                                BackgroundColor="{StaticResource Error}"
+                                                TextColor="White"
+                                                HeightRequest="44"
+                                                CornerRadius="8"/>
+                                </VerticalStackLayout>
+                        </Frame>
+
                 </VerticalStackLayout>
-            </Frame>
-
-            <!-- Notifications Section -->
-            <Frame Margin="16,16,16,0"
-                    Padding="16"
-                    BackgroundColor="{StaticResource CardBackground}"
-                    BorderColor="Transparent"
-                    CornerRadius="12">
-                <VerticalStackLayout Spacing="12">
-                    <Label Text="🔔 Thông báo"
-                            FontSize="18"
-                            FontAttributes="Bold"
-                            TextColor="{StaticResource TextPrimary}"/>
-
-                    <Grid ColumnDefinitions="*,Auto">
-                        <Label Text="Kích hoạt thông báo"
-                                VerticalOptions="Center"
-                                TextColor="{StaticResource TextPrimary}"/>
-                        <Switch Grid.Column="1"
-                                IsToggled="{Binding NotificationsEnabled}"
-                                OnColor="{StaticResource Primary}"/>
-                    </Grid>
-                </VerticalStackLayout>
-            </Frame>
-
-            <!-- Audio Section -->
-            <Frame Margin="16,16,16,0"
-                    Padding="16"
-                    BackgroundColor="{StaticResource CardBackground}"
-                    BorderColor="Transparent"
-                    CornerRadius="12">
-                <VerticalStackLayout Spacing="12">
-                    <Label Text="🎧 Âm thanh"
-                            FontSize="18"
-                            FontAttributes="Bold"
-                            TextColor="{StaticResource TextPrimary}"/>
-
-                    <Grid ColumnDefinitions="*,Auto">
-                        <Label Text="Tự động phát audio"
-                                VerticalOptions="Center"
-                                TextColor="{StaticResource TextPrimary}"/>
-                        <Switch Grid.Column="1"
-                                IsToggled="{Binding AutoPlayAudio}"
-                                OnColor="{StaticResource Primary}"/>
-                    </Grid>
-                </VerticalStackLayout>
-            </Frame>
-
-            <!-- Location Section -->
-            <Frame Margin="16,16,16,0"
-                    Padding="16"
-                    BackgroundColor="{StaticResource CardBackground}"
-                    BorderColor="Transparent"
-                    CornerRadius="12">
-                <VerticalStackLayout Spacing="12">
-                    <Label Text="📍 Vị trí"
-                            FontSize="18"
-                            FontAttributes="Bold"
-                            TextColor="{StaticResource TextPrimary}"/>
-
-                    <Label Text="{Binding GeofenceRadius, StringFormat='Bán kính geofence: {0:F0}m'}"
-                            TextColor="{StaticResource TextSecondary}"/>
-                    <Slider Minimum="20"
-                            Maximum="200"
-                            Value="{Binding GeofenceRadius}"
-                            MinimumTrackColor="{StaticResource Primary}"
-                            MaximumTrackColor="{StaticResource Border}"/>
-
-                    <Label Text="{Binding LocationUpdateInterval, StringFormat='Cập nhật vị trí: {0}s'}"
-                            TextColor="{StaticResource TextSecondary}"/>
-                    <Slider Minimum="1"
-                            Maximum="30"
-                            Value="{Binding LocationUpdateInterval}"
-                            MinimumTrackColor="{StaticResource Primary}"
-                            MaximumTrackColor="{StaticResource Border}"/>
-
-                    <Button Text="Lưu cài đặt vị trí"
-                            Command="{Binding SaveGeofenceRadiusCommand}"
-                            BackgroundColor="{StaticResource Primary}"
-                            TextColor="White"
-                            HeightRequest="44"
-                            CornerRadius="8"/>
-                </VerticalStackLayout>
-            </Frame>
-
-            <!-- Storage Section -->
-            <Frame Margin="16,16,16,0"
-                    Padding="16"
-                    BackgroundColor="{StaticResource CardBackground}"
-                    BorderColor="Transparent"
-                    CornerRadius="12">
-                <VerticalStackLayout Spacing="12">
-                    <Label Text="💾 Bộ nhớ"
-                            FontSize="18"
-                            FontAttributes="Bold"
-                            TextColor="{StaticResource TextPrimary}"/>
-
-                    <Button Text="Xóa bộ nhớ đệm"
-                            Command="{Binding ClearCacheCommand}"
-                            BackgroundColor="{StaticResource Warning}"
-                            TextColor="White"
-                            HeightRequest="44"
-                            CornerRadius="8"/>
-                </VerticalStackLayout>
-            </Frame>
-
-            <!-- Account Section -->
-            <Frame Margin="16,16,16,16"
-                    Padding="16"
-                    BackgroundColor="{StaticResource CardBackground}"
-                    BorderColor="Transparent"
-                    CornerRadius="12">
-                <VerticalStackLayout Spacing="12">
-                    <Label Text="👤 Tài khoản"
-                            FontSize="18"
-                            FontAttributes="Bold"
-                            TextColor="{StaticResource TextPrimary}"/>
-
-                    <Button Text="Đăng xuất"
-                            Command="{Binding LogoutCommand}"
-                            BackgroundColor="{StaticResource Error}"
-                            TextColor="White"
-                            HeightRequest="44"
-                            CornerRadius="8"/>
-                </VerticalStackLayout>
-            </Frame>
-
-        </VerticalStackLayout>
-    </ScrollView>
+        </ScrollView>
 </ContentPage>

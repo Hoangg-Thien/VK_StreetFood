@@ -3,91 +3,91 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:vm="clr-namespace:VK.Mobile.ViewModels"
              xmlns:models="clr-namespace:VK.Mobile.Models"
+             xmlns:loc="clr-namespace:VK.Mobile.Services"
              x:Class="VK.Mobile.Views.HistoryPage"
              x:DataType="vm:HistoryViewModel"
-             Title="Lịch sử"
              BackgroundColor="{StaticResource PageBackground}">
 
-    <Grid RowDefinitions="*">
+       <Grid RowDefinitions="*">
 
-        <!-- Loading Indicator -->
-        <ActivityIndicator IsRunning="{Binding IsLoading}"
-                           IsVisible="{Binding IsLoading}"
-                           Color="{StaticResource Primary}"
-                           VerticalOptions="Center"
-                           HorizontalOptions="Center"/>
+              <!-- Loading Indicator -->
+              <ActivityIndicator IsRunning="{Binding IsLoading}"
+                                 IsVisible="{Binding IsLoading}"
+                                 Color="{StaticResource Primary}"
+                                 VerticalOptions="Center"
+                                 HorizontalOptions="Center"/>
 
-        <!-- Empty State -->
-        <VerticalStackLayout IsVisible="{Binding IsEmpty}"
-                             VerticalOptions="Center"
-                             Padding="40"
-                             Spacing="16">
-            <Label Text="📜"
-                   FontSize="64"
-                   HorizontalOptions="Center"/>
-            <Label Text="Chưa có lịch sử tham quan"
-                   FontSize="20"
-                   FontAttributes="Bold"
-                   HorizontalTextAlignment="Center"
-                   TextColor="{StaticResource TextPrimary}"/>
-            <Label Text="Các địa điểm bạn đã ghé thăm sẽ xuất hiện ở đây"
-                   FontSize="14"
-                   HorizontalTextAlignment="Center"
-                   TextColor="{StaticResource TextSecondary}"/>
-        </VerticalStackLayout>
+              <!-- Empty State -->
+              <VerticalStackLayout IsVisible="{Binding IsEmpty}"
+                                   VerticalOptions="Center"
+                                   Padding="40"
+                                   Spacing="16">
+                     <Label Text="📜"
+                            FontSize="64"
+                            HorizontalOptions="Center"/>
+                     <Label Text="{Binding Source={x:Static loc:LocalizationResourceManager.Instance}, Path=[HistoryEmptyTitle]}"
+                            FontSize="20"
+                            FontAttributes="Bold"
+                            HorizontalTextAlignment="Center"
+                            TextColor="{StaticResource TextPrimary}"/>
+                     <Label Text="{Binding Source={x:Static loc:LocalizationResourceManager.Instance}, Path=[HistoryEmptyDesc]}"
+                            FontSize="14"
+                            HorizontalTextAlignment="Center"
+                            TextColor="{StaticResource TextSecondary}"/>
+              </VerticalStackLayout>
 
-        <!-- History List -->
-        <CollectionView ItemsSource="{Binding Visits}"
-                        SelectionMode="None"
-                        IsVisible="{Binding IsEmpty, Converter={StaticResource InvertedBoolConverter}}"
-                        Margin="16,8">
+              <!-- History List -->
+              <CollectionView ItemsSource="{Binding Visits}"
+                              SelectionMode="None"
+                              IsVisible="{Binding IsEmpty, Converter={StaticResource InvertedBoolConverter}}"
+                              Margin="16,8">
 
-            <CollectionView.ItemTemplate>
-                <DataTemplate x:DataType="models:VisitLogModel">
-                    <Frame Margin="0,8"
-                           Padding="16"
-                           BackgroundColor="{StaticResource CardBackground}"
-                           BorderColor="Transparent"
-                           CornerRadius="12">
+                     <CollectionView.ItemTemplate>
+                            <DataTemplate x:DataType="models:VisitLogModel">
+                                   <Frame Margin="0,8"
+                                          Padding="16"
+                                          BackgroundColor="{StaticResource CardBackground}"
+                                          BorderColor="Transparent"
+                                          CornerRadius="12">
 
-                        <Frame.GestureRecognizers>
-                            <TapGestureRecognizer Command="{Binding Source={RelativeSource AncestorType={x:Type vm:HistoryViewModel}}, Path=NavigateToPOICommand}"
-                                                  CommandParameter="{Binding .}"/>
-                        </Frame.GestureRecognizers>
+                                          <Frame.GestureRecognizers>
+                                                 <TapGestureRecognizer Command="{Binding Source={RelativeSource AncestorType={x:Type vm:HistoryViewModel}}, Path=NavigateToPOICommand}"
+                                                                       CommandParameter="{Binding .}"/>
+                                          </Frame.GestureRecognizers>
 
-                        <VerticalStackLayout Spacing="8">
+                                          <VerticalStackLayout Spacing="8">
 
-                            <!-- POI Name -->
-                            <Label Text="{Binding PoiName}"
-                                   FontSize="18"
-                                   FontAttributes="Bold"
-                                   TextColor="{StaticResource TextPrimary}"/>
+                                                 <!-- POI Name -->
+                                                 <Label Text="{Binding PoiName}"
+                                                        FontSize="18"
+                                                        FontAttributes="Bold"
+                                                        TextColor="{StaticResource TextPrimary}"/>
 
-                            <!-- Visit Time -->
-                            <HorizontalStackLayout Spacing="4">
-                                <Label Text="🕐"
-                                       FontSize="14"/>
-                                <Label Text="{Binding VisitedAt, StringFormat='{0:dd/MM/yyyy HH:mm}'}"
-                                       FontSize="14"
-                                       TextColor="{StaticResource TextSecondary}"/>
-                            </HorizontalStackLayout>
+                                                 <!-- Visit Time -->
+                                                 <HorizontalStackLayout Spacing="4">
+                                                        <Label Text="🕐"
+                                                               FontSize="14"/>
+                                                        <Label Text="{Binding VisitedAt, StringFormat='{0:dd/MM/yyyy HH:mm}'}"
+                                                               FontSize="14"
+                                                               TextColor="{StaticResource TextSecondary}"/>
+                                                 </HorizontalStackLayout>
 
-                            <!-- Trigger Method -->
-                            <HorizontalStackLayout Spacing="4"
-                                                   IsVisible="{Binding TriggerMethod, Converter={StaticResource NullToBoolConverter}}">
-                                <Label Text="📍"
-                                       FontSize="14"/>
-                                <Label Text="{Binding TriggerMethod}"
-                                       FontSize="14"
-                                       TextColor="{StaticResource TextSecondary}"/>
-                            </HorizontalStackLayout>
+                                                 <!-- Trigger Method -->
+                                                 <HorizontalStackLayout Spacing="4"
+                                                                        IsVisible="{Binding TriggerMethod, Converter={StaticResource NullToBoolConverter}}">
+                                                        <Label Text="📍"
+                                                               FontSize="14"/>
+                                                        <Label Text="{Binding TriggerMethod}"
+                                                               FontSize="14"
+                                                               TextColor="{StaticResource TextSecondary}"/>
+                                                 </HorizontalStackLayout>
 
-                        </VerticalStackLayout>
+                                          </VerticalStackLayout>
 
-                    </Frame>
-                </DataTemplate>
-            </CollectionView.ItemTemplate>
-        </CollectionView>
+                                   </Frame>
+                            </DataTemplate>
+                     </CollectionView.ItemTemplate>
+              </CollectionView>
 
-    </Grid>
+       </Grid>
 </ContentPage>

@@ -2,25 +2,25 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:vm="clr-namespace:VK.Mobile.ViewModels"
+             xmlns:loc="clr-namespace:VK.Mobile.Services"
              x:Class="VK.Mobile.Views.ProfilePage"
              x:DataType="vm:ProfileViewModel"
-             Title="Hồ sơ"
              BackgroundColor="{StaticResource PageBackground}">
 
     <ScrollView>
         <VerticalStackLayout Spacing="0"
-                Padding="0">
+                             Padding="0">
 
             <!-- Profile Header with Gradient -->
             <Grid HeightRequest="200">
                 <BoxView>
                     <BoxView.Background>
                         <LinearGradientBrush StartPoint="0,0"
-                                EndPoint="1,1">
+                                             EndPoint="1,1">
                             <GradientStop Color="#FFF27A4F"
-                                    Offset="0.0"/>
+                                          Offset="0.0"/>
                             <GradientStop Color="#FFF27A4F"
-                                    Offset="1.0"/>
+                                          Offset="1.0"/>
                         </LinearGradientBrush>
                     </BoxView.Background>
                 </BoxView>
@@ -67,11 +67,11 @@
                    CornerRadius="16"
                    Shadow="{StaticResource Shadow}">
                 <Grid ColumnDefinitions="*,*"
-                        ColumnSpacing="20">
+                      ColumnSpacing="20">
                     <!-- Visits Stat -->
                     <VerticalStackLayout Grid.Column="0"
-                            Spacing="4"
-                            HorizontalOptions="Center">
+                                         Spacing="4"
+                                         HorizontalOptions="Center">
                         <VerticalStackLayout.GestureRecognizers>
                             <TapGestureRecognizer Command="{Binding NavigateToHistoryCommand}"/>
                         </VerticalStackLayout.GestureRecognizers>
@@ -80,7 +80,7 @@
                                FontAttributes="Bold"
                                TextColor="{StaticResource Primary}"
                                HorizontalTextAlignment="Center"/>
-                        <Label Text="Địa điểm đã ghé"
+                        <Label Text="{Binding Source={x:Static loc:LocalizationResourceManager.Instance}, Path=[ProfileVisitedPlaces]}"
                                FontSize="14"
                                TextColor="{StaticResource TextSecondary}"
                                HorizontalTextAlignment="Center"/>
@@ -88,8 +88,8 @@
 
                     <!-- Favorites Stat -->
                     <VerticalStackLayout Grid.Column="1"
-                            Spacing="4"
-                            HorizontalOptions="Center">
+                                         Spacing="4"
+                                         HorizontalOptions="Center">
                         <VerticalStackLayout.GestureRecognizers>
                             <TapGestureRecognizer Command="{Binding NavigateToFavoritesCommand}"/>
                         </VerticalStackLayout.GestureRecognizers>
@@ -98,7 +98,7 @@
                                FontAttributes="Bold"
                                TextColor="{StaticResource FavoriteActive}"
                                HorizontalTextAlignment="Center"/>
-                        <Label Text="Yêu thích"
+                        <Label Text="{Binding Source={x:Static loc:LocalizationResourceManager.Instance}, Path=[TabFavorites]}"
                                FontSize="14"
                                TextColor="{StaticResource TextSecondary}"
                                HorizontalTextAlignment="Center"/>
@@ -108,7 +108,7 @@
 
             <!-- Menu Items -->
             <VerticalStackLayout Spacing="0"
-                    Margin="16,20,16,0">
+                                 Margin="16,20,16,0">
 
                 <!-- History -->
                 <Frame Padding="0"
@@ -120,7 +120,7 @@
                         <TapGestureRecognizer Command="{Binding NavigateToHistoryCommand}"/>
                     </Frame.GestureRecognizers>
                     <Grid ColumnDefinitions="Auto,*,Auto"
-                            Padding="16">
+                          Padding="16">
                         <Border Grid.Column="0"
                                 StrokeShape="RoundRectangle 10"
                                 BackgroundColor="{StaticResource Primary}"
@@ -134,11 +134,11 @@
                         <VerticalStackLayout Grid.Column="1"
                                              VerticalOptions="Center"
                                              Padding="12,0,0,0">
-                            <Label Text="Lịch sử tham quan"
+                            <Label Text="{Binding Source={x:Static loc:LocalizationResourceManager.Instance}, Path=[ProfileVisitHistory]}"
                                    FontSize="16"
                                    FontAttributes="Bold"
                                    TextColor="{StaticResource TextPrimary}"/>
-                            <Label Text="Xem các địa điểm đã ghé thăm"
+                            <Label Text="{Binding Source={x:Static loc:LocalizationResourceManager.Instance}, Path=[ProfileVisitHistoryDesc]}"
                                    FontSize="12"
                                    TextColor="{StaticResource TextSecondary}"/>
                         </VerticalStackLayout>
@@ -160,7 +160,7 @@
                         <TapGestureRecognizer Command="{Binding NavigateToFavoritesCommand}"/>
                     </Frame.GestureRecognizers>
                     <Grid ColumnDefinitions="Auto,*,Auto"
-                            Padding="16">
+                          Padding="16">
                         <Border Grid.Column="0"
                                 StrokeShape="RoundRectangle 10"
                                 BackgroundColor="{StaticResource FavoriteActive}"
@@ -174,11 +174,11 @@
                         <VerticalStackLayout Grid.Column="1"
                                              VerticalOptions="Center"
                                              Padding="12,0,0,0">
-                            <Label Text="Địa điểm yêu thích"
+                            <Label Text="{Binding Source={x:Static loc:LocalizationResourceManager.Instance}, Path=[ProfileFavoritePlaces]}"
                                    FontSize="16"
                                    FontAttributes="Bold"
                                    TextColor="{StaticResource TextPrimary}"/>
-                            <Label Text="Danh sách địa điểm đã lưu"
+                            <Label Text="{Binding Source={x:Static loc:LocalizationResourceManager.Instance}, Path=[ProfileFavoritePlacesDesc]}"
                                    FontSize="12"
                                    TextColor="{StaticResource TextSecondary}"/>
                         </VerticalStackLayout>
@@ -200,7 +200,7 @@
                         <TapGestureRecognizer Command="{Binding NavigateToSettingsCommand}"/>
                     </Frame.GestureRecognizers>
                     <Grid ColumnDefinitions="Auto,*,Auto"
-                            Padding="16">
+                          Padding="16">
                         <Border Grid.Column="0"
                                 StrokeShape="RoundRectangle 10"
                                 BackgroundColor="{StaticResource Secondary}"
@@ -214,11 +214,11 @@
                         <VerticalStackLayout Grid.Column="1"
                                              VerticalOptions="Center"
                                              Padding="12,0,0,0">
-                            <Label Text="Cài đặt"
+                            <Label Text="{Binding Source={x:Static loc:LocalizationResourceManager.Instance}, Path=[TabSettings]}"
                                    FontSize="16"
                                    FontAttributes="Bold"
                                    TextColor="{StaticResource TextPrimary}"/>
-                            <Label Text="Ngôn ngữ, thông báo, vị trí"
+                            <Label Text="{Binding Source={x:Static loc:LocalizationResourceManager.Instance}, Path=[ProfileSettingsDesc]}"
                                    FontSize="12"
                                    TextColor="{StaticResource TextSecondary}"/>
                         </VerticalStackLayout>
@@ -239,7 +239,7 @@
                    BorderColor="Transparent"
                    CornerRadius="12">
                 <VerticalStackLayout Spacing="4"
-                        HorizontalOptions="Center">
+                                     HorizontalOptions="Center">
                     <Label Text="🍜"
                            FontSize="32"
                            HorizontalOptions="Center"/>
@@ -248,7 +248,7 @@
                            FontAttributes="Bold"
                            TextColor="{StaticResource TextPrimary}"
                            HorizontalTextAlignment="Center"/>
-                    <Label Text="Phiên bản 1.0.0"
+                    <Label Text="{Binding Source={x:Static loc:LocalizationResourceManager.Instance}, Path=[AppVersion]}"
                            FontSize="12"
                            TextColor="{StaticResource TextSecondary}"
                            HorizontalTextAlignment="Center"/>

@@ -71,7 +71,90 @@
   <data name="TabSettings" xml:space="preserve">
     <value>Settings</value>
   </data>
-  
+
+  <!-- Settings Page -->
+  <data name="SettingsLanguageSection" xml:space="preserve">
+    <value>🌐 Language</value>
+  </data>
+  <data name="SettingsSaveLanguage" xml:space="preserve">
+    <value>Save Language</value>
+  </data>
+  <data name="SettingsNotifications" xml:space="preserve">
+    <value>🔔 Notifications</value>
+  </data>
+  <data name="SettingsEnableNotifications" xml:space="preserve">
+    <value>Enable Notifications</value>
+  </data>
+  <data name="SettingsAudio" xml:space="preserve">
+    <value>🎧 Audio</value>
+  </data>
+  <data name="SettingsAutoPlayAudio" xml:space="preserve">
+    <value>Auto play audio</value>
+  </data>
+  <data name="SettingsLocation" xml:space="preserve">
+    <value>📍 Location</value>
+  </data>
+  <data name="SettingsGeofenceLabel" xml:space="preserve">
+    <value>Geofence radius:</value>
+  </data>
+  <data name="SettingsLocationUpdateLabel" xml:space="preserve">
+    <value>Location update:</value>
+  </data>
+  <data name="SettingsSaveLocation" xml:space="preserve">
+    <value>Save Location Settings</value>
+  </data>
+  <data name="SettingsStorage" xml:space="preserve">
+    <value>💾 Storage</value>
+  </data>
+  <data name="SettingsClearCache" xml:space="preserve">
+    <value>Clear Cache</value>
+  </data>
+  <data name="SettingsAccount" xml:space="preserve">
+    <value>👤 Account</value>
+  </data>
+  <data name="SettingsLogout" xml:space="preserve">
+    <value>Logout</value>
+  </data>
+
+  <!-- Favorites Page -->
+  <data name="FavoritesEmptyTitle" xml:space="preserve">
+    <value>No favorites yet</value>
+  </data>
+  <data name="FavoritesEmptyDesc" xml:space="preserve">
+    <value>Add places you like to easily find them later</value>
+  </data>
+
+  <!-- History Page -->
+  <data name="HistoryEmptyTitle" xml:space="preserve">
+    <value>No visit history</value>
+  </data>
+  <data name="HistoryEmptyDesc" xml:space="preserve">
+    <value>Places you visited will appear here</value>
+  </data>
+
+  <!-- Profile Page -->
+  <data name="ProfileVisitedPlaces" xml:space="preserve">
+    <value>Places Visited</value>
+  </data>
+  <data name="ProfileVisitHistory" xml:space="preserve">
+    <value>Visit History</value>
+  </data>
+  <data name="ProfileVisitHistoryDesc" xml:space="preserve">
+    <value>View visited places</value>
+  </data>
+  <data name="ProfileFavoritePlaces" xml:space="preserve">
+    <value>Favorite Places</value>
+  </data>
+  <data name="ProfileFavoritePlacesDesc" xml:space="preserve">
+    <value>Saved places list</value>
+  </data>
+  <data name="ProfileSettingsDesc" xml:space="preserve">
+    <value>Language, notifications, location</value>
+  </data>
+  <data name="AppVersion" xml:space="preserve">
+    <value>Version 1.0.0</value>
+  </data>
+
   <data name="Loading" xml:space="preserve">
     <value>Loading...</value>
   </data>
