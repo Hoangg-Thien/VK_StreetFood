@@ -1,4 +1,5 @@
 using System.Net.Http.Json;
+using System.Text.Json;
 using VK.Mobile.Models;
 using Microsoft.Extensions.Logging;
 
@@ -39,6 +40,16 @@ public class ApiService : IApiService
     private readonly HttpClient _httpClient;
     private readonly ILogger<ApiService> _logger;
 
+    /// <summary>
+    /// Case-insensitive + camelCase: đảm bảo JSON từ API (camelCase) 
+    /// deserialize đúng vào mobile models.
+    /// </summary>
+    private static readonly JsonSerializerOptions _jsonOptions = new()
+    {
+        PropertyNameCaseInsensitive = true,
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+    };
+
     public ApiService(HttpClient httpClient, ILogger<ApiService> logger)
     {
         _httpClient = httpClient;
@@ -54,7 +65,7 @@ public class ApiService : IApiService
             var response = await _httpClient.PostAsJsonAsync("tourist/register", request);
             response.EnsureSuccessStatusCode();
 
-            var result = await response.Content.ReadFromJsonAsync<TouristModel>();
+            var result = await response.Content.ReadFromJsonAsync<TouristModel>(_jsonOptions);
             _logger.LogInformation("Tourist registered: {DeviceId}", deviceId);
             return result;
         }
@@ -88,7 +99,7 @@ public class ApiService : IApiService
             if (!string.IsNullOrEmpty(search))
                 url += $"?search={Uri.EscapeDataString(search)}";
 
-            var pois = await _httpClient.GetFromJsonAsync<List<POIModel>>(url);
+            var pois = await _httpClient.GetFromJsonAsync<List<POIModel>>(url, _jsonOptions);
             return pois ?? new List<POIModel>();
         }
         catch (Exception ex)
@@ -103,7 +114,7 @@ public class ApiService : IApiService
         try
         {
             var url = $"poi/nearby?latitude={latitude}&longitude={longitude}&radiusKm={radiusKm}";
-            var pois = await _httpClient.GetFromJsonAsync<List<POIModel>>(url);
+            var pois = await _httpClient.GetFromJsonAsync<List<POIModel>>(url, _jsonOptions);
             return pois ?? new List<POIModel>();
         }
         catch (Exception ex)
@@ -118,7 +129,7 @@ public class ApiService : IApiService
         try
         {
             var url = $"poi/{poiId}?languageCode={languageCode}";
-            return await _httpClient.GetFromJsonAsync<POIDetailModel>(url);
+            return await _httpClient.GetFromJsonAsync<POIDetailModel>(url, _jsonOptions);
         }
         catch (Exception ex)
         {
@@ -132,7 +143,7 @@ public class ApiService : IApiService
         try
         {
             var url = $"qrcode/scan/{qrCode}?languageCode={languageCode}";
-            return await _httpClient.GetFromJsonAsync<POIDetailModel>(url);
+            return await _httpClient.GetFromJsonAsync<POIDetailModel>(url, _jsonOptions);
         }
         catch (Exception ex)
         {
@@ -160,7 +171,7 @@ public class ApiService : IApiService
     {
         try
         {
-            return await _httpClient.GetFromJsonAsync<List<VisitLogModel>>($"tourist/{touristId}/visits") ?? new List<VisitLogModel>();
+            return await _httpClient.GetFromJsonAsync<List<VisitLogModel>>($"tourist/{touristId}/visits", _jsonOptions) ?? new List<VisitLogModel>();
         }
         catch (Exception ex)
         {
@@ -202,7 +213,7 @@ public class ApiService : IApiService
     {
         try
         {
-            return await _httpClient.GetFromJsonAsync<List<FavoriteModel>>($"tourist/{touristId}/favorites") ?? new List<FavoriteModel>();
+            return await _httpClient.GetFromJsonAsync<List<FavoriteModel>>($"tourist/{touristId}/favorites", _jsonOptions) ?? new List<FavoriteModel>();
         }
         catch (Exception ex)
         {
@@ -245,7 +256,7 @@ public class ApiService : IApiService
     {
         try
         {
-            return await _httpClient.GetFromJsonAsync<TouristStatsModel>($"tourist/{touristId}/stats");
+            return await _httpClient.GetFromJsonAsync<TouristStatsModel>($"tourist/{touristId}/stats", _jsonOptions);
         }
         catch (Exception ex)
         {
@@ -258,7 +269,7 @@ public class ApiService : IApiService
     {
         try
         {
-            return await _httpClient.GetFromJsonAsync<List<TopPOIModel>>($"analytics/top-pois?count={count}") ?? new List<TopPOIModel>();
+            return await _httpClient.GetFromJsonAsync<List<TopPOIModel>>($"analytics/top-pois?count={count}", _jsonOptions) ?? new List<TopPOIModel>();
         }
         catch (Exception ex)
         {

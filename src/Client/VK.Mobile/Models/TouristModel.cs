@@ -1,7 +1,10 @@
+using System.Text.Json.Serialization;
+
 namespace VK.Mobile.Models;
 
 public class TouristModel
 {
+    [JsonPropertyName("touristId")]
     public int Id { get; set; }
     public string DeviceId { get; set; } = string.Empty;
     public string PreferredLanguage { get; set; } = "vi";

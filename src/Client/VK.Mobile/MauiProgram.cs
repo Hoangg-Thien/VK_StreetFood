@@ -6,6 +6,7 @@ using Plugin.Maui.Audio;
 using ZXing.Net.Maui;
 using CommunityToolkit.Maui;
 using ZXing.Net.Maui.Controls;
+using SkiaSharp.Views.Maui.Controls.Hosting;
 
 namespace VK.Mobile;
 
@@ -16,6 +17,7 @@ public static class MauiProgram
 		var builder = MauiApp.CreateBuilder();
 		builder
 			.UseMauiApp<App>()
+			.UseSkiaSharp()
 			.UseBarcodeReader()
 			.UseMauiCommunityToolkit()
 			.ConfigureFonts(fonts =>

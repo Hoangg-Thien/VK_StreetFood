@@ -179,11 +179,10 @@ public partial class MainMapViewModel : ObservableObject
                 _logger.LogWarning(ex, "API not available, loading sample POIs for testing");
             }
 
-            // Fallback: load sample POIs if API returned nothing
+            // Nếu API không trả về gì → log warning, không dùng sample data nữa
             if (poiList.Count == 0)
             {
-                poiList = GetSamplePOIs();
-                _logger.LogInformation("Using {Count} sample POIs (offline mode)", poiList.Count);
+                _logger.LogWarning("No POIs returned from API. Check API connection and database.");
             }
 
             Pois.Clear();
@@ -192,68 +191,13 @@ public partial class MainMapViewModel : ObservableObject
                 Pois.Add(poi);
             }
 
-            _logger.LogInformation("Loaded {Count} POIs", Pois.Count);
+            _logger.LogInformation("Loaded {Count} POIs from API", Pois.Count);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error loading POIs");
         }
     }
-
-    /// <summary>
-    /// Sample POIs from Vĩnh Khánh Food Street for offline testing.
-    /// </summary>
-    private static List<POIModel> GetSamplePOIs() => new()
-    {
-        new POIModel
-        {
-            Id = 1, Name = "Cổng chào Phố Ẩm thực Vĩnh Khánh",
-            Description = "Chào mừng bạn đến với Phố Ẩm thực Vĩnh Khánh – 'thiên đường không ngủ' của Quận 4. Được Time Out vinh danh là một trong những đường phố thú vị nhất thế giới năm 2025.",
-            Latitude = 10.761905898335831, Longitude = 106.70222716527056,
-            Address = "Vĩnh Khánh, Phường 9, Quận 4, TP.HCM", QrCode = "VK-ENTRANCE",
-            CategoryName = "Đặc sản", Priority = 10
-        },
-        new POIModel
-        {
-            Id = 2, Name = "Ốc Vũ",
-            Description = "Quán ốc nổi tiếng với hơn một thập kỷ hoạt động. Nổi tiếng với nguồn hải sản tươi sống và nước sốt me 'thần thánh' - chua thanh, cay nhẹ, tạo nên bản giao hưởng vị giác khó quên.",
-            Latitude = 10.761518431027818, Longitude = 106.70271542519974,
-            Address = "37 Vĩnh Khánh, Phường 9, Quận 4, TP.HCM", QrCode = "VK-OC-VU",
-            CategoryName = "Ốc & Hải sản", AverageRating = 4.5, Priority = 5
-        },
-        new POIModel
-        {
-            Id = 3, Name = "Ốc Thảo",
-            Description = "Không gian rộng rãi, thoáng đãng với triết lý tôn vinh vị ngọt tự nhiên của nguyên liệu. Ốc len xào dừa được đánh giá là cực phẩm với nước cốt dừa béo ngậy không gây ngán.",
-            Latitude = 10.761795162597451, Longitude = 106.70239298897182,
-            Address = "383 Vĩnh Khánh, Phường 9, Quận 4, TP.HCM", QrCode = "VK-OC-THAO",
-            CategoryName = "Ốc & Hải sản", AverageRating = 4.3, Priority = 4
-        },
-        new POIModel
-        {
-            Id = 4, Name = "Ốc Sáu Nở",
-            Description = "Quán ốc gạo cội từ thập niên 90 với kỹ thuật nướng mỡ hành gia truyền. Sò điệp nướng mỡ hành đậu phộng với lửa than hồng là 'signature dish'.",
-            Latitude = 10.762087, Longitude = 106.70261,
-            Address = "412 Vĩnh Khánh, Phường 9, Quận 4, TP.HCM", QrCode = "VK-OC-SAU-NO",
-            CategoryName = "Ốc & Hải sản", AverageRating = 4.6, Priority = 5
-        },
-        new POIModel
-        {
-            Id = 5, Name = "Lẩu Dê Phước Thịnh",
-            Description = "Thương hiệu lẩu dê lâu đời nhất phố Vĩnh Khánh. Nồi lẩu dê nấu tiêu xanh hoặc thuốc bắc với nước dùng ninh xương 6 tiếng.",
-            Latitude = 10.762328, Longitude = 106.70305,
-            Address = "Vĩnh Khánh, Phường 9, Quận 4, TP.HCM", QrCode = "VK-LAU-DE",
-            CategoryName = "Lẩu & Nướng", AverageRating = 4.4, Priority = 3
-        },
-        new POIModel
-        {
-            Id = 6, Name = "Cơm tấm 168",
-            Description = "Cơm tấm đêm nổi tiếng với sườn nướng than hồng thơm lừng, bì giòn và chả trứng. Mở cửa từ 5h chiều đến 3h sáng.",
-            Latitude = 10.760896, Longitude = 106.70195,
-            Address = "168 Vĩnh Khánh, Phường 9, Quận 4, TP.HCM", QrCode = "VK-COM-TAM",
-            CategoryName = "Món chính", AverageRating = 4.2, Priority = 2
-        },
-    };
 
     [RelayCommand]
     private async Task TestAudioAsync(POIModel poi)

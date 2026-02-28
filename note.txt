@@ -22,8 +22,8 @@ VisitLog - Lịch sử quét QR
 Và các supporting files:
 
 Constants (ngôn ngữ, API config, file settings)
-Enums (Language, UserRole, Status)
+Enums (Language, UserRole, Status)run
 DTOs (data transfer objects)
 Requests/Responses cho API
 
-dotnet run --project src/Server/VK.API/VK.API.csproj
+dotnet run --project src/Server/VK.API 

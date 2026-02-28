@@ -142,7 +142,6 @@ D:\VK_StreetFood\src\Server\VK.API\obj\Debug\net10.0\staticwebassets.build.json.
 D:\VK_StreetFood\src\Server\VK.API\obj\Debug\net10.0\staticwebassets.development.json
 D:\VK_StreetFood\src\Server\VK.API\obj\Debug\net10.0\staticwebassets.build.endpoints.json
 D:\VK_StreetFood\src\Server\VK.API\obj\Debug\net10.0\swae.build.ex.cache
-D:\VK_StreetFood\src\Server\VK.API\obj\Debug\net10.0\staticwebassets.upToDateCheck.txt
 D:\VK_StreetFood\src\Server\VK.API\obj\Debug\net10.0\VK.API.csproj.Up2Date
 D:\VK_StreetFood\src\Server\VK.API\obj\Debug\net10.0\VK.API.dll
 D:\VK_StreetFood\src\Server\VK.API\obj\Debug\net10.0\refint\VK.API.dll
