@@ -13,6 +13,7 @@ public partial class POIDetailViewModel : ObservableObject
     private readonly IAudioService _audioService;
     private readonly StorageService _storageService;
     private readonly ILogger<POIDetailViewModel> _logger;
+    private IDispatcherTimer? _positionTimer;
 
     [ObservableProperty]
     private POIDetailModel? _poi;
@@ -32,6 +33,44 @@ public partial class POIDetailViewModel : ObservableObject
     [ObservableProperty]
     private AudioInfo? _selectedAudio;
 
+    // ── Audio progress tracking ──────────────────────────────────
+    [ObservableProperty]
+    private double _audioPositionRatio = 0;
+
+    [ObservableProperty]
+    private string _audioPositionText = "0:00";
+
+    [ObservableProperty]
+    private string _audioDurationText = "0:00";
+
+    [ObservableProperty]
+    private string _audioTranscript = string.Empty;
+
+    [ObservableProperty]
+    private bool _hasTranscript;
+
+    public string AudioStatusText => IsPlayingAudio
+        ? "⏸ Đang phát..."
+        : (AudioPositionRatio > 0 ? "Đã tạm dừng" : "Nhấn ▶ để nghe");
+
+    partial void OnIsPlayingAudioChanged(bool value)
+    {
+        OnPropertyChanged(nameof(AudioStatusText));
+        if (value) StartPositionTimer();
+        else StopPositionTimer();
+    }
+
+    partial void OnSelectedAudioChanged(AudioInfo? value)
+    {
+        AudioTranscript = value?.TextContent ?? string.Empty;
+        HasTranscript = !string.IsNullOrWhiteSpace(AudioTranscript);
+        var dur = value?.DurationSeconds ?? 0;
+        AudioDurationText = FormatTime(dur);
+        AudioPositionRatio = 0;
+        AudioPositionText = "0:00";
+        OnPropertyChanged(nameof(AudioStatusText));
+    }
+
     public POIDetailViewModel(
         IApiService apiService,
         IAudioService audioService,
@@ -44,6 +83,51 @@ public partial class POIDetailViewModel : ObservableObject
         _logger = logger;
 
         _audioService.PlaybackCompleted += OnAudioCompleted;
+    }
+
+    // ── Timer helpers ─────────────────────────────────────────────
+    private void StartPositionTimer()
+    {
+        if (_positionTimer != null) return;
+        _positionTimer = Application.Current!.Dispatcher.CreateTimer();
+        _positionTimer.Interval = TimeSpan.FromMilliseconds(500);
+        _positionTimer.Tick += (_, _) => UpdateAudioPosition();
+        _positionTimer.Start();
+    }
+
+    private void StopPositionTimer()
+    {
+        _positionTimer?.Stop();
+        _positionTimer = null;
+    }
+
+    private void UpdateAudioPosition()
+    {
+        var duration = _audioService.Duration;
+        var position = _audioService.CurrentPosition;
+        if (duration <= 0) return;
+
+        AudioPositionRatio = position / duration;
+        AudioPositionText = FormatTime((int)position);
+        AudioDurationText = FormatTime((int)duration);
+        OnPropertyChanged(nameof(AudioStatusText));
+    }
+
+    private static string FormatTime(int totalSeconds)
+    {
+        var m = totalSeconds / 60;
+        var s = totalSeconds % 60;
+        return $"{m}:{s:D2}";
+    }
+
+    [RelayCommand]
+    private void SeekAudio(double ratio)
+    {
+        // AudioService expose Duration; seek = ratio * duration
+        // Plugin.Maui.Audio không có seek nên chỉ update display
+        var dur = _audioService.Duration;
+        if (dur > 0)
+            AudioPositionText = FormatTime((int)(ratio * dur));
     }
 
     partial void OnPoiChanged(POIDetailModel? value)
@@ -156,6 +240,10 @@ public partial class POIDetailViewModel : ObservableObject
     {
         await _audioService.StopAsync();
         IsPlayingAudio = false;
+        AudioPositionRatio = 0;
+        AudioPositionText = "0:00";
+        StopPositionTimer();
+        OnPropertyChanged(nameof(AudioStatusText));
     }
 
     [RelayCommand]
@@ -241,6 +329,7 @@ public partial class POIDetailViewModel : ObservableObject
     [RelayCommand]
     private async Task GoBackAsync()
     {
+        StopPositionTimer();
         await _audioService.StopAsync();
         await Shell.Current.GoToAsync("..");
     }
@@ -248,6 +337,10 @@ public partial class POIDetailViewModel : ObservableObject
     private async void OnAudioCompleted(object? sender, EventArgs e)
     {
         IsPlayingAudio = false;
+        StopPositionTimer();
+        AudioPositionRatio = 0;
+        AudioPositionText = "0:00";
+        OnPropertyChanged(nameof(AudioStatusText));
 
         // Track audio complete event
         var touristId = await _storageService.GetTouristIdAsync();

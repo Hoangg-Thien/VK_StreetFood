@@ -14,6 +14,9 @@ public interface ITTSService
     /// </summary>
     Task SpeakPOIAsync(POIModel poi, string languageCode, CancellationToken ct = default);
 
+    /// <summary>Phát thẳng text bằng MAUI TTS theo ngôn ngữ chỉ định.</summary>
+    Task SpeakTextAsync(string text, string languageCode, CancellationToken ct = default);
+
     /// <summary>Dừng mọi phát âm đang chạy.</summary>
     Task StopAsync();
 }
@@ -91,31 +94,11 @@ public class TTSService : ITTSService
         {
             _logger.LogInformation("TTS Layer 3: using MAUI TextToSpeech for POI {Id}", poi.Id);
 
-            // Dùng description ngắn, tối đa 300 ký tự để không nói quá dài
             var text = string.IsNullOrWhiteSpace(poi.Description)
                 ? poi.Name
                 : $"{poi.Name}. {poi.Description[..Math.Min(300, poi.Description.Length)]}";
 
-            var locale = languageCode switch
-            {
-                "vi" => "vi-VN",
-                "en" => "en-US",
-                "ko" => "ko-KR",
-                _ => "vi-VN"
-            };
-
-            var locales = await TextToSpeech.Default.GetLocalesAsync();
-            var matched = locales.FirstOrDefault(l =>
-                l.Language.StartsWith(languageCode, StringComparison.OrdinalIgnoreCase));
-
-            var options = new SpeechOptions
-            {
-                Locale = matched,
-                Pitch = 1.0f,
-                Volume = 1.0f
-            };
-
-            await TextToSpeech.Default.SpeakAsync(text, options, _ttsCts.Token);
+            await SpeakWithMauiTtsAsync(text, languageCode, _ttsCts.Token);
         }
         catch (Exception ex)
         {
@@ -128,10 +111,61 @@ public class TTSService : ITTSService
         _ttsCts?.Cancel();
         _ttsCts = null;
         await _audioService.StopAsync();
+        // Cancel token dừng SpeakAsync đang chạy
     }
 
-    private class GeneratedAudioResult
+    public async Task SpeakTextAsync(string text, string languageCode, CancellationToken ct = default)
     {
-        public string? AudioFileUrl { get; set; }
+        _ttsCts?.Cancel();
+        _ttsCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        try
+        {
+            await SpeakWithMauiTtsAsync(text, languageCode, _ttsCts.Token);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "SpeakTextAsync failed");
+        }
     }
+
+    private async Task SpeakWithMauiTtsAsync(string text, string languageCode, CancellationToken ct)
+    {
+        _logger.LogInformation("MAUI TTS: lang={Lang}, text=\"{Text}\"", languageCode, text[..Math.Min(60, text.Length)]);
+        System.Diagnostics.Debug.WriteLine($"[TTS] Speaking ({languageCode}): {text[..Math.Min(80, text.Length)]}");
+
+        // GetLocalesAsync + SpeakAsync phải chạy trên MainThread trên Android
+        await MainThread.InvokeOnMainThreadAsync(async () =>
+        {
+            try
+            {
+                var locales = (await TextToSpeech.Default.GetLocalesAsync()).ToList();
+
+                System.Diagnostics.Debug.WriteLine($"[TTS] Available locales: {string.Join(", ", locales.Select(l => $"{l.Language}-{l.Country}"))}");
+
+                Locale? matched = languageCode switch
+                {
+                    "en" => locales.FirstOrDefault(l => l.Language.StartsWith("en", StringComparison.OrdinalIgnoreCase)),
+                    "ko" => locales.FirstOrDefault(l => l.Language.StartsWith("ko", StringComparison.OrdinalIgnoreCase))
+                             ?? locales.FirstOrDefault(l => l.Language.StartsWith("en", StringComparison.OrdinalIgnoreCase)),
+                    _ => locales.FirstOrDefault(l => l.Language.StartsWith("vi", StringComparison.OrdinalIgnoreCase))
+                             ?? locales.FirstOrDefault(l => l.Language.StartsWith("en", StringComparison.OrdinalIgnoreCase))
+                             ?? locales.FirstOrDefault()
+                };
+
+                System.Diagnostics.Debug.WriteLine($"[TTS] Locale matched: {matched?.Language ?? "null"}-{matched?.Country ?? "null"}");
+
+                var options = new SpeechOptions { Locale = matched, Pitch = 1.0f, Volume = 1.0f };
+                await TextToSpeech.Default.SpeakAsync(text, options, ct);
+
+                System.Diagnostics.Debug.WriteLine("[TTS] SpeakAsync completed");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[TTS] MainThread speak error: {ex.Message}");
+                _logger.LogError(ex, "TTS speak failed on MainThread");
+            }
+        });
+    }
+
+    private record GeneratedAudioResult(string? AudioFileUrl);
 }

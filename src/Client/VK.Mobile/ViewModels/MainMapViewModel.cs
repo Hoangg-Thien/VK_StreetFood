@@ -1,3 +1,4 @@
+using CommunityToolkit.Maui.Alerts;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using VK.Mobile.Models;
@@ -212,20 +213,61 @@ public partial class MainMapViewModel : ObservableObject
     {
         try
         {
-            _logger.LogInformation("Testing audio for POI: {Name}", poi.Name);
+            _logger.LogInformation("Playing audio for POI: {Name}, Language: {Lang}", poi.Name, SelectedLanguage);
+            System.Diagnostics.Debug.WriteLine($"[Audio] Tap POI '{poi.Name}', lang={SelectedLanguage}");
 
-            await Shell.Current.DisplayAlert(
-                "🔊 Đang phát thuyết minh",
-                poi.Name,
-                "OK");
+            // Dừng audio đang chạy (nếu có)
+            await _ttsService.StopAsync();
 
-            // Use TTS fallback (MAUI TextToSpeech since API is offline)
-            await _ttsService.SpeakPOIAsync(poi, SelectedLanguage);
+            // Hiển thị feedback ngay cho user biết app đã nhận lệnh
+            var langLabel = SelectedLanguage switch { "en" => "English", "ko" => "한국어", _ => "Tiếng Việt" };
+            await MainThread.InvokeOnMainThreadAsync(async () =>
+                await Shell.Current.DisplayAlert("🎧 Thuyết minh", $"📍 {poi.Name}\n🌐 {langLabel}", "OK")
+            );
+
+            System.Diagnostics.Debug.WriteLine($"[Audio] Start speak: POI='{poi.Name}', lang={SelectedLanguage}");
+
+            // Fetch nội dung audio đúng ngôn ngữ từ API
+            AudioContentResult? audioContent = null;
+            try
+            {
+                audioContent = await _apiService.GetAudioForPOIAsync(poi.Id, SelectedLanguage);
+                System.Diagnostics.Debug.WriteLine($"[Audio] API response: {(audioContent == null ? "null" : $"lang={audioContent.LanguageCode}, textLen={audioContent.TextContent?.Length ?? 0}")}");
+            }
+            catch (Exception apiEx)
+            {
+                System.Diagnostics.Debug.WriteLine($"[Audio] API error (will use fallback): {apiEx.Message}");
+            }
+
+            // Dùng text content đúng ngôn ngữ để đọc
+            if (audioContent != null && !string.IsNullOrWhiteSpace(audioContent.TextContent))
+            {
+                var text = audioContent.TextContent.Length > 500
+                    ? audioContent.TextContent[..500]
+                    : audioContent.TextContent;
+                System.Diagnostics.Debug.WriteLine($"[Audio] Speaking via TTS: '{text[..Math.Min(80, text.Length)]}...'");
+                await _ttsService.SpeakTextAsync(text, SelectedLanguage);
+                return;
+            }
+
+            // Fallback: đọc tên + mô tả POI bằng MAUI TTS
+            System.Diagnostics.Debug.WriteLine($"[Audio] No audio content from API, using POI description fallback");
+            var fallbackText = SelectedLanguage switch
+            {
+                "en" => $"{poi.Name}. {(string.IsNullOrWhiteSpace(poi.Description) ? "A famous street food spot in Vinh Khanh." : poi.Description[..Math.Min(300, poi.Description.Length)])}",
+                "ko" => $"{poi.Name}. 이 곳은 빈칸의 유명한 길거리 음식 명소입니다.",
+                _ => $"{poi.Name}. {(string.IsNullOrWhiteSpace(poi.Description) ? "Điểm ẩm thực nổi tiếng tại Vĩnh Khánh." : poi.Description[..Math.Min(300, poi.Description.Length)])}"
+            };
+            await _ttsService.SpeakTextAsync(fallbackText, SelectedLanguage);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error testing audio for POI {Name}", poi.Name);
-            await Shell.Current.DisplayAlert("Lỗi", $"Không thể phát audio: {ex.Message}", "OK");
+            _logger.LogError(ex, "Error playing audio for POI {Name}", poi.Name);
+            System.Diagnostics.Debug.WriteLine($"[Audio] Error: {ex.Message}\n{ex.StackTrace}");
+            await MainThread.InvokeOnMainThreadAsync(async () =>
+            {
+                await Shell.Current.DisplayAlert("⚠️ Lỗi", $"Không phát được thuyết minh: {ex.Message}", "Đóng");
+            });
         }
     }
 

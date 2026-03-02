@@ -53,6 +53,31 @@ public class AudioInfo
     public string? TextContent { get; set; }
 }
 
+/// <summary>Kết quả từ GET /api/audio/poi/{id}?languageCode=</summary>
+public class AudioContentResult
+{
+    [JsonPropertyName("audioId")]
+    public int AudioId { get; set; }
+
+    [JsonPropertyName("poiId")]
+    public int PoiId { get; set; }
+
+    [JsonPropertyName("languageCode")]
+    public string LanguageCode { get; set; } = "vi";
+
+    [JsonPropertyName("audioFileUrl")]
+    public string? AudioFileUrl { get; set; }
+
+    [JsonPropertyName("textContent")]
+    public string? TextContent { get; set; }
+
+    [JsonPropertyName("durationInSeconds")]
+    public int? DurationInSeconds { get; set; }
+
+    [JsonPropertyName("isGenerated")]
+    public bool IsGenerated { get; set; }
+}
+
 public class POIDetailModel : POIModel
 {
     public string? CategoryDescription { get; set; }

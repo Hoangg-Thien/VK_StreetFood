@@ -26,6 +26,9 @@ public interface IApiService
     Task<bool> RemoveFavoriteAsync(int touristId, int poiId);
     Task<List<FavoriteModel>> GetFavoritesAsync(int touristId);
 
+    // Audio
+    Task<AudioContentResult?> GetAudioForPOIAsync(int poiId, string languageCode = "vi");
+
     // Rating
     Task<bool> SubmitRatingAsync(int touristId, int poiId, int rating, string? comment = null);
 
@@ -160,6 +163,21 @@ public class ApiService : IApiService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error getting POI detail");
+            return null;
+        }
+    }
+
+    public async Task<AudioContentResult?> GetAudioForPOIAsync(int poiId, string languageCode = "vi")
+    {
+        try
+        {
+            var url = $"audio/poi/{poiId}?languageCode={languageCode}";
+            System.Diagnostics.Debug.WriteLine($"[ApiService] GET audio: {url}");
+            return await _httpClient.GetFromJsonAsync<AudioContentResult>(url, _jsonOptions);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting audio for POI {Id}", poiId);
             return null;
         }
     }
