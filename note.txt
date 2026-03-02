@@ -27,3 +27,4 @@ DTOs (data transfer objects)
 Requests/Responses cho API
 
 dotnet run --project src/Server/VK.API 
+dotnet run --project src/Server/VK.API/VK.API.csproj --urls "http://0.0.0.0:5089"

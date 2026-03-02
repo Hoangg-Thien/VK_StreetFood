@@ -44,19 +44,6 @@
             </ShellContent.Icon>
         </ShellContent>
 
-        <!-- History Tab -->
-        <ShellContent
-            x:Name="TabHistory"
-            Title="Lịch sử"
-            Route="History"
-            ContentTemplate="{DataTemplate local:HistoryPage}">
-            <ShellContent.Icon>
-                <FontImageSource Glyph="📜"
-                                 FontFamily="OpenSansRegular"
-                                 Size="24"/>
-            </ShellContent.Icon>
-        </ShellContent>
-
         <!-- Profile Tab -->
         <ShellContent
             x:Name="TabProfile"

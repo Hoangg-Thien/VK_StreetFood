@@ -17,7 +17,6 @@
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
 
             <Label Grid.Column="0"
@@ -43,20 +42,42 @@
                     </x:Array>
                 </Picker.ItemsSource>
             </Picker>
-
-            <Button Grid.Column="2"
-                    Text="📷"
-                    FontSize="24"
-                    BackgroundColor="Transparent"
-                    WidthRequest="44"
-                    HeightRequest="44"
-                    Clicked="OnQRScanClicked"/>
         </Grid>
 
         <!-- Map + POI List -->
         <Grid Grid.Row="1">
             <!-- Map Container -->
             <ContentView x:Name="MapContainer"/>
+
+            <!-- API Error Banner (top of map) -->
+            <Frame VerticalOptions="Start"
+                   HorizontalOptions="Fill"
+                   Margin="8,8,8,0"
+                   Padding="8,6"
+                   BackgroundColor="#FFF3E0"
+                   BorderColor="#FF8C00"
+                   CornerRadius="8"
+                   HasShadow="False"
+                   IsVisible="{Binding HasPoiError}">
+                <Grid ColumnDefinitions="*,Auto"
+                        ColumnSpacing="8">
+                    <Label Grid.Column="0"
+                           Text="{Binding PoiLoadError}"
+                           FontSize="11"
+                           TextColor="#E65100"
+                           LineBreakMode="WordWrap"
+                           VerticalOptions="Center"/>
+                    <Button Grid.Column="1"
+                            Text="Thử lại"
+                            FontSize="11"
+                            BackgroundColor="#FF5722"
+                            TextColor="White"
+                            CornerRadius="6"
+                            Padding="8,4"
+                            HeightRequest="32"
+                            Command="{Binding LoadPOIsCommand}"/>
+                </Grid>
+            </Frame>
 
             <!-- POI List Drawer (Bottom) -->
             <Frame VerticalOptions="End"

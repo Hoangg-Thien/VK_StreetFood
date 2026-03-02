@@ -25,7 +25,7 @@ public class POIModel
 
     public int ViewCount { get; set; }
     public double? AverageRating { get; set; }
-    public double DistanceKm { get; set; }
+    public double? DistanceKm { get; set; }
     public int TotalRatings { get; set; }
     public List<string> Tags { get; set; } = new();
 

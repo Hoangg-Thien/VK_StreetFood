@@ -99,12 +99,38 @@ public class ApiService : IApiService
             if (!string.IsNullOrEmpty(search))
                 url += $"?search={Uri.EscapeDataString(search)}";
 
-            var pois = await _httpClient.GetFromJsonAsync<List<POIModel>>(url, _jsonOptions);
+            var fullUrl = new Uri(_httpClient.BaseAddress!, url);
+            _logger.LogInformation("Fetching POIs from: {Url}", fullUrl);
+            System.Diagnostics.Debug.WriteLine($"[ApiService] GET {fullUrl}");
+
+            using var response = await _httpClient.GetAsync(url);
+            var rawJson = await response.Content.ReadAsStringAsync();
+
+            System.Diagnostics.Debug.WriteLine($"[ApiService] POI response status: {(int)response.StatusCode} {response.StatusCode}");
+            System.Diagnostics.Debug.WriteLine($"[ApiService] POI raw JSON (first 500): {rawJson.Substring(0, Math.Min(500, rawJson.Length))}");
+
+            if (!response.IsSuccessStatusCode)
+            {
+                _logger.LogError("POI API returned {StatusCode}: {Body}", response.StatusCode, rawJson);
+                return new List<POIModel>();
+            }
+
+            var pois = JsonSerializer.Deserialize<List<POIModel>>(rawJson, _jsonOptions);
+            _logger.LogInformation("Deserialized {Count} POIs", pois?.Count ?? 0);
+            System.Diagnostics.Debug.WriteLine($"[ApiService] Deserialized {pois?.Count ?? 0} POIs");
+
+            if (pois != null && pois.Count > 0)
+            {
+                var first = pois[0];
+                System.Diagnostics.Debug.WriteLine($"[ApiService] First POI: Id={first.Id} Name='{first.Name}' Lat={first.Latitude} Lon={first.Longitude} Category='{first.CategoryName}'");
+            }
+
             return pois ?? new List<POIModel>();
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error getting POIs");
+            System.Diagnostics.Debug.WriteLine($"[ApiService] GetAllPOIsAsync EXCEPTION: {ex.GetType().Name}: {ex.Message}");
             return new List<POIModel>();
         }
     }

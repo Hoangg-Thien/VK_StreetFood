@@ -77,12 +77,6 @@ public partial class ProfileViewModel : ObservableObject
         await Shell.Current.GoToAsync("///Favorites");
     }
 
-    [RelayCommand]
-    async Task NavigateToHistory()
-    {
-        await Shell.Current.GoToAsync("///History");
-    }
-
     public string GetLanguageDisplayName(string code)
     {
         return code switch

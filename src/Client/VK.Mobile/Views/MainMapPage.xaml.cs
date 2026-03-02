@@ -17,6 +17,10 @@ public partial class MainMapPage : ContentPage
     private WritableLayer? _poiLayer;
     private WritableLayer? _locationLayer;
     private bool _hasCenteredOnUser = false;
+    // Viewport save/restore on tab switch
+    private double _savedCenterX = double.NaN;
+    private double _savedCenterY = double.NaN;
+    private double _savedResolution = double.NaN;
 
     // OSM resolution for zoom level: 156543.03392804062 / 2^z
     private static double ZoomResolution(int level) =>
@@ -36,10 +40,8 @@ public partial class MainMapPage : ContentPage
         {
             InitializeMap();
 
-            try { await _viewModel.InitializeCommand.ExecuteAsync(null); }
-            catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"VM init error: {ex}"); }
-
-            // Wire up collection / property changes
+            // Wire up collection / property changes TRƯỚC KHI load data
+            // để đảm bảo mọi thay đổi đều trigger render trên map
             _viewModel.Pois.CollectionChanged += (_, _) => UpdatePOIMarkers();
             _viewModel.PropertyChanged += (_, args) =>
             {
@@ -47,9 +49,14 @@ public partial class MainMapPage : ContentPage
                     UpdateCurrentLocationMarker();
             };
 
-            // Draw any POIs that were loaded during InitializeAsync
-            if (_viewModel.Pois.Count > 0)
-                UpdatePOIMarkers();
+            try { await _viewModel.InitializeCommand.ExecuteAsync(null); }
+            catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"VM init error: {ex}"); }
+
+            // Draw POIs + location ngay sau init (phòng trường hợp event không fire)
+            UpdatePOIMarkers();
+            UpdateCurrentLocationMarker();
+
+            System.Diagnostics.Debug.WriteLine($"After init: {_viewModel.Pois.Count} POIs, Location={_viewModel.CurrentLocation?.Latitude},{_viewModel.CurrentLocation?.Longitude}");
 
             // Auto-start tracking
             if (!_viewModel.IsTracking)
@@ -141,18 +148,27 @@ public partial class MainMapPage : ContentPage
             {
                 _poiLayer.Clear();
 
+                System.Diagnostics.Debug.WriteLine($"Drawing {_viewModel.Pois.Count} POI markers on map");
+
                 foreach (var poi in _viewModel.Pois)
                 {
+                    // Bỏ qua POIs không có tọa độ hợp lệ
+                    if (poi.Latitude == 0 && poi.Longitude == 0)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"Skipping POI '{poi.Name}' - no coordinates (Id={poi.Id})");
+                        continue;
+                    }
+
                     var point = SphericalMercator.FromLonLat(poi.Longitude, poi.Latitude);
                     var feature = new PointFeature(point.ToMPoint());
 
                     feature["poi_id"] = poi.Id;
                     feature["poi_name"] = poi.Name;
 
-                    // Orange marker
+                    // Orange marker (lớn hơn, dễ nhìn)
                     feature.Styles.Add(new SymbolStyle
                     {
-                        SymbolScale = 0.8,
+                        SymbolScale = 1.0,
                         Fill = new Mapsui.Styles.Brush(Mapsui.Styles.Color.FromString("#FF5722")),
                         Outline = new Pen(Mapsui.Styles.Color.White, 2),
                         SymbolType = SymbolType.Ellipse
@@ -170,10 +186,23 @@ public partial class MainMapPage : ContentPage
                     });
 
                     _poiLayer.Add(feature);
+                    System.Diagnostics.Debug.WriteLine($"  POI marker: '{poi.Name}' at ({poi.Latitude:F6}, {poi.Longitude:F6}) Id={poi.Id}");
                 }
 
                 _mapControl.Map.Refresh();
-                System.Diagnostics.Debug.WriteLine($"Updated {_viewModel.Pois.Count} POI markers");
+                System.Diagnostics.Debug.WriteLine($"Total POI markers drawn: {_poiLayer.GetFeatures().Count()}");
+
+                // Nếu chưa center on user, zoom to fit tất cả POIs
+                if (!_hasCenteredOnUser && _viewModel.Pois.Count > 0)
+                {
+                    var extent = _poiLayer.Extent;
+                    if (extent != null)
+                    {
+                        // Zoom vào khu vực POIs với padding
+                        _mapControl.Map.Navigator.ZoomToBox(extent, MBoxFit.Fit, 50);
+                        System.Diagnostics.Debug.WriteLine("Map zoomed to fit all POIs");
+                    }
+                }
             }
             catch (Exception ex)
             {
@@ -191,29 +220,32 @@ public partial class MainMapPage : ContentPage
         {
             try
             {
+                var lat = _viewModel.CurrentLocation.Latitude;
+                var lon = _viewModel.CurrentLocation.Longitude;
+
+                System.Diagnostics.Debug.WriteLine($"Updating user location marker: ({lat:F6}, {lon:F6})");
+
                 _locationLayer.Clear();
 
-                var point = SphericalMercator.FromLonLat(
-                    _viewModel.CurrentLocation.Longitude,
-                    _viewModel.CurrentLocation.Latitude);
+                var point = SphericalMercator.FromLonLat(lon, lat);
                 var mpoint = point.ToMPoint();
 
-                // Outer ring
+                // Accuracy ring (outer, semi-transparent blue)
                 var outerFeature = new PointFeature(mpoint);
                 outerFeature.Styles.Add(new SymbolStyle
                 {
-                    SymbolScale = 1.2,
-                    Fill = new Mapsui.Styles.Brush(new Mapsui.Styles.Color(33, 150, 243, 40)),
-                    Outline = new Pen(Mapsui.Styles.Color.FromString("#2196F3"), 1),
+                    SymbolScale = 1.5,
+                    Fill = new Mapsui.Styles.Brush(new Mapsui.Styles.Color(33, 150, 243, 50)),
+                    Outline = new Pen(new Mapsui.Styles.Color(33, 150, 243, 100), 2),
                     SymbolType = SymbolType.Ellipse
                 });
                 _locationLayer.Add(outerFeature);
 
-                // Blue dot
+                // Blue dot (Google Maps style)
                 var dotFeature = new PointFeature(mpoint);
                 dotFeature.Styles.Add(new SymbolStyle
                 {
-                    SymbolScale = 0.4,
+                    SymbolScale = 0.5,
                     Fill = new Mapsui.Styles.Brush(Mapsui.Styles.Color.FromString("#2196F3")),
                     Outline = new Pen(Mapsui.Styles.Color.White, 3),
                     SymbolType = SymbolType.Ellipse
@@ -222,12 +254,13 @@ public partial class MainMapPage : ContentPage
 
                 _mapControl.Map.Refresh();
 
-                // Center on user first time
+                // Center on user first time location is received
                 if (!_hasCenteredOnUser)
                 {
                     _hasCenteredOnUser = true;
-                    var res = ZoomResolution(16);
+                    var res = ZoomResolution(17);
                     _mapControl.Map.Navigator.CenterOnAndZoomTo(mpoint, res);
+                    System.Diagnostics.Debug.WriteLine($"Map centered on user at ({lat:F6}, {lon:F6})");
                 }
             }
             catch (Exception ex)
@@ -294,11 +327,6 @@ public partial class MainMapPage : ContentPage
         }
     }
 
-    private async void OnQRScanClicked(object sender, EventArgs e)
-    {
-        await _viewModel.OpenQRScannerCommand.ExecuteAsync(null);
-    }
-
     private async void OnLanguageChanged(object sender, EventArgs e)
     {
         if (sender is Picker picker && picker.SelectedIndex >= 0)
@@ -308,9 +336,69 @@ public partial class MainMapPage : ContentPage
         }
     }
 
+    protected override async void OnAppearing()
+    {
+        base.OnAppearing();
+
+        try
+        {
+            // Restore map viewport nếu đã save trước đó
+            if (_mapControl?.Map != null && !double.IsNaN(_savedCenterX))
+            {
+                MainThread.BeginInvokeOnMainThread(() =>
+                {
+                    try
+                    {
+                        _mapControl.Map.Navigator.CenterOnAndZoomTo(
+                            new Mapsui.MPoint(_savedCenterX, _savedCenterY),
+                            _savedResolution);
+                        System.Diagnostics.Debug.WriteLine($"Viewport restored: center=({_savedCenterX:F0},{_savedCenterY:F0}) res={_savedResolution:F2}");
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"Viewport restore error: {ex}");
+                    }
+                });
+            }
+
+            // Redraw markers (layer data is intact, just need refresh)
+            UpdatePOIMarkers();
+            UpdateCurrentLocationMarker();
+
+            // Restart GPS tracking nếu đã dừng
+            if (!_viewModel.IsTracking)
+            {
+                try { await _viewModel.StartTrackingCommand.ExecuteAsync(null); }
+                catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"OnAppearing tracking restart error: {ex}"); }
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"OnAppearing error: {ex}");
+        }
+    }
+
     protected override void OnDisappearing()
     {
         base.OnDisappearing();
+
+        // Save viewport position trước khi rời tab
+        if (_mapControl?.Map != null)
+        {
+            try
+            {
+                var vp = _mapControl.Map.Navigator.Viewport;
+                _savedCenterX = vp.CenterX;
+                _savedCenterY = vp.CenterY;
+                _savedResolution = vp.Resolution;
+                System.Diagnostics.Debug.WriteLine($"Viewport saved: center=({_savedCenterX:F0},{_savedCenterY:F0}) res={_savedResolution:F2}");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Viewport save error: {ex}");
+            }
+        }
+
         _viewModel.StopTrackingCommand.Execute(null);
     }
 }

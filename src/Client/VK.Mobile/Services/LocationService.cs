@@ -66,12 +66,24 @@ public class LocationService : ILocationService
                 }
             }
 
-            var request = new GeolocationRequest(GeolocationAccuracy.Medium, TimeSpan.FromSeconds(10));
+            var request = new GeolocationRequest(GeolocationAccuracy.Best, TimeSpan.FromSeconds(15));
             var location = await Geolocation.GetLocationAsync(request);
 
             if (location != null)
             {
-                _logger.LogInformation("Location: {Lat}, {Lon}", location.Latitude, location.Longitude);
+                _logger.LogInformation("Location: {Lat}, {Lon} (accuracy: {Acc}m)",
+                    location.Latitude, location.Longitude, location.Accuracy);
+
+                // Nếu location quá cũ (>60s), thử lấy lại lần nữa với High accuracy
+                if (location.Timestamp < DateTimeOffset.UtcNow.AddSeconds(-60))
+                {
+                    _logger.LogWarning("Location is stale ({Age}s old), requesting fresh location",
+                        (DateTimeOffset.UtcNow - location.Timestamp).TotalSeconds);
+                    var freshRequest = new GeolocationRequest(GeolocationAccuracy.High, TimeSpan.FromSeconds(10));
+                    var freshLocation = await Geolocation.GetLocationAsync(freshRequest);
+                    if (freshLocation != null)
+                        location = freshLocation;
+                }
             }
             else
             {

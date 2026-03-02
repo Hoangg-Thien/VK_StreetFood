@@ -12,8 +12,6 @@ public partial class AppShell : Shell
 		// Register routes for navigation
 		Routing.RegisterRoute("POIDetail", typeof(POIDetailPage));
 		Routing.RegisterRoute("poidetail", typeof(POIDetailPage));
-		Routing.RegisterRoute("QRScan", typeof(QRScanPage));
-		Routing.RegisterRoute("qrscan", typeof(QRScanPage));
 		Routing.RegisterRoute("analytics", typeof(AnalyticsPage));
 
 		// Lắng nghe thay đổi ngôn ngữ để cập nhật tab titles
@@ -25,7 +23,6 @@ public partial class AppShell : Shell
 		var L = LocalizationResourceManager.Instance;
 		TabMap.Title = L["TabMap"];
 		TabFavorites.Title = L["TabFavorites"];
-		TabHistory.Title = L["TabHistory"];
 		TabProfile.Title = L["TabProfile"];
 		TabSettings.Title = L["TabSettings"];
 	}

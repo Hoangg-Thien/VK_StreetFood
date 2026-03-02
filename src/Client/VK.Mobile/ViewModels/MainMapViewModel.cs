@@ -45,6 +45,14 @@ public partial class MainMapViewModel : ObservableObject
     private bool _isTracking;
 
     [ObservableProperty]
+    private string? _poiLoadError;
+
+    public bool HasPoiError => !string.IsNullOrEmpty(PoiLoadError);
+
+    partial void OnPoiLoadErrorChanged(string? value)
+        => OnPropertyChanged(nameof(HasPoiError));
+
+    [ObservableProperty]
     private string _selectedLanguage = "vi";
 
     /// <summary>Picker index tương ứng: 0=vi, 1=en, 2=ko</summary>
@@ -107,18 +115,20 @@ public partial class MainMapViewModel : ObservableObject
                 _logger.LogWarning(ex, "Failed to initialize tourist, continuing anyway");
             }
 
-            // Get current location (with fallback to default)
+            // Get current location (with fallback to Vĩnh Khánh default)
             try
             {
                 CurrentLocation = await _locationService.GetCurrentLocationAsync();
                 if (CurrentLocation == null)
                 {
-                    _logger.LogWarning("Could not get current location, using default");
+                    _logger.LogWarning("Could not get current location, using Vĩnh Khánh default");
+                    CurrentLocation = new Location(AppSettings.DefaultLatitude, AppSettings.DefaultLongitude);
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Failed to get location, using default");
+                _logger.LogWarning(ex, "Failed to get location, using Vĩnh Khánh default");
+                CurrentLocation = new Location(AppSettings.DefaultLatitude, AppSettings.DefaultLongitude);
             }
 
             // Load POIs (best effort)
@@ -157,32 +167,26 @@ public partial class MainMapViewModel : ObservableObject
     {
         try
         {
+            PoiLoadError = null;
             List<POIModel> poiList = new();
 
-            // Try to load POIs from API
+            // Luôn load tất cả POIs từ API để hiển thị đầy đủ trên map
             try
             {
-                if (CurrentLocation != null)
-                {
-                    poiList = await _apiService.GetNearbyPOIsAsync(
-                        CurrentLocation.Latitude,
-                        CurrentLocation.Longitude,
-                        5.0); // 5km radius
-                }
-                else
-                {
-                    poiList = await _apiService.GetAllPOIsAsync();
-                }
+                poiList = await _apiService.GetAllPOIsAsync();
+                _logger.LogInformation("API returned {Count} POIs", poiList.Count);
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "API not available, loading sample POIs for testing");
+                _logger.LogWarning(ex, "API not available for loading POIs");
+                PoiLoadError = $"Không thể kết nối API: {ex.Message}";
             }
 
-            // Nếu API không trả về gì → log warning, không dùng sample data nữa
-            if (poiList.Count == 0)
+            // Nếu API không trả về gì → set error message
+            if (poiList.Count == 0 && PoiLoadError == null)
             {
                 _logger.LogWarning("No POIs returned from API. Check API connection and database.");
+                PoiLoadError = "API không trả về POIs. Hãy kiểm tra server đang chạy tại cổng 5089.";
             }
 
             Pois.Clear();
@@ -191,11 +195,15 @@ public partial class MainMapViewModel : ObservableObject
                 Pois.Add(poi);
             }
 
+            if (Pois.Count > 0)
+                PoiLoadError = null; // Clear error khi load thành công
+
             _logger.LogInformation("Loaded {Count} POIs from API", Pois.Count);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error loading POIs");
+            PoiLoadError = $"Lỗi load POIs: {ex.Message}";
         }
     }
 
@@ -260,19 +268,6 @@ public partial class MainMapViewModel : ObservableObject
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error navigating to POI detail");
-        }
-    }
-
-    [RelayCommand]
-    private async Task OpenQRScannerAsync()
-    {
-        try
-        {
-            await Shell.Current.GoToAsync("qrscan");
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error opening QR scanner");
         }
     }
 
