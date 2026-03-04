@@ -1,0 +1,262 @@
+@{
+    ViewData["Title"] = "Quản lý Audio";
+    Layout = "_AdminLayout";
+
+    var audios = ViewBag.Audios as IEnumerable<VK.Core.Entities.AudioContent> ?? new List<VK.Core.Entities.AudioContent>();
+    int total = ViewBag.Total ?? 0;
+    int page = ViewBag.Page ?? 1;
+    int pageSize = ViewBag.PageSize ?? 10;
+
+    var langMap = new Dictionary<string, (string label, string css)>
+    {
+        ["vi"] = ("Tiếng Việt", "lang-vi"),
+        ["en"] = ("English", "lang-en"),
+        ["ko"] = ("한국어", "lang-ko"),
+    };
+}
+
+@if (TempData["Success"] != null)
+{
+    <div style="background:rgba(34,197,94,0.12);border:1px solid rgba(34,197,94,0.2);border-radius:8px;padding:12px 16px;margin-bottom:16px;color:#22C55E;font-size:13px;">
+        <i class="fa-solid fa-circle-check"></i> @TempData["Success"]
+    </div>
+}
+@if (TempData["Error"] != null)
+{
+    <div style="background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.2);border-radius:8px;padding:12px 16px;margin-bottom:16px;color:#EF4444;font-size:13px;">
+        <i class="fa-solid fa-circle-xmark"></i> @TempData["Error"]
+    </div>
+}
+
+<div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:24px;">
+    <div>
+        <div class="page-title">Quản lý Audio</div>
+        <div class="page-subtitle">Nội dung thuyết minh âm thanh cho từng địa điểm theo ngôn ngữ</div>
+    </div>
+    <button class="btn-primary-admin" onclick="openModal('addAudioModal')">
+        <i class="fa-solid fa-plus"></i>
+        Thêm Audio
+    </button>
+</div>
+
+<!-- STAT ROW -->
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px;">
+    @{
+        var langs = new[] {
+            new { Code = "vi", Label = "Tiếng Việt", Icon = "fa-v", Color = "var(--accent-orange)" },
+            new { Code = "en", Label = "English", Icon = "fa-e", Color = "var(--blue)" },
+            new { Code = "ko", Label = "한국어", Icon = "fa-k", Color = "var(--purple)" },
+        };
+        foreach (var lang in langs)
+        {
+            var count = audios.Count(a => a.LanguageCode == lang.Code);
+            <div class="stat-card">
+                <div class="stat-card-header">
+                    <div class="stat-icon" style="background:rgba(0,0,0,0.2);color:@lang.Color;">
+                        <i class="fa-solid fa-headphones"></i>
+                    </div>
+                </div>
+                <div class="stat-value">@count</div>
+                <div class="stat-label">@lang.Label</div>
+            </div>
+        }
+    }
+</div>
+
+<!-- TABLE CARD -->
+<div class="admin-card">
+    <form method="get" action="/Audio" class="filter-bar">
+        <div class="search-input-wrap">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" name="search" placeholder="Tìm theo tên địa điểm, nội dung..." value="@ViewBag.Search" />
+        </div>
+        <select name="language">
+            <option value="">Tất cả ngôn ngữ</option>
+            <option value="vi" selected="@(ViewBag.Language == "vi" ? "selected" : null)">🇻🇳 Tiếng Việt</option>
+            <option value="en" selected="@(ViewBag.Language == "en" ? "selected" : null)">🇺🇸 English</option>
+            <option value="ko" selected="@(ViewBag.Language == "ko" ? "selected" : null)">🇰🇷 한국어</option>
+            <option value="zh" selected="@(ViewBag.Language == "zh" ? "selected" : null)">🇨🇳 中文</option>
+        </select>
+        <button type="submit" class="btn-primary-admin" style="padding:8px 14px;">
+            <i class="fa-solid fa-filter"></i> Lọc
+        </button>
+        <a href="/Audio" class="btn-secondary-admin" style="padding:8px 14px;">
+            <i class="fa-solid fa-rotate-right"></i> Đặt lại
+        </a>
+    </form>
+
+    <div class="admin-table-wrap">
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>Địa điểm</th>
+                    <th>Ngôn ngữ</th>
+                    <th>Nội dung văn bản</th>
+                    <th>Ngày tạo</th>
+                    <th>Hành động</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (audios.Any())
+                {
+                    @foreach (var audio in audios)
+                    {
+                        var (lbl, css) = langMap.ContainsKey(audio.LanguageCode) ? langMap[audio.LanguageCode] : (audio.LanguageCode, "lang-en");
+                        var preview = audio.TextContent.Length > 80 ? audio.TextContent[..80] + "..." : audio.TextContent;
+                        <tr>
+                            <td>
+                                <div class="item-info">
+                                    <div class="stat-icon orange" style="width:34px;height:34px;border-radius:8px;font-size:14px;">
+                                        <i class="fa-solid fa-map-pin"></i>
+                                    </div>
+                                    <div>
+                                        <div class="item-name">@(audio.PointOfInterest?.Name ?? "—")</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td><span class="lang-badge @css">@lbl</span></td>
+                            <td style="max-width:300px;color:var(--text-secondary);font-size:12px;">@preview</td>
+                            <td style="color:var(--text-muted);font-size:12px;">@audio.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy")</td>
+                            <td>
+                                <div style="display:flex;gap:6px;">
+                                    <button class="action-btn edit"
+                                        onclick="openEditAudioModal(@audio.Id, @audio.PointOfInterestId, '@audio.LanguageCode', @Html.Raw(System.Text.Json.JsonSerializer.Serialize(audio.TextContent)))"
+                                        title="Chỉnh sửa">
+                                        <i class="fa-solid fa-pen"></i>
+                                    </button>
+                                    <form method="post" action="/Audio/Delete" style="display:inline;" onsubmit="return confirm('Xóa audio này?')">
+                                        <input type="hidden" name="id" value="@audio.Id" />
+                                        <button type="submit" class="action-btn delete" title="Xóa">
+                                            <i class="fa-solid fa-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                }
+                else
+                {
+                    <tr>
+                        <td colspan="5">
+                            <div class="empty-state">
+                                <i class="fa-solid fa-headphones"></i>
+                                <p>Chưa có nội dung audio nào. Hãy thêm audio đầu tiên!</p>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <div class="pagination-wrap">
+        <span>Hiển thị @total nội dung audio</span>
+        <div class="pagination-btns">
+            @for (int i = 1; i <= Math.Max(1, (int)Math.Ceiling((double)total / pageSize)); i++)
+            {
+                <button class="@(i == page ? "active" : "")" onclick="location.href='/Audio?page=@i'">@i</button>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- ADD AUDIO MODAL -->
+<div class="modal-overlay" id="addAudioModal">
+    <div class="modal-box">
+        <div class="modal-header">
+            <span class="modal-title"><i class="fa-solid fa-headphones" style="color:var(--accent-orange);margin-right:8px;"></i>Thêm Audio mới</span>
+            <button class="modal-close" onclick="closeModal('addAudioModal')"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <form method="post" action="/Audio/Create">
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">Địa điểm (POI) *</label>
+                    <select name="PointOfInterestId" class="form-control-admin" required>
+                        <option value="">-- Chọn địa điểm --</option>
+                        @if (ViewBag.POIs != null)
+                        {
+                            foreach (var poi in (IEnumerable<dynamic>)ViewBag.POIs)
+                            {
+                                <option value="@poi.Id">@poi.Name</option>
+                            }
+                        }
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Ngôn ngữ *</label>
+                    <select name="LanguageCode" class="form-control-admin" required>
+                        <option value="vi">🇻🇳 Tiếng Việt</option>
+                        <option value="en">🇺🇸 English</option>
+                        <option value="ko">🇰🇷 한국어</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Nội dung thuyết minh *</label>
+                    <textarea name="TextContent" class="form-control-admin" rows="6"
+                        placeholder="Nhập nội dung thuyết minh âm thanh cho địa điểm này..." required></textarea>
+                    <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">Tối đa 2000 ký tự</div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary-admin" onclick="closeModal('addAudioModal')">Hủy</button>
+                <button type="submit" class="btn-primary-admin"><i class="fa-solid fa-floppy-disk"></i> Lưu</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- EDIT AUDIO MODAL -->
+<div class="modal-overlay" id="editAudioModal">
+    <div class="modal-box">
+        <div class="modal-header">
+            <span class="modal-title"><i class="fa-solid fa-pen" style="color:var(--blue);margin-right:8px;"></i>Chỉnh sửa Audio</span>
+            <button class="modal-close" onclick="closeModal('editAudioModal')"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <form method="post" action="/Audio/Edit">
+            <div class="modal-body">
+                <input type="hidden" name="Id" id="editAudioId" />
+                <div class="form-group">
+                    <label class="form-label">Địa điểm (POI)</label>
+                    <select name="PointOfInterestId" id="editAudioPoi" class="form-control-admin">
+                        @if (ViewBag.POIs != null)
+                        {
+                            foreach (var poi in (IEnumerable<dynamic>)ViewBag.POIs)
+                            {
+                                <option value="@poi.Id">@poi.Name</option>
+                            }
+                        }
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Ngôn ngữ</label>
+                    <select name="LanguageCode" id="editAudioLang" class="form-control-admin">
+                        <option value="vi">🇻🇳 Tiếng Việt</option>
+                        <option value="en">🇺🇸 English</option>
+                        <option value="ko">🇰🇷 한국어</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Nội dung thuyết minh</label>
+                    <textarea name="TextContent" id="editAudioContent" class="form-control-admin" rows="6"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary-admin" onclick="closeModal('editAudioModal')">Hủy</button>
+                <button type="submit" class="btn-primary-admin"><i class="fa-solid fa-floppy-disk"></i> Cập nhật</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+function openEditAudioModal(id, poiId, lang, content) {
+    document.getElementById('editAudioId').value = id;
+    document.getElementById('editAudioPoi').value = poiId;
+    document.getElementById('editAudioLang').value = lang;
+    document.getElementById('editAudioContent').value = content;
+    openModal('editAudioModal');
+}
+</script>
+}

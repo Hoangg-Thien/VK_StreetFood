@@ -1,0 +1,231 @@
+@{
+    ViewData["Title"] = "Bản dịch";
+    Layout = "_AdminLayout";
+
+    var pois = ViewBag.POIs as IEnumerable<VK.Core.Entities.PointOfInterest> ?? new List<VK.Core.Entities.PointOfInterest>();
+    var allPois = ViewBag.AllPOIs as IEnumerable<dynamic> ?? new List<dynamic>();
+    int total = ViewBag.Total ?? 0;
+    int page = ViewBag.Page ?? 1;
+    int pageSize = ViewBag.PageSize ?? 10;
+
+    var supportedLangs = new[] {
+        new { Code = "vi", Flag = "🇻🇳", Label = "Tiếng Việt", Css = "lang-vi" },
+        new { Code = "en", Flag = "🇺🇸", Label = "English",    Css = "lang-en" },
+        new { Code = "ko", Flag = "🇰🇷", Label = "한국어",      Css = "lang-ko" },
+    };
+}
+
+@if (TempData["Success"] != null)
+{
+    <div style="background:rgba(34,197,94,0.12);border:1px solid rgba(34,197,94,0.2);border-radius:8px;padding:12px 16px;margin-bottom:16px;color:#22C55E;font-size:13px;">
+        <i class="fa-solid fa-circle-check"></i> @TempData["Success"]
+    </div>
+}
+@if (TempData["Error"] != null)
+{
+    <div style="background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.2);border-radius:8px;padding:12px 16px;margin-bottom:16px;color:#EF4444;font-size:13px;">
+        <i class="fa-solid fa-circle-xmark"></i> @TempData["Error"]
+    </div>
+}
+
+<div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:24px;">
+    <div>
+        <div class="page-title">Bản dịch</div>
+        <div class="page-subtitle">Quản lý nội dung thuyết minh đa ngôn ngữ cho từng địa điểm</div>
+    </div>
+</div>
+
+<!-- LANG STAT CARDS -->
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px;">
+    @foreach (var lang in supportedLangs)
+    {
+        var count = pois.Sum(p => p.AudioContents.Count(a => a.LanguageCode == lang.Code));
+        var poiHas = pois.Count(p => p.AudioContents.Any(a => a.LanguageCode == lang.Code));
+        <div class="stat-card">
+            <div class="stat-card-header">
+                <div class="stat-icon" style="background:rgba(255,255,255,0.05);font-size:20px;">@lang.Flag</div>
+            </div>
+            <div class="stat-value">@count</div>
+            <div class="stat-label">@lang.Label</div>
+            <div class="stat-compare">@poiHas / @total địa điểm đã có</div>
+        </div>
+    }
+</div>
+
+<!-- TRANSLATION TABLE -->
+<div class="admin-card">
+    <form method="get" action="/Translation" class="filter-bar">
+        <div class="search-input-wrap">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" name="search" placeholder="Tìm địa điểm..." value="@ViewBag.Search" />
+        </div>
+        <button type="submit" class="btn-primary-admin" style="padding:8px 14px;"><i class="fa-solid fa-filter"></i> Lọc</button>
+        <a href="/Translation" class="btn-secondary-admin" style="padding:8px 14px;"><i class="fa-solid fa-rotate-right"></i></a>
+    </form>
+
+    <div class="admin-table-wrap">
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>Địa điểm</th>
+                    @foreach (var lang in supportedLangs)
+                    {
+                        <th><span class="lang-badge @lang.Css">@lang.Flag @lang.Code.ToUpper()</span></th>
+                    }
+                    <th>Hoàn thiện</th>
+                    <th>Hành động</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (pois.Any())
+                {
+                    @foreach (var poi in pois)
+                    {
+                        var bg = new[] { "#E85D04", "#3B82F6", "#8B5CF6", "#22C55E", "#F59E0B" };
+                        var initials = string.Join("", poi.Name.Split(' ').Where(w => w.Length > 0).Take(2).Select(w => w[0].ToString().ToUpper()));
+                        var bgColor = bg[Math.Abs(poi.Id.GetHashCode()) % bg.Length];
+                        var totalLangs = supportedLangs.Length;
+                        var hasLangs = supportedLangs.Count(l => poi.AudioContents.Any(a => a.LanguageCode == l.Code));
+                        var pct = (int)Math.Round((double)hasLangs / totalLangs * 100);
+
+                        <tr>
+                            <td>
+                                <div class="item-info">
+                                    <div class="table-avatar" style="background:@bgColor;">@initials</div>
+                                    <div>
+                                        <div class="item-name">@poi.Name</div>
+                                        <div class="item-sub">@poi.Address</div>
+                                    </div>
+                                </div>
+                            </td>
+                            @foreach (var lang in supportedLangs)
+                            {
+                                var audio = poi.AudioContents.FirstOrDefault(a => a.LanguageCode == lang.Code);
+                                <td>
+                                    @if (audio != null)
+                                    {
+                                        <button class="action-btn edit"
+                                            onclick="openTranslationModal(@poi.Id, '@lang.Code', '@lang.Flag @lang.Label', @Html.Raw(System.Text.Json.JsonSerializer.Serialize(audio.TextContent)), @audio.Id)"
+                                            title="Chỉnh sửa @lang.Label"
+                                            style="color:var(--green);border-color:rgba(34,197,94,0.3);">
+                                            <i class="fa-solid fa-circle-check"></i>
+                                        </button>
+                                    }
+                                    else
+                                    {
+                                        <button class="action-btn"
+                                            onclick="openTranslationModal(@poi.Id, '@lang.Code', '@lang.Flag @lang.Label', '', 0)"
+                                            title="Thêm @lang.Label"
+                                            style="color:var(--text-muted);">
+                                            <i class="fa-solid fa-plus"></i>
+                                        </button>
+                                    }
+                                </td>
+                            }
+                            <td>
+                                <div style="display:flex;align-items:center;gap:8px;">
+                                    <div style="flex:1;height:6px;background:var(--bg-input);border-radius:3px;overflow:hidden;">
+                                        <div style="height:100%;width:@pct%;background:@(pct==100?"var(--green)":pct>50?"var(--yellow)":"var(--accent-orange)");border-radius:3px;"></div>
+                                    </div>
+                                    <span style="font-size:11px;color:var(--text-muted);">@pct%</span>
+                                </div>
+                            </td>
+                            <td>
+                                <a href="/Audio?search=@Uri.EscapeDataString(poi.Name)" class="action-btn view" title="Xem audio">
+                                    <i class="fa-solid fa-headphones"></i>
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                }
+                else
+                {
+                    <tr>
+                        <td colspan="7">
+                            <div class="empty-state">
+                                <i class="fa-solid fa-language"></i>
+                                <p>Chưa có dữ liệu bản dịch. Hãy thêm địa điểm trước!</p>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <div class="pagination-wrap">
+        <span>@total địa điểm</span>
+        <div class="pagination-btns">
+            @for (int i = 1; i <= Math.Max(1, (int)Math.Ceiling((double)total / pageSize)); i++)
+            {
+                <button class="@(i == page ? "active" : "")" onclick="location.href='/Translation?page=@i'">@i</button>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- TRANSLATION EDIT MODAL -->
+<div class="modal-overlay" id="translationModal">
+    <div class="modal-box" style="width:600px;">
+        <div class="modal-header">
+            <span class="modal-title" id="translationModalTitle">
+                <i class="fa-solid fa-language" style="color:var(--accent-orange);margin-right:8px;"></i>Bản dịch
+            </span>
+            <button class="modal-close" onclick="closeModal('translationModal')"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <form method="post" action="/Translation/SaveTranslation">
+            <div class="modal-body">
+                <input type="hidden" name="poiId" id="tPoiId" />
+                <input type="hidden" name="languageCode" id="tLangCode" />
+                <input type="hidden" name="existingId" id="tExistingId" />
+                <div class="form-group" style="margin-bottom:8px;">
+                    <label class="form-label">Ngôn ngữ</label>
+                    <div id="tLangDisplay" style="font-size:14px;color:var(--text-primary);padding:8px 0;"></div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Nội dung thuyết minh *</label>
+                    <textarea name="textContent" id="tContent" class="form-control-admin" rows="8"
+                        placeholder="Nhập nội dung thuyết minh..." required></textarea>
+                    <div style="display:flex;justify-content:space-between;margin-top:4px;">
+                        <span style="font-size:11px;color:var(--text-muted);">Tối đa 2000 ký tự</span>
+                        <span id="tCharCount" style="font-size:11px;color:var(--text-muted);">0 / 2000</span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary-admin" onclick="closeModal('translationModal')">Hủy</button>
+                <button type="submit" class="btn-primary-admin"><i class="fa-solid fa-floppy-disk"></i> Lưu bản dịch</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+function openTranslationModal(poiId, langCode, langLabel, content, existingId) {
+    document.getElementById('tPoiId').value = poiId;
+    document.getElementById('tLangCode').value = langCode;
+    document.getElementById('tExistingId').value = existingId;
+    document.getElementById('tContent').value = content;
+    document.getElementById('tLangDisplay').textContent = langLabel;
+    document.getElementById('translationModalTitle').innerHTML =
+        '<i class="fa-solid fa-language" style="color:var(--accent-orange);margin-right:8px;"></i>' +
+        (existingId > 0 ? 'Chỉnh sửa' : 'Thêm') + ' bản dịch: ' + langLabel;
+    updateCharCount();
+    openModal('translationModal');
+}
+
+const tContent = document.getElementById('tContent');
+const tCharCount = document.getElementById('tCharCount');
+
+function updateCharCount() {
+    const len = tContent ? tContent.value.length : 0;
+    if (tCharCount) {
+        tCharCount.textContent = len + ' / 2000';
+        tCharCount.style.color = len > 1800 ? 'var(--red)' : 'var(--text-muted)';
+    }
+}
+
+if (tContent) tContent.addEventListener('input', updateCharCount);
+</script>
+}

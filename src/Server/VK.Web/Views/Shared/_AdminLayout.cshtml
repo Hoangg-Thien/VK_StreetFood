@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - VK StreetFood Admin</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+    <link rel="stylesheet" href="~/css/admin.css" asp-append-version="true" />
+    @await RenderSectionAsync("Styles", required: false)
+</head>
+
+<body>
+
+    <!-- SIDEBAR -->
+    <aside class="admin-sidebar">
+        <div class="sidebar-brand">
+            <div class="brand-icon">🍜</div>
+            <div class="brand-text">
+                <div class="brand-name">Vinh Khánh</div>
+                <div class="brand-sub">Food Street</div>
+            </div>
+        </div>
+
+        <nav class="sidebar-nav">
+            <div class="sidebar-section-label">Tổng quan</div>
+
+            <a href="/Dashboard"
+                   class='@(ViewContext.RouteData.Values["controller"]?.ToString() == "Dashboard" ? "active" : "")'>
+                <i class="fa-solid fa-chart-pie"></i>
+                Dashboard
+            </a>
+
+            <div class="sidebar-section-label" style="margin-top:8px">Quản lý nội dung</div>
+
+            <a href="/Poi" class='@(ViewContext.RouteData.Values["controller"]?.ToString() == "Poi" ? "active" : "")'>
+                <i class="fa-solid fa-map-location-dot"></i>
+                Địa điểm (POI)
+            </a>
+
+            <a href="/Audio"
+                   class='@(ViewContext.RouteData.Values["controller"]?.ToString() == "Audio" ? "active" : "")'>
+                <i class="fa-solid fa-headphones"></i>
+                Quản lý Audio
+            </a>
+
+            <a href="/Translation"
+                   class='@(ViewContext.RouteData.Values["controller"]?.ToString() == "Translation" ? "active" : "")'>
+                <i class="fa-solid fa-language"></i>
+                Bản dịch
+            </a>
+
+            <div class="sidebar-section-label" style="margin-top:8px">Phân tích</div>
+
+            <a href="/UsageHistory"
+                   class='@(ViewContext.RouteData.Values["controller"]?.ToString() == "UsageHistory" ? "active" : "")'>
+                <i class="fa-solid fa-clock-rotate-left"></i>
+                Lịch sử sử dụng
+            </a>
+
+            <a href="/Tour" class='@(ViewContext.RouteData.Values["controller"]?.ToString() == "Tour" ? "active" : "")'>
+                <i class="fa-solid fa-route"></i>
+                Quản lý Tour
+            </a>
+        </nav>
+
+        <div class="sidebar-footer">
+            <a href="#">
+                <i class="fa-solid fa-circle-question"></i>
+                Trung tâm hỗ trợ
+            </a>
+        </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <div class="admin-main">
+        <!-- HEADER -->
+        <header class="admin-header">
+            <div class="header-search">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="text" placeholder="Tìm kiếm địa điểm, audio, tour..." />
+            </div>
+            <div class="header-right">
+                <div class="header-icon-btn">
+                    <i class="fa-regular fa-bell"></i>
+                </div>
+                <div class="header-icon-btn">
+                    <i class="fa-solid fa-gear"></i>
+                </div>
+                <div class="header-user">
+                    <div class="user-avatar">
+                        <i class="fa-solid fa-user" style="font-size:12px;"></i>
+                    </div>
+                    <div>
+                        <div class="user-name">@(Context.Session.GetString("AdminUsername") ?? "Admin")</div>
+                        <div class="user-role">Super Admin</div>
+                    </div>
+                </div>
+                <a href="/Home/Logout" class="header-icon-btn" title="Đăng xuất"
+                       style="color:#EF4444;border-color:rgba(239,68,68,0.3);">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                </a>
+            </div>
+        </header>
+
+        <!-- PAGE BODY -->
+        <div class="admin-content">
+            @RenderBody()
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script>
+        // Close action dropdowns when clicking outside
+        document.addEventListener('click', function (e) {
+        if (!e.target.closest('.action-menu')) {
+        document.querySelectorAll('.action-dropdown').forEach(d => d.classList.remove('show'));
+        }
+        });
+
+        function toggleMenu(el) {
+        const dropdown = el.nextElementSibling;
+        document.querySelectorAll('.action-dropdown').forEach(d => {
+        if (d !== dropdown) d.classList.remove('show');
+        });
+        dropdown.classList.toggle('show');
+        }
+
+        function openModal(id) {
+        document.getElementById(id).classList.add('show');
+        }
+
+        function closeModal(id) {
+        document.getElementById(id).classList.remove('show');
+        }
+    </script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+
+</html>

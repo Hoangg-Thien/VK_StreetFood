@@ -1,0 +1,262 @@
+@{
+    ViewData["Title"] = "Lịch sử sử dụng";
+    Layout = "_AdminLayout";
+
+    var logs = ViewBag.Logs as IEnumerable<VK.Core.Entities.VisitLog> ?? new List<VK.Core.Entities.VisitLog>();
+    int total = ViewBag.Total ?? 0;
+    int page = ViewBag.Page ?? 1;
+    int pageSize = ViewBag.PageSize ?? 15;
+
+    var langMap = new Dictionary<string, (string flag, string css)>
+    {
+        ["vi"] = ("🇻🇳", "lang-vi"), ["en"] = ("🇺🇸", "lang-en"),
+        ["ko"] = ("🇰🇷", "lang-ko"), };
+}
+
+<div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:24px;">
+    <div>
+        <div class="page-title">Lịch sử sử dụng</div>
+        <div class="page-subtitle">Theo dõi toàn bộ lượt tham quan và tương tác của du khách</div>
+    </div>
+    <button class="btn-secondary-admin">
+        <i class="fa-solid fa-file-export"></i>
+        Xuất báo cáo
+    </button>
+</div>
+
+<!-- STAT CARDS -->
+<div class="stat-cards" style="grid-template-columns:repeat(4,1fr);">
+    <div class="stat-card">
+        <div class="stat-card-header">
+            <div class="stat-icon orange"><i class="fa-solid fa-person-walking"></i></div>
+            <span class="stat-trend up">+12.5%</span>
+        </div>
+        <div class="stat-value">@total</div>
+        <div class="stat-label">Tổng lượt tham quan</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-card-header">
+            <div class="stat-icon blue"><i class="fa-solid fa-headphones"></i></div>
+        </div>
+        <div class="stat-value">@(logs.Count(v => v.AudioPlayed))</div>
+        <div class="stat-label">Lượt phát audio</div>
+        <div class="stat-compare">@(total > 0 ? ((double)logs.Count(v => v.AudioPlayed) / total * 100).ToString("F0") : 0)% tỷ lệ phát</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-card-header">
+            <div class="stat-icon green"><i class="fa-solid fa-globe"></i></div>
+        </div>
+        <div class="stat-value">@(logs.Select(v => v.LanguageUsed).Distinct().Count())</div>
+        <div class="stat-label">Ngôn ngữ sử dụng</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-card-header">
+            <div class="stat-icon purple"><i class="fa-solid fa-map-pin"></i></div>
+        </div>
+        <div class="stat-value">@(logs.Select(v => v.PointOfInterestId).Distinct().Count())</div>
+        <div class="stat-label">Địa điểm được ghé thăm</div>
+    </div>
+</div>
+
+<!-- CHART + LANG DIST -->
+<div class="grid-2-1" style="margin-bottom:24px;">
+    <div class="admin-card">
+        <div class="admin-card-header">
+            <div>
+                <div class="admin-card-title">Lượt tham quan 7 ngày qua</div>
+                <div class="admin-card-subtitle">Biểu đồ theo ngày</div>
+            </div>
+        </div>
+        <div class="admin-card-body">
+            <div class="chart-container"><canvas id="visitsChart7d"></canvas></div>
+        </div>
+    </div>
+    <div class="admin-card">
+        <div class="admin-card-header">
+            <div class="admin-card-title">Phân bổ ngôn ngữ</div>
+        </div>
+        <div class="admin-card-body">
+            <div style="height:120px;display:flex;align-items:center;justify-content:center;">
+                <canvas id="langChart" style="max-height:120px;"></canvas>
+            </div>
+            @if (ViewBag.LangStats != null)
+            {
+                <div style="margin-top:16px;">
+                    @foreach (var stat in (IEnumerable<dynamic>)ViewBag.LangStats)
+                    {
+                        var lCode = (string)stat.Language ?? "vi";
+                        var (flag, css) = langMap.ContainsKey(lCode) ? langMap[lCode] : ("🌐", "lang-en");
+                        <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border-color);">
+                            <span class="lang-badge @css" style="font-size:12px;">@flag @lCode.ToUpper()</span>
+                            <span style="font-size:13px;font-weight:600;">@stat.Count</span>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- LOGS TABLE -->
+<div class="admin-card">
+    <form method="get" action="/UsageHistory" class="filter-bar">
+        <select name="language">
+            <option value="">Tất cả ngôn ngữ</option>
+            <option value="vi" selected="@(ViewBag.Language == "vi" ? "selected" : null)">🇻🇳 Tiếng Việt</option>
+            <option value="en" selected="@(ViewBag.Language == "en" ? "selected" : null)">🇺🇸 English</option>
+            <option value="ko" selected="@(ViewBag.Language == "ko" ? "selected" : null)">🇰🇷 한국어</option>
+            <option value="zh" selected="@(ViewBag.Language == "zh" ? "selected" : null)">🇨🇳 中文</option>
+        </select>
+        <input type="date" name="fromDate" class="form-control-admin" style="width:auto;padding:8px 12px;" placeholder="Từ ngày" />
+        <input type="date" name="toDate" class="form-control-admin" style="width:auto;padding:8px 12px;" placeholder="Đến ngày" />
+        <button type="submit" class="btn-primary-admin" style="padding:8px 14px;"><i class="fa-solid fa-filter"></i> Lọc</button>
+        <a href="/UsageHistory" class="btn-secondary-admin" style="padding:8px 14px;"><i class="fa-solid fa-rotate-right"></i></a>
+    </form>
+
+    <div class="admin-table-wrap">
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Du khách (Device ID)</th>
+                    <th>Địa điểm</th>
+                    <th>Ngôn ngữ</th>
+                    <th>Audio</th>
+                    <th>Thời gian</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (logs.Any())
+                {
+                    int rowNum = (page - 1) * pageSize;
+                    @foreach (var log in logs)
+                    {
+                        rowNum++;
+                        var lCode = log.LanguageUsed ?? "vi";
+                        var (flag, css) = langMap.ContainsKey(lCode) ? langMap[lCode] : ("🌐", "lang-en");
+                        var deviceShort = log.Tourist?.DeviceId?.Length > 12 ? log.Tourist.DeviceId[..12] + "..." : (log.Tourist?.DeviceId ?? "—");
+                        <tr>
+                            <td style="color:var(--text-muted);font-size:12px;">@rowNum</td>
+                            <td>
+                                <div class="item-info">
+                                    <div class="stat-icon blue" style="width:30px;height:30px;border-radius:6px;font-size:12px;">
+                                        <i class="fa-solid fa-mobile-screen"></i>
+                                    </div>
+                                    <span style="font-size:12px;font-family:monospace;color:var(--text-secondary);">@deviceShort</span>
+                                </div>
+                            </td>
+                            <td>
+                                <span style="font-size:13px;font-weight:500;">@(log.PointOfInterest?.Name ?? "—")</span>
+                            </td>
+                            <td><span class="lang-badge @css">@flag @lCode.ToUpper()</span></td>
+                            <td>
+                                @if (log.AudioPlayed)
+                                {
+                                    <span style="color:var(--green);font-size:12px;"><i class="fa-solid fa-circle-check"></i> Đã phát</span>
+                                }
+                                else
+                                {
+                                    <span style="color:var(--text-muted);font-size:12px;"><i class="fa-solid fa-circle-xmark"></i> Không</span>
+                                }
+                            </td>
+                            <td style="color:var(--text-muted);font-size:12px;">
+                                @log.VisitedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")
+                            </td>
+                        </tr>
+                    }
+                }
+                else
+                {
+                    <tr>
+                        <td colspan="6">
+                            <div class="empty-state">
+                                <i class="fa-solid fa-clock-rotate-left"></i>
+                                <p>Chưa có lịch sử sử dụng nào.</p>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <div class="pagination-wrap">
+        <span>Hiển thị @(Math.Min(total, page * pageSize)) trong @total lượt</span>
+        <div class="pagination-btns">
+            @for (int i = 1; i <= Math.Max(1, (int)Math.Ceiling((double)total / pageSize)); i++)
+            {
+                <button class="@(i == page ? "active" : "")" onclick="location.href='/UsageHistory?page=@i'">@i</button>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+// 7-day visits chart
+const ctx7 = document.getElementById('visitsChart7d').getContext('2d');
+const g7 = ctx7.createLinearGradient(0, 0, 0, 200);
+g7.addColorStop(0, 'rgba(232,93,4,0.3)');
+g7.addColorStop(1, 'rgba(232,93,4,0.02)');
+
+const dailyData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
+    (ViewBag.DailyVisits as IEnumerable<dynamic> ?? new List<dynamic>())
+        .Select(d => (int)d.Count).ToList()
+));
+const dailyLabels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
+    (ViewBag.DailyVisits as IEnumerable<dynamic> ?? new List<dynamic>())
+        .Select(d => ((DateTime)d.Date).ToString("dd/MM")).ToList()
+));
+
+new Chart(ctx7, {
+    type: 'bar',
+    data: {
+        labels: dailyLabels.length > 0 ? dailyLabels : ['T2','T3','T4','T5','T6','T7','CN'],
+        datasets: [{
+            label: 'Lượt tham quan',
+            data: dailyData.length > 0 ? dailyData : [12,25,18,42,61,88,34],
+            backgroundColor: 'rgba(232,93,4,0.3)',
+            borderColor: '#E85D04',
+            borderWidth: 2,
+            borderRadius: 6,
+        }]
+    },
+    options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+            x: { grid: { color: '#252840' }, ticks: { color: '#8B8FA8', font: { size: 11 } } },
+            y: { grid: { color: '#252840' }, ticks: { color: '#8B8FA8', font: { size: 11 } }, beginAtZero: true }
+        }
+    }
+});
+
+// Lang donut chart
+const ctxLang = document.getElementById('langChart').getContext('2d');
+const langData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
+    (ViewBag.LangStats as IEnumerable<dynamic> ?? new List<dynamic>())
+        .Select(s => (int)s.Count).ToList()
+));
+const langLabels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
+    (ViewBag.LangStats as IEnumerable<dynamic> ?? new List<dynamic>())
+        .Select(s => (string)s.Language ?? "vi").ToList()
+));
+
+new Chart(ctxLang, {
+    type: 'doughnut',
+    data: {
+        labels: langLabels.length > 0 ? langLabels : ['vi','en','ko'],
+        datasets: [{
+            data: langData.length > 0 ? langData : [45, 30, 25],
+            backgroundColor: ['#E85D04','#3B82F6','#8B5CF6','#22C55E'],
+            borderWidth: 0,
+        }]
+    },
+    options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        cutout: '70%'
+    }
+});
+</script>
+}

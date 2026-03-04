@@ -24,68 +24,65 @@ public class DashboardController : Controller
     {
         try
         {
-            // Get statistics from database
-            var totalPOIs = await _context.PointsOfInterest
-                .Where(p => !p.IsDeleted)
-                .CountAsync();
-
-            var totalTourists = await _context.Tourists
-                .Where(t => !t.IsDeleted)
-                .CountAsync();
-
-            var totalVisits = await _context.VisitLogs
-                .Where(v => !v.IsDeleted)
-                .CountAsync();
-
-            var totalRatings = await _context.Ratings
-                .Where(r => !r.IsDeleted)
-                .CountAsync();
+            var totalPOIs = await _context.PointsOfInterest.CountAsync();
+            var totalTourists = await _context.Tourists.CountAsync();
+            var totalVisits = await _context.VisitLogs.CountAsync();
+            var totalAudio = await _context.AudioContents.CountAsync();
 
             var averageRating = await _context.Ratings
-                .Where(r => !r.IsDeleted)
-                .AverageAsync(r => (double?)r.RatingValue) ?? 0;
+                .AverageAsync(r => (double?)r.Score) ?? 0;
 
-            // Recent visitors (last 7 days)
+            // Recent POIs
+            var recentPOIs = await _context.PointsOfInterest
+                .Include(p => p.Category)
+                .OrderByDescending(p => p.CreatedAt)
+                .Take(5)
+                .ToListAsync();
+
+            // Last 7 days visit chart data
             var last7Days = DateTime.UtcNow.AddDays(-7);
-            var recentVisitors = await _context.VisitLogs
-                .Where(v => !v.IsDeleted && v.VisitedAt >= last7Days)
+            var dailyVisits = await _context.VisitLogs
+                .Where(v => v.VisitedAt >= last7Days)
                 .GroupBy(v => v.VisitedAt.Date)
                 .Select(g => new { Date = g.Key, Count = g.Count() })
                 .OrderBy(x => x.Date)
                 .ToListAsync();
 
-            // Top 5 POIs by visits
-            var topPOIs = await _context.VisitLogs
-                .Where(v => !v.IsDeleted)
-                .GroupBy(v => new { v.PointOfInterestId, v.PointOfInterest!.Name })
-                .Select(g => new { POIName = g.Key.Name, VisitCount = g.Count() })
-                .OrderByDescending(x => x.VisitCount)
-                .Take(5)
-                .ToListAsync();
-
-            // Language distribution
-            var languageStats = await _context.Tourists
-                .Where(t => !t.IsDeleted)
-                .GroupBy(t => t.PreferredLanguage)
-                .Select(g => new { Language = g.Key, Count = g.Count() })
-                .ToListAsync();
+            // Fill missing days
+            var chartData = new List<int>();
+            var chartLabels = new List<string>();
+            for (int d = 6; d >= 0; d--)
+            {
+                var day = DateTime.UtcNow.Date.AddDays(-d);
+                var vh = dailyVisits.FirstOrDefault(x => x.Date == day);
+                chartData.Add(vh?.Count ?? 0);
+                chartLabels.Add(day.ToString("ddd", new System.Globalization.CultureInfo("vi-VN")));
+            }
 
             ViewBag.TotalPOIs = totalPOIs;
             ViewBag.TotalTourists = totalTourists;
             ViewBag.TotalVisits = totalVisits;
-            ViewBag.TotalRatings = totalRatings;
+            ViewBag.TotalAudio = totalAudio;
             ViewBag.AverageRating = Math.Round(averageRating, 2);
-            ViewBag.RecentVisitors = recentVisitors;
-            ViewBag.TopPOIs = topPOIs;
-            ViewBag.LanguageStats = languageStats;
-
-            return View();
+            ViewBag.RecentPOIs = recentPOIs;
+            ViewBag.ChartDataJson = System.Text.Json.JsonSerializer.Serialize(chartData);
+            ViewBag.ChartLabelsJson = System.Text.Json.JsonSerializer.Serialize(chartLabels);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error loading dashboard");
-            return View("Error");
+            // Set defaults so the view still renders
+            ViewBag.TotalPOIs = 0;
+            ViewBag.TotalTourists = 0;
+            ViewBag.TotalVisits = 0;
+            ViewBag.TotalAudio = 0;
+            ViewBag.AverageRating = 0.0;
+            ViewBag.RecentPOIs = new List<object>();
+            ViewBag.ChartDataJson = "[0,0,0,0,0,0,0]";
+            ViewBag.ChartLabelsJson = "[\"T2\",\"T3\",\"T4\",\"T5\",\"T6\",\"T7\",\"CN\"]";
         }
+
+        return View("DashboardPage");
     }
 
     public async Task<IActionResult> Analytics()

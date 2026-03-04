@@ -1,0 +1,338 @@
+@{
+    ViewData["Title"] = "Dashboard";
+    Layout = "_AdminLayout";
+
+    // Use ViewBag data or defaults if DB not connected
+    int totalPOIs = ViewBag.TotalPOIs ?? 0;
+    int totalTourists = ViewBag.TotalTourists ?? 0;
+    int totalVisits = ViewBag.TotalVisits ?? 0;
+    double averageRating = ViewBag.AverageRating ?? 0.0;
+    int totalAudio = ViewBag.TotalAudio ?? 0;
+}
+
+<div class="page-title">Dashboard</div>
+<div class="page-subtitle">Xin chào! Đây là tình hình hôm nay tại Vinh Khánh Food Street.</div>
+
+<!-- STAT CARDS -->
+<div class="stat-cards">
+    <div class="stat-card">
+        <div class="stat-card-header">
+            <div class="stat-icon orange"><i class="fa-solid fa-map-pin"></i></div>
+            <span class="stat-trend up">+6.2%</span>
+        </div>
+        <div class="stat-value">@totalPOIs</div>
+        <div class="stat-label">Tổng địa điểm (POI)</div>
+        <div class="stat-compare">vs. tháng trước</div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-card-header">
+            <div class="stat-icon green"><i class="fa-solid fa-headphones"></i></div>
+            <span class="stat-trend up">+3.2%</span>
+        </div>
+        <div class="stat-value">@totalAudio</div>
+        <div class="stat-label">Nội dung Audio</div>
+        <div class="stat-compare">4 bản mới chờ duyệt</div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-card-header">
+            <div class="stat-icon blue"><i class="fa-solid fa-star"></i></div>
+            <span class="stat-trend up">+8.4%</span>
+        </div>
+        <div class="stat-value">@averageRating.ToString("F1")</div>
+        <div class="stat-label">Đánh giá trung bình</div>
+        <div class="stat-compare">Tăng từ @(averageRating > 0.2 ? (averageRating - 0.2).ToString("F1") : "0.0")</div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-card-header">
+            <div class="stat-icon purple"><i class="fa-solid fa-users"></i></div>
+            <span class="stat-trend new">Mới</span>
+        </div>
+        <div class="stat-value">@totalTourists</div>
+        <div class="stat-label">Du khách</div>
+        <div class="stat-compare">Giờ cao điểm: 7PM - 9PM</div>
+    </div>
+</div>
+
+<!-- CHART + LIVE STATUS -->
+<div class="grid-2-1">
+
+    <!-- VISITS CHART -->
+    <div class="admin-card">
+        <div class="admin-card-header">
+            <div>
+                <div class="admin-card-title">Lượt tham quan theo ngày</div>
+                <div class="admin-card-subtitle">Tổng lượt ghé thăm tất cả các địa điểm đang hoạt động</div>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center;">
+                <select
+                    style="background:var(--bg-input);border:1px solid var(--border-color);border-radius:6px;padding:6px 10px;color:var(--text-secondary);font-size:12px;outline:none;">
+                    <option>Tuần này</option>
+                    <option>Tháng này</option>
+                    <option>3 tháng</option>
+                </select>
+            </div>
+        </div>
+        <div class="admin-card-body">
+            <div class="chart-container">
+                <canvas id="visitsChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- LIVE STATUS -->
+    <div class="admin-card">
+        <div class="admin-card-header">
+            <div>
+                <div class="admin-card-title">Trạng thái trực tiếp</div>
+            </div>
+            <div class="live-indicator">
+                <div class="live-dot"></div>
+                ONLINE
+            </div>
+        </div>
+        <div class="admin-card-body">
+            <div class="live-stat-item">
+                <div class="live-stat-icon orange"><i class="fa-solid fa-headphones"></i></div>
+                <div>
+                    <div class="live-stat-label">Audio đang phát</div>
+                    <div class="live-stat-value">@(totalAudio > 0 ? totalAudio : 24) Đang hoạt động</div>
+                </div>
+                <div class="live-stat-badge" style="color:var(--green);font-size:11px;font-weight:600;">12m avg</div>
+            </div>
+
+            <div class="live-stat-item">
+                <div class="live-stat-icon blue"><i class="fa-solid fa-person-walking"></i></div>
+                <div>
+                    <div class="live-stat-label">Du khách hiện tại</div>
+                    <div class="live-stat-value">@(totalTourists > 0 ? Math.Min(totalTourists, 142) : 142) đang tham
+                        quan</div>
+                    </div>
+                    <div class="live-stat-badge" style="color:var(--yellow);font-size:11px;font-weight:600;">88% Công suất
+                    </div>
+                </div>
+
+                <div class="live-stat-item">
+                    <div class="live-stat-icon green"><i class="fa-solid fa-map-pin"></i></div>
+                    <div>
+                        <div class="live-stat-label">POI đang hoạt động</div>
+                        <div class="live-stat-value">@(totalPOIs > 0 ? totalPOIs : 0) Địa điểm</div>
+                    </div>
+                </div>
+
+                <p style="font-size:11px;color:var(--text-muted);margin-top:12px;line-height:1.6;">
+                    *Lượng khách cao điểm dự kiến trong 45 phút tới dựa trên dữ liệu lịch sử ngày thứ Sáu.
+                </p>
+
+                <a href="/UsageHistory" class="heatmap-btn">
+                    <i class="fa-solid fa-fire-flame-curved" style="margin-right:6px;"></i>
+                    Xem Heatmap
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- RECENT POI APPLICATIONS / ACTIVITY -->
+    <div class="admin-card">
+        <div class="admin-card-header">
+            <div>
+                <div class="admin-card-title">Địa điểm mới nhất</div>
+                <div class="admin-card-subtitle">Các POI vừa được thêm hoặc chờ phê duyệt</div>
+            </div>
+            <a href="/Poi" class="btn-primary-admin" style="font-size:12px;padding:7px 14px;">
+                Xem tất cả
+                <i class="fa-solid fa-arrow-right"></i>
+            </a>
+        </div>
+        <div class="admin-table-wrap">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>Địa điểm</th>
+                        <th>Danh mục</th>
+                        <th>Ngày thêm</th>
+                        <th>Trạng thái</th>
+                        <th>Hành động</th>
+                    </tr>
+                </thead>
+                <tbody id="dashboardPoiTable">
+                    @if (ViewBag.RecentPOIs != null && ((IEnumerable<dynamic>)ViewBag.RecentPOIs).Any())
+                    {
+                        foreach (var poi in (IEnumerable<dynamic>)ViewBag.RecentPOIs)
+                        {
+                            <tr>
+                                <td>
+                                    <div class="item-info">
+                                        <div class="table-avatar" style="background:var(--accent-orange);">
+                                            <i class="fa-solid fa-map-pin" style="font-size:14px;"></i>
+                                        </div>
+                                        <div>
+                                            <div class="item-name">@poi.Name</div>
+                                            <div class="item-sub">@poi.Address</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td><span class="lang-badge lang-vi">Ẩm thực</span></td>
+                                <td style="color:var(--text-muted);font-size:12px;">Vừa thêm</td>
+                                <td><span class="badge-status badge-active">Hoạt động</span></td>
+                                <td>
+                                    <div class="action-menu">
+                                        <button class="action-menu-btn" onclick="toggleMenu(this)">
+                                            <i class="fa-solid fa-ellipsis-vertical"></i>
+                                        </button>
+                                        <div class="action-dropdown">
+                                            <a href="/Poi/Edit/@poi.Id"><i class="fa-solid fa-pen"></i> Chỉnh sửa</a>
+                                            <a href="/Poi/Details/@poi.Id"><i class="fa-solid fa-eye"></i> Xem chi tiết</a>
+                                            <a href="#" class="danger"><i class="fa-solid fa-trash"></i> Xóa</a>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <!-- Demo rows when DB not connected -->
+                        <tr>
+                            <td>
+                                <div class="item-info">
+                                    <div class="table-avatar" style="background:var(--accent-orange);">BN</div>
+                                    <div>
+                                        <div class="item-name">Bún Thịt Nướng Kim</div>
+                                        <div class="item-sub">65 Đinh Tiên Hoàng, Vĩnh Khánh</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td><span class="lang-badge lang-vi">Món chính</span></td>
+                            <td style="color:var(--text-muted);font-size:12px;">2 giờ trước</td>
+                            <td><span class="badge-status badge-review">Đang xem xét</span></td>
+                            <td>
+                                <div class="action-menu">
+                                    <button class="action-menu-btn" onclick="toggleMenu(this)"><i
+                                        class="fa-solid fa-ellipsis-vertical"></i></button>
+                                        <div class="action-dropdown">
+                                            <a href="/Poi"><i class="fa-solid fa-pen"></i> Chỉnh sửa</a>
+                                            <a href="/Poi"><i class="fa-solid fa-eye"></i> Xem chi tiết</a>
+                                            <a href="#" class="danger"><i class="fa-solid fa-trash"></i> Xóa</a>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <div class="item-info">
+                                        <div class="table-avatar" style="background:var(--blue);">SJ</div>
+                                        <div>
+                                            <div class="item-name">Sugar Juice Co.</div>
+                                            <div class="item-sub">12 Nguyễn Văn Linh, Vĩnh Khánh</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td><span class="lang-badge lang-en">Đồ uống</span></td>
+                                <td style="color:var(--text-muted);font-size:12px;">Hôm qua, 4:20 PM</td>
+                                <td><span class="badge-status badge-approved">Đã duyệt</span></td>
+                                <td>
+                                    <div class="action-menu">
+                                        <button class="action-menu-btn" onclick="toggleMenu(this)"><i
+                                            class="fa-solid fa-ellipsis-vertical"></i></button>
+                                            <div class="action-dropdown">
+                                                <a href="/Poi"><i class="fa-solid fa-pen"></i> Chỉnh sửa</a>
+                                                <a href="/Poi"><i class="fa-solid fa-eye"></i> Xem chi tiết</a>
+                                                <a href="#" class="danger"><i class="fa-solid fa-trash"></i> Xóa</a>
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div class="item-info">
+                                            <div class="table-avatar" style="background:var(--purple);">SO</div>
+                                            <div>
+                                                <div class="item-name">Saigon Oyster Bar</div>
+                                                <div class="item-sub">88 Trần Phú, Vĩnh Khánh</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td><span class="lang-badge lang-ko">Hải sản</span></td>
+                                    <td style="color:var(--text-muted);font-size:12px;">24/10/2025</td>
+                                    <td><span class="badge-status badge-interview">Phỏng vấn</span></td>
+                                    <td>
+                                        <div class="action-menu">
+                                            <button class="action-menu-btn" onclick="toggleMenu(this)"><i
+                                                class="fa-solid fa-ellipsis-vertical"></i></button>
+                                                <div class="action-dropdown">
+                                                    <a href="/Poi"><i class="fa-solid fa-pen"></i> Chỉnh sửa</a>
+                                                    <a href="/Poi"><i class="fa-solid fa-eye"></i> Xem chi tiết</a>
+                                                    <a href="#" class="danger"><i class="fa-solid fa-trash"></i> Xóa</a>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                @section Scripts {
+                    <script>
+                                            // Visits Chart
+                                            const ctx = document.getElementById('visitsChart').getContext('2d');
+
+                                            const gradient = ctx.createLinearGradient(0, 0, 0, 220);
+                                            gradient.addColorStop(0, 'rgba(232, 93, 4, 0.35)');
+                                            gradient.addColorStop(1, 'rgba(232, 93, 4, 0.02)');
+
+                                            const visitsData = @Html.Raw(ViewBag.ChartDataJson ?? "[45, 72, 58, 90, 134, 188, 102]");
+                                            const labels = @Html.Raw(ViewBag.ChartLabelsJson ?? "[\"T2\",\"T3\",\"T4\",\"T5\",\"T6\",\"T7\",\"CN\"]");
+
+                                            new Chart(ctx, {
+                                                type: 'line',
+                                                data: {
+                                                    labels: labels,
+                                                    datasets: [{
+                                                        label: 'Lượt tham quan',
+                                                        data: visitsData,
+                                                        fill: true,
+                                                        backgroundColor: gradient,
+                                                        borderColor: '#E85D04',
+                                                        borderWidth: 2.5,
+                                                        pointBackgroundColor: '#E85D04',
+                                                        pointBorderColor: '#fff',
+                                                        pointBorderWidth: 2,
+                                                        pointRadius: 4,
+                                                        pointHoverRadius: 6,
+                                                        tension: 0.4
+                                                    }]
+                                                },
+                                                options: {
+                                                    responsive: true,
+                                                    maintainAspectRatio: false,
+                                                    plugins: {
+                                                        legend: { display: false },
+                                                        tooltip: {
+                                                            backgroundColor: '#1A1D2E',
+                                                            borderColor: '#252840',
+                                                            borderWidth: 1,
+                                                            titleColor: '#8B8FA8',
+                                                            bodyColor: '#fff',
+                                                            displayColors: false
+                                                        }
+                                                    },
+                                                    scales: {
+                                                        x: {
+                                                            grid: { color: '#252840', drawBorder: false },
+                                                            ticks: { color: '#8B8FA8', font: { size: 11 } }
+                                                        },
+                                                        y: {
+                                                            grid: { color: '#252840', drawBorder: false },
+                                                            ticks: { color: '#8B8FA8', font: { size: 11 } },
+                                                            beginAtZero: true
+                                                        }
+                                                    }
+                                                }
+                                            });
+                    </script>
+                }

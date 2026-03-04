@@ -22,6 +22,14 @@ build_property._RazorSourceGeneratorDebug =
 build_property.EffectiveAnalysisLevelStyle = 10.0
 build_property.EnableCodeStyleSeverity = 
 
+[D:/VK_StreetFood/src/Server/VK.Web/Views/Audio/AudioPage.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQXVkaW9cQXVkaW9QYWdlLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/VK_StreetFood/src/Server/VK.Web/Views/Dashboard/DashboardPage.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcRGFzaGJvYXJkXERhc2hib2FyZFBhZ2UuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
 [D:/VK_StreetFood/src/Server/VK.Web/Views/Home/Index.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSG9tZVxJbmRleC5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
@@ -30,12 +38,32 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSG9tZVxQcml2YWN5LmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
+[D:/VK_StreetFood/src/Server/VK.Web/Views/Poi/PoiPage.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUG9pXFBvaVBhZ2UuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
 [D:/VK_StreetFood/src/Server/VK.Web/Views/Shared/Error.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXEVycm9yLmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
+[D:/VK_StreetFood/src/Server/VK.Web/Views/Shared/_AdminLayout.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXF9BZG1pbkxheW91dC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
 [D:/VK_StreetFood/src/Server/VK.Web/Views/Shared/_ValidationScriptsPartial.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXF9WYWxpZGF0aW9uU2NyaXB0c1BhcnRpYWwuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/VK_StreetFood/src/Server/VK.Web/Views/Tour/TourPage.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcVG91clxUb3VyUGFnZS5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/VK_StreetFood/src/Server/VK.Web/Views/Translation/TranslationPage.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcVHJhbnNsYXRpb25cVHJhbnNsYXRpb25QYWdlLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/VK_StreetFood/src/Server/VK.Web/Views/UsageHistory/UsageHistoryPage.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcVXNhZ2VIaXN0b3J5XFVzYWdlSGlzdG9yeVBhZ2UuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
 [D:/VK_StreetFood/src/Server/VK.Web/Views/_ViewImports.cshtml]

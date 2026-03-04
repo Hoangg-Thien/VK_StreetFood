@@ -1,8 +1,517 @@
 ﻿@{
-    ViewData["Title"] = "Home Page";
+    ViewData["Title"] = "Đăng nhập Admin";
+    Layout = null; // Standalone page - no layout
 }
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Đăng nhập - VK StreetFood Admin</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+    <style>
+            *,
+            *::before,
+            *::after {
+                box-sizing: border-box;
+                margin: 0;
+                padding: 0;
+            }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
-</div>
+            body {
+                font-family: 'Inter', sans-serif;
+                background: #0F1117;
+                min-height: 100vh;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                overflow: hidden;
+            }
+
+            /* Background decoration */
+            .bg-dec {
+                position: fixed;
+                inset: 0;
+                pointer-events: none;
+                z-index: 0;
+            }
+
+            .bg-circle {
+                position: absolute;
+                border-radius: 50%;
+                filter: blur(80px);
+                opacity: 0.15;
+            }
+
+            .bg-circle-1 {
+                width: 600px;
+                height: 600px;
+                background: #E85D04;
+                top: -200px;
+                left: -200px;
+            }
+
+            .bg-circle-2 {
+                width: 400px;
+                height: 400px;
+                background: #3B82F6;
+                bottom: -150px;
+                right: -100px;
+            }
+
+            .bg-circle-3 {
+                width: 300px;
+                height: 300px;
+                background: #8B5CF6;
+                top: 40%;
+                left: 60%;
+            }
+
+            /* Grid lines */
+            .bg-grid {
+                position: absolute;
+                inset: 0;
+                background-image:
+                    linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+                    linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+                background-size: 40px 40px;
+            }
+
+            /* Login container */
+            .login-wrap {
+                position: relative;
+                z-index: 10;
+                display: flex;
+                width: 900px;
+                max-width: 97vw;
+                min-height: 540px;
+                border-radius: 20px;
+                overflow: hidden;
+                box-shadow: 0 25px 60px rgba(0, 0, 0, 0.6);
+                border: 1px solid rgba(255, 255, 255, 0.06);
+            }
+
+            /* LEFT PANEL */
+            .login-left {
+                flex: 1;
+                background: linear-gradient(145deg, #13151F 0%, #1A1D2E 100%);
+                border-right: 1px solid rgba(255, 255, 255, 0.06);
+                padding: 48px 44px;
+                display: flex;
+                flex-direction: column;
+                justify-content: space-between;
+            }
+
+            .brand {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+            }
+
+            .brand-icon {
+                width: 44px;
+                height: 44px;
+                background: #E85D04;
+                border-radius: 12px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 22px;
+            }
+
+            .brand-name {
+                font-size: 18px;
+                font-weight: 700;
+                color: #fff;
+            }
+
+            .brand-sub {
+                font-size: 11px;
+                color: #E85D04;
+                text-transform: uppercase;
+                letter-spacing: 1px;
+                font-weight: 600;
+            }
+
+            .panel-title {
+                font-size: 32px;
+                font-weight: 700;
+                color: #fff;
+                line-height: 1.25;
+                margin-bottom: 14px;
+            }
+
+            .panel-title span {
+                color: #E85D04;
+            }
+
+            .panel-desc {
+                font-size: 14px;
+                color: #8B8FA8;
+                line-height: 1.7;
+                margin-bottom: 32px;
+            }
+
+            .panel-stats {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 14px;
+            }
+
+            .panel-stat {
+                background: rgba(255, 255, 255, 0.04);
+                border: 1px solid rgba(255, 255, 255, 0.07);
+                border-radius: 12px;
+                padding: 16px;
+            }
+
+            .panel-stat-val {
+                font-size: 22px;
+                font-weight: 700;
+                color: #fff;
+            }
+
+            .panel-stat-label {
+                font-size: 11px;
+                color: #8B8FA8;
+                margin-top: 3px;
+            }
+
+            .panel-footer {
+                font-size: 12px;
+                color: #5B5F75;
+            }
+
+            /* RIGHT PANEL */
+            .login-right {
+                width: 400px;
+                background: #1A1D2E;
+                padding: 48px 40px;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+            }
+
+            .login-header {
+                margin-bottom: 32px;
+            }
+
+            .login-title {
+                font-size: 22px;
+                font-weight: 700;
+                color: #fff;
+                margin-bottom: 6px;
+            }
+
+            .login-subtitle {
+                font-size: 13px;
+                color: #8B8FA8;
+            }
+
+            /* Error alert */
+            .alert-error {
+                background: rgba(239, 68, 68, 0.1);
+                border: 1px solid rgba(239, 68, 68, 0.25);
+                border-radius: 8px;
+                padding: 12px 14px;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                font-size: 13px;
+                color: #EF4444;
+                margin-bottom: 20px;
+            }
+
+            /* Form */
+            .form-group {
+                margin-bottom: 18px;
+            }
+
+            .form-label {
+                display: block;
+                font-size: 12px;
+                font-weight: 600;
+                color: #8B8FA8;
+                text-transform: uppercase;
+                letter-spacing: 0.6px;
+                margin-bottom: 8px;
+            }
+
+            .input-wrap {
+                position: relative;
+            }
+
+            .input-icon {
+                position: absolute;
+                left: 14px;
+                top: 50%;
+                transform: translateY(-50%);
+                color: #5B5F75;
+                font-size: 14px;
+                pointer-events: none;
+            }
+
+            .form-input {
+                width: 100%;
+                background: #13151F;
+                border: 1px solid #252840;
+                border-radius: 10px;
+                padding: 12px 14px 12px 42px;
+                color: #fff;
+                font-size: 14px;
+                font-family: 'Inter', sans-serif;
+                outline: none;
+                transition: border-color 0.2s, box-shadow 0.2s;
+            }
+
+            .form-input:focus {
+                border-color: #E85D04;
+                box-shadow: 0 0 0 3px rgba(232, 93, 4, 0.12);
+            }
+
+            .form-input::placeholder {
+                color: #3D4159;
+            }
+
+            .toggle-pass {
+                position: absolute;
+                right: 14px;
+                top: 50%;
+                transform: translateY(-50%);
+                background: none;
+                border: none;
+                color: #5B5F75;
+                cursor: pointer;
+                font-size: 14px;
+                padding: 0;
+            }
+
+            .toggle-pass:hover {
+                color: #8B8FA8;
+            }
+
+            .form-row {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                margin-bottom: 24px;
+                font-size: 13px;
+            }
+
+            .remember-wrap {
+                display: flex;
+                align-items: center;
+                gap: 7px;
+                color: #8B8FA8;
+                cursor: pointer;
+            }
+
+            .remember-wrap input[type="checkbox"] {
+                width: 15px;
+                height: 15px;
+                accent-color: #E85D04;
+                cursor: pointer;
+            }
+
+            .forgot-link {
+                color: #E85D04;
+                text-decoration: none;
+                font-size: 12px;
+            }
+
+            .forgot-link:hover {
+                text-decoration: underline;
+            }
+
+            /* Submit button */
+            .btn-login {
+                width: 100%;
+                padding: 13px;
+                background: #E85D04;
+                color: #fff;
+                border: none;
+                border-radius: 10px;
+                font-size: 14px;
+                font-weight: 700;
+                font-family: 'Inter', sans-serif;
+                cursor: pointer;
+                transition: all 0.2s;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 8px;
+            }
+
+            .btn-login:hover {
+                background: #FF6B2B;
+                transform: translateY(-1px);
+                box-shadow: 0 6px 20px rgba(232, 93, 4, 0.4);
+            }
+
+            .btn-login:active {
+                transform: translateY(0);
+            }
+
+            /* Demo hint */
+            .demo-hint {
+                margin-top: 20px;
+                background: rgba(232, 93, 4, 0.06);
+                border: 1px solid rgba(232, 93, 4, 0.15);
+                border-radius: 8px;
+                padding: 12px 14px;
+                font-size: 12px;
+                color: #8B8FA8;
+                line-height: 1.7;
+            }
+
+            .demo-hint strong {
+                color: #E85D04;
+            }
+
+            /* Responsive */
+            @@media (max-width: 768px) {
+                .login-left {
+                    display: none;
+                }
+
+                .login-right {
+                    width: 100%;
+                    padding: 36px 28px;
+                }
+                .login-wrap {
+                    min-height: auto;
+                }
+            }
+    </style>
+</head>
+<body>
+    <!-- Background decoration -->
+    <div class="bg-dec">
+        <div class="bg-grid"></div>
+        <div class="bg-circle bg-circle-1"></div>
+        <div class="bg-circle bg-circle-2"></div>
+        <div class="bg-circle bg-circle-3"></div>
+    </div>
+
+    <div class="login-wrap">
+        <!-- LEFT PANEL -->
+        <div class="login-left">
+            <div class="brand">
+                <div class="brand-icon">🍜</div>
+                <div>
+                    <div class="brand-name">Vinh Khánh</div>
+                    <div class="brand-sub">Food Street Admin</div>
+                </div>
+            </div>
+
+            <div>
+                <h1 class="panel-title">
+                    Hệ thống quản lý<br />
+                    <span>Ẩm thực đường phố</span>
+                </h1>
+                <p class="panel-desc">
+                    Trung tâm điều phối toàn bộ hoạt động tại khu ẩm thực Vinh Khánh —
+                    quản lý địa điểm, audio thuyết minh, bản dịch đa ngôn ngữ và tour tham quan.
+                </p>
+
+                <div class="panel-stats">
+                    <div class="panel-stat">
+                        <div class="panel-stat-val">3</div>
+                        <div class="panel-stat-label">Ngôn ngữ hỗ trợ</div>
+                    </div>
+                    <div class="panel-stat">
+                        <div class="panel-stat-val" style="color:#E85D04;">24/7</div>
+                        <div class="panel-stat-label">Sẵn sàng hoạt động</div>
+                    </div>
+                    <div class="panel-stat">
+                        <div class="panel-stat-val" style="color:#22C55E;">CMS</div>
+                        <div class="panel-stat-label">Quản lý nội dung</div>
+                    </div>
+                    <div class="panel-stat">
+                        <div class="panel-stat-val" style="color:#3B82F6;">Tour</div>
+                        <div class="panel-stat-label">Lộ trình tham quan</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel-footer">
+                &copy; 2026 VK StreetFood &mdash; Hệ thống quản trị nội bộ
+            </div>
+        </div>
+
+        <!-- RIGHT PANEL -->
+        <div class="login-right">
+            <div class="login-header">
+                <div class="login-title">Chào mừng trở lại 👋</div>
+                <div class="login-subtitle">Đăng nhập để truy cập trang quản trị</div>
+            </div>
+
+            @if (ViewBag.Error != null)
+            {
+                <div class="alert-error">
+                    <i class="fa-solid fa-circle-exclamation"></i>
+                    @ViewBag.Error
+                </div>
+            }
+
+            <form method="post" action="/Home/Login">
+                <div class="form-group">
+                    <label class="form-label">Tên đăng nhập</label>
+                    <div class="input-wrap">
+                        <i class="fa-solid fa-user input-icon"></i>
+                        <input type="text" name="username" class="form-input" placeholder="Nhập tên đăng nhập..."
+                               autocomplete="username" required />
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Mật khẩu</label>
+                    <div class="input-wrap">
+                        <i class="fa-solid fa-lock input-icon"></i>
+                        <input type="password" name="password" id="passwordInput" class="form-input"
+                               placeholder="Nhập mật khẩu..." autocomplete="current-password" required />
+                        <button type="button" class="toggle-pass" onclick="togglePassword()">
+                            <i class="fa-solid fa-eye" id="eyeIcon"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <label class="remember-wrap">
+                        <input type="checkbox" name="remember" />
+                        Ghi nhớ đăng nhập
+                    </label>
+                    <a href="#" class="forgot-link">Quên mật khẩu?</a>
+                </div>
+
+                <button type="submit" class="btn-login">
+                    <i class="fa-solid fa-arrow-right-to-bracket"></i>
+                    Đăng nhập
+                </button>
+            </form>
+
+            <div class="demo-hint">
+                <i class="fa-solid fa-circle-info" style="color:#E85D04;margin-right:5px;"></i>
+                <strong>Demo:</strong> username <strong>admin</strong> / password <strong>admin123</strong>
+            </div>
+        </div>
+    </div>
+
+    <script>
+            function togglePassword() {
+                const input = document.getElementById('passwordInput');
+                const icon = document.getElementById('eyeIcon');
+                if (input.type === 'password') {
+                    input.type = 'text';
+                    icon.className = 'fa-solid fa-eye-slash';
+                } else {
+                    input.type = 'password';
+                    icon.className = 'fa-solid fa-eye';
+                }
+            }
+    </script>
+</body>
+
+</html>
