@@ -177,4 +177,78 @@
   <data name="ListenAudio" xml:space="preserve">
     <value>듣기</value>
   </data>
+
+  <!-- Menu / Explore Page -->
+  <data name="TabExplore" xml:space="preserve">
+    <value>탐헙</value>
+  </data>
+  <data name="MenuTitle" xml:space="preserve">
+    <value>🍜 음식 메뉴</value>
+  </data>
+  <data name="MenuSubtitle" xml:space="preserve">
+    <value>빈 칸</value>
+  </data>
+  <data name="MenuSearchPlaceholder" xml:space="preserve">
+    <value>이름, 주소, 음식 검색...</value>
+  </data>
+  <data name="MenuEmpty" xml:space="preserve">
+    <value>식당을 찾을 수 없어요</value>
+  </data>
+  <data name="MenuPointsUnit" xml:space="preserve">
+    <value> 곣</value>
+  </data>
+  <data name="MenuRetry" xml:space="preserve">
+    <value>다시 시도</value>
+  </data>
+
+  <!-- Now Playing Page -->
+  <data name="NowPlayingHeader" xml:space="preserve">
+    <value>재생 중</value>
+  </data>
+  <data name="NowPlayingSkipBack" xml:space="preserve">
+    <value>5초 뒤로</value>
+  </data>
+  <data name="NowPlayingStop" xml:space="preserve">
+    <value>정지</value>
+  </data>
+  <data name="NowPlayingSkipForward" xml:space="preserve">
+    <value>5초 앞으로</value>
+  </data>
+  <data name="NowPlayingClose" xml:space="preserve">
+    <value>닫기</value>
+  </data>
+
+  <!-- POI Detail Page -->
+  <data name="POIDetailDescription" xml:space="preserve">
+    <value>설명</value>
+  </data>
+  <data name="POIDetailAddress" xml:space="preserve">
+    <value>📍 주소</value>
+  </data>
+  <data name="POIDetailAudioGuide" xml:space="preserve">
+    <value>🎧 오디오 가이드</value>
+  </data>
+  <data name="POIDetailAudioLang" xml:space="preserve">
+    <value>언어</value>
+  </data>
+  <data name="POIDetailTranscript" xml:space="preserve">
+    <value>📝 스크립트</value>
+  </data>
+  <data name="POIDetailRating" xml:space="preserve">
+    <value>⭐ 이곳을 평가하세요</value>
+  </data>
+  <data name="POIDetailVendors" xml:space="preserve">
+    <value>🍽️ 판매점</value>
+  </data>
+
+  <!-- POI Action Sheet -->
+  <data name="POIActionListen" xml:space="preserve">
+    <value>🎧 오디오 가이드</value>
+  </data>
+  <data name="POIActionDetail" xml:space="preserve">
+    <value>📍 상세 보기</value>
+  </data>
+  <data name="POIActionClose" xml:space="preserve">
+    <value>닫기</value>
+  </data>
 </root>

@@ -7,6 +7,7 @@ using Mapsui.Tiling;
 using Mapsui.UI.Maui;
 using VK.Mobile.ViewModels;
 using VK.Mobile.Models;
+using VK.Mobile.Services;
 
 namespace VK.Mobile.Views;
 
@@ -303,18 +304,21 @@ public partial class MainMapPage : ContentPage
                 if (poi != null)
                 {
                     // Show popup with audio test option
+                    var L = LocalizationResourceManager.Instance;
+                    var listen = L["POIActionListen"];
+                    var detail = L["POIActionDetail"];
                     var action = await DisplayActionSheet(
                         poi.Name,
-                        "Đóng",
+                        L["POIActionClose"],
                         null,
-                        " Nghe thuyết minh",
-                        " Xem chi tiết");
+                        listen,
+                        detail);
 
-                    if (action == " Nghe thuyết minh")
+                    if (action == listen)
                     {
                         await _viewModel.TestAudioCommand.ExecuteAsync(poi);
                     }
-                    else if (action == " Xem chi tiết")
+                    else if (action == detail)
                     {
                         await _viewModel.POISelectedCommand.ExecuteAsync(poi);
                     }
@@ -334,6 +338,30 @@ public partial class MainMapPage : ContentPage
             var langCode = AppSettings.SupportedLanguages[picker.SelectedIndex];
             await _viewModel.ChangeLanguageCommand.ExecuteAsync(langCode);
         }
+    }
+
+    private void OnZoomInClicked(object? sender, EventArgs e)
+    {
+        if (_mapControl?.Map?.Navigator == null) return;
+        _mapControl.Map.Navigator.ZoomIn(300);
+        _mapControl.Map.Refresh();
+    }
+
+    private void OnZoomOutClicked(object? sender, EventArgs e)
+    {
+        if (_mapControl?.Map?.Navigator == null) return;
+        _mapControl.Map.Navigator.ZoomOut(300);
+        _mapControl.Map.Refresh();
+    }
+
+    private void OnLocateMeClicked(object? sender, EventArgs e)
+    {
+        if (_mapControl?.Map?.Navigator == null) return;
+        var loc = _viewModel.CurrentLocation;
+        if (loc == null) return;
+        var center = SphericalMercator.FromLonLat(loc.Longitude, loc.Latitude).ToMPoint();
+        _mapControl.Map.Navigator.CenterOnAndZoomTo(center, ZoomResolution(17), 300);
+        _mapControl.Map.Refresh();
     }
 
     protected override async void OnAppearing()

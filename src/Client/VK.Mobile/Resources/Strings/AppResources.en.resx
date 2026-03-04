@@ -177,4 +177,78 @@
   <data name="ListenAudio" xml:space="preserve">
     <value>Listen</value>
   </data>
+
+  <!-- Menu / Explore Page -->
+  <data name="TabExplore" xml:space="preserve">
+    <value>Explore</value>
+  </data>
+  <data name="MenuTitle" xml:space="preserve">
+    <value>🍜 Food Menu</value>
+  </data>
+  <data name="MenuSubtitle" xml:space="preserve">
+    <value>Vinh Khanh</value>
+  </data>
+  <data name="MenuSearchPlaceholder" xml:space="preserve">
+    <value>Search name, address, food...</value>
+  </data>
+  <data name="MenuEmpty" xml:space="preserve">
+    <value>No food spots found</value>
+  </data>
+  <data name="MenuPointsUnit" xml:space="preserve">
+    <value> spots</value>
+  </data>
+  <data name="MenuRetry" xml:space="preserve">
+    <value>Retry</value>
+  </data>
+
+  <!-- Now Playing Page -->
+  <data name="NowPlayingHeader" xml:space="preserve">
+    <value>NOW PLAYING</value>
+  </data>
+  <data name="NowPlayingSkipBack" xml:space="preserve">
+    <value>Back 5s</value>
+  </data>
+  <data name="NowPlayingStop" xml:space="preserve">
+    <value>Stop</value>
+  </data>
+  <data name="NowPlayingSkipForward" xml:space="preserve">
+    <value>Forward 5s</value>
+  </data>
+  <data name="NowPlayingClose" xml:space="preserve">
+    <value>Close</value>
+  </data>
+
+  <!-- POI Detail Page -->
+  <data name="POIDetailDescription" xml:space="preserve">
+    <value>Description</value>
+  </data>
+  <data name="POIDetailAddress" xml:space="preserve">
+    <value>📍 Address</value>
+  </data>
+  <data name="POIDetailAudioGuide" xml:space="preserve">
+    <value>🎧 Audio Guide</value>
+  </data>
+  <data name="POIDetailAudioLang" xml:space="preserve">
+    <value>Language</value>
+  </data>
+  <data name="POIDetailTranscript" xml:space="preserve">
+    <value>📝 Transcript</value>
+  </data>
+  <data name="POIDetailRating" xml:space="preserve">
+    <value>⭐ Rate this place</value>
+  </data>
+  <data name="POIDetailVendors" xml:space="preserve">
+    <value>🍽️ Vendors</value>
+  </data>
+
+  <!-- POI Action Sheet -->
+  <data name="POIActionListen" xml:space="preserve">
+    <value>🎧 Audio Guide</value>
+  </data>
+  <data name="POIActionDetail" xml:space="preserve">
+    <value>📍 View Details</value>
+  </data>
+  <data name="POIActionClose" xml:space="preserve">
+    <value>Close</value>
+  </data>
 </root>

@@ -1,8 +1,10 @@
 using CommunityToolkit.Maui.Alerts;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Microsoft.Extensions.DependencyInjection;
 using VK.Mobile.Models;
 using VK.Mobile.Services;
+using VK.Mobile.Views;
 using System.Collections.ObjectModel;
 using Microsoft.Extensions.Logging;
 
@@ -16,6 +18,7 @@ public partial class MainMapViewModel : ObservableObject
     private readonly ITTSService _ttsService;
     private readonly StorageService _storageService;
     private readonly ILogger<MainMapViewModel> _logger;
+    private readonly IServiceProvider _serviceProvider;
 
     // Debounce: bỏ qua các trigger ngay sau khi khởi động
     private DateTime _trackingStartTime = DateTime.MaxValue;
@@ -80,7 +83,8 @@ public partial class MainMapViewModel : ObservableObject
         IAudioService audioService,
         ITTSService ttsService,
         StorageService storageService,
-        ILogger<MainMapViewModel> logger)
+        ILogger<MainMapViewModel> logger,
+        IServiceProvider serviceProvider)
     {
         _apiService = apiService;
         _locationService = locationService;
@@ -88,6 +92,7 @@ public partial class MainMapViewModel : ObservableObject
         _ttsService = ttsService;
         _storageService = storageService;
         _logger = logger;
+        _serviceProvider = serviceProvider;
 
         _locationService.LocationChanged += OnLocationChanged;
 
@@ -213,63 +218,50 @@ public partial class MainMapViewModel : ObservableObject
     {
         try
         {
-            _logger.LogInformation("Playing audio for POI: {Name}, Language: {Lang}", poi.Name, SelectedLanguage);
-            System.Diagnostics.Debug.WriteLine($"[Audio] Tap POI '{poi.Name}', lang={SelectedLanguage}");
+            _logger.LogInformation("Opening NowPlaying for POI: {Name}, Language: {Lang}", poi.Name, SelectedLanguage);
 
-            // Dừng audio đang chạy (nếu có)
+            // Dừng audio đang chạy
             await _ttsService.StopAsync();
 
-            // Hiển thị feedback ngay cho user biết app đã nhận lệnh
-            var langLabel = SelectedLanguage switch { "en" => "English", "ko" => "한국어", _ => "Tiếng Việt" };
-            await MainThread.InvokeOnMainThreadAsync(async () =>
-                await Shell.Current.DisplayAlert("🎧 Thuyết minh", $"📍 {poi.Name}\n🌐 {langLabel}", "OK")
-            );
-
-            System.Diagnostics.Debug.WriteLine($"[Audio] Start speak: POI='{poi.Name}', lang={SelectedLanguage}");
-
             // Fetch nội dung audio đúng ngôn ngữ từ API
-            AudioContentResult? audioContent = null;
+            string audioText;
             try
             {
-                audioContent = await _apiService.GetAudioForPOIAsync(poi.Id, SelectedLanguage);
-                System.Diagnostics.Debug.WriteLine($"[Audio] API response: {(audioContent == null ? "null" : $"lang={audioContent.LanguageCode}, textLen={audioContent.TextContent?.Length ?? 0}")}");
+                var audioContent = await _apiService.GetAudioForPOIAsync(poi.Id, SelectedLanguage);
+                if (audioContent != null && !string.IsNullOrWhiteSpace(audioContent.TextContent))
+                    audioText = audioContent.TextContent.Length > 500
+                        ? audioContent.TextContent[..500]
+                        : audioContent.TextContent;
+                else
+                    audioText = BuildFallbackText(poi);
             }
-            catch (Exception apiEx)
+            catch
             {
-                System.Diagnostics.Debug.WriteLine($"[Audio] API error (will use fallback): {apiEx.Message}");
-            }
-
-            // Dùng text content đúng ngôn ngữ để đọc
-            if (audioContent != null && !string.IsNullOrWhiteSpace(audioContent.TextContent))
-            {
-                var text = audioContent.TextContent.Length > 500
-                    ? audioContent.TextContent[..500]
-                    : audioContent.TextContent;
-                System.Diagnostics.Debug.WriteLine($"[Audio] Speaking via TTS: '{text[..Math.Min(80, text.Length)]}...'");
-                await _ttsService.SpeakTextAsync(text, SelectedLanguage);
-                return;
+                audioText = BuildFallbackText(poi);
             }
 
-            // Fallback: đọc tên + mô tả POI bằng MAUI TTS
-            System.Diagnostics.Debug.WriteLine($"[Audio] No audio content from API, using POI description fallback");
-            var fallbackText = SelectedLanguage switch
-            {
-                "en" => $"{poi.Name}. {(string.IsNullOrWhiteSpace(poi.Description) ? "A famous street food spot in Vinh Khanh." : poi.Description[..Math.Min(300, poi.Description.Length)])}",
-                "ko" => $"{poi.Name}. 이 곳은 빈칸의 유명한 길거리 음식 명소입니다.",
-                _ => $"{poi.Name}. {(string.IsNullOrWhiteSpace(poi.Description) ? "Điểm ẩm thực nổi tiếng tại Vĩnh Khánh." : poi.Description[..Math.Min(300, poi.Description.Length)])}"
-            };
-            await _ttsService.SpeakTextAsync(fallbackText, SelectedLanguage);
+            // Mở NowPlayingPage dạng modal overlay
+            var page = _serviceProvider.GetRequiredService<NowPlayingPage>();
+            var vm = (NowPlayingViewModel)page.BindingContext;
+            vm.Initialize(poi.Name ?? string.Empty, poi.CategoryName ?? string.Empty,
+                          poi.ImageUrl ?? string.Empty, audioText, SelectedLanguage);
+            await Shell.Current.Navigation.PushModalAsync(page, animated: true);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error playing audio for POI {Name}", poi.Name);
-            System.Diagnostics.Debug.WriteLine($"[Audio] Error: {ex.Message}\n{ex.StackTrace}");
+            _logger.LogError(ex, "Error opening NowPlaying for POI {Name}", poi.Name);
             await MainThread.InvokeOnMainThreadAsync(async () =>
-            {
-                await Shell.Current.DisplayAlert("⚠️ Lỗi", $"Không phát được thuyết minh: {ex.Message}", "Đóng");
-            });
+                await Shell.Current.DisplayAlert("⚠️ Lỗi", $"Không mở được trình phát: {ex.Message}", "Đóng")
+            );
         }
     }
+
+    private string BuildFallbackText(POIModel poi) => SelectedLanguage switch
+    {
+        "en" => $"{poi.Name}. {(string.IsNullOrWhiteSpace(poi.Description) ? "A famous street food spot in Vinh Khanh." : poi.Description[..Math.Min(300, poi.Description.Length)])}",
+        "ko" => $"{poi.Name}. 이 곳은 빈칸의 유명한 길거리 음식 명소입니다.",
+        _ => $"{poi.Name}. {(string.IsNullOrWhiteSpace(poi.Description) ? "Điểm ẩm thực nổi tiếng tại Vĩnh Khánh." : poi.Description[..Math.Min(300, poi.Description.Length)])}"
+    };
 
     [RelayCommand]
     private async Task StartTrackingAsync()

@@ -18,7 +18,7 @@
 
     <!-- Main TabBar -->
     <TabBar>
-        <!-- Home Tab -->
+        <!-- Bản đồ -->
         <ShellContent
             x:Name="TabMap"
             Title="Bản đồ"
@@ -27,11 +27,24 @@
             <ShellContent.Icon>
                 <FontImageSource Glyph="🗺️"
                                  FontFamily="OpenSansRegular"
-                                 Size="24"/>
+                                 Size="22"/>
             </ShellContent.Icon>
         </ShellContent>
 
-        <!-- Favorites Tab -->
+        <!-- Khám phá (Menu POI) -->
+        <ShellContent
+            x:Name="TabMenu"
+            Title="Khám phá"
+            Route="Menu"
+            ContentTemplate="{DataTemplate local:MenuPage}">
+            <ShellContent.Icon>
+                <FontImageSource Glyph="🍜"
+                                 FontFamily="OpenSansRegular"
+                                 Size="22"/>
+            </ShellContent.Icon>
+        </ShellContent>
+
+        <!-- Yêu thích -->
         <ShellContent
             x:Name="TabFavorites"
             Title="Yêu thích"
@@ -40,11 +53,11 @@
             <ShellContent.Icon>
                 <FontImageSource Glyph="❤️"
                                  FontFamily="OpenSansRegular"
-                                 Size="24"/>
+                                 Size="22"/>
             </ShellContent.Icon>
         </ShellContent>
 
-        <!-- Profile Tab -->
+        <!-- Hồ sơ -->
         <ShellContent
             x:Name="TabProfile"
             Title="Hồ sơ"
@@ -53,11 +66,11 @@
             <ShellContent.Icon>
                 <FontImageSource Glyph="👤"
                                  FontFamily="OpenSansRegular"
-                                 Size="24"/>
+                                 Size="22"/>
             </ShellContent.Icon>
         </ShellContent>
 
-        <!-- Settings Tab -->
+        <!-- Cài đặt -->
         <ShellContent
             x:Name="TabSettings"
             Title="Cài đặt"
@@ -66,7 +79,7 @@
             <ShellContent.Icon>
                 <FontImageSource Glyph="⚙️"
                                  FontFamily="OpenSansRegular"
-                                 Size="24"/>
+                                 Size="22"/>
             </ShellContent.Icon>
         </ShellContent>
     </TabBar>

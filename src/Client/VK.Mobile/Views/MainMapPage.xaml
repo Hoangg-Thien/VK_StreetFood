@@ -49,6 +49,59 @@
             <!-- Map Container -->
             <ContentView x:Name="MapContainer"/>
 
+            <!-- Map Control Buttons (zoom + locate) -->
+            <VerticalStackLayout HorizontalOptions="End"
+                                 VerticalOptions="Center"
+                                 Spacing="2"
+                                 Margin="0,0,10,0">
+                <!-- Zoom In -->
+                <Border BackgroundColor="#CC1A1A1A"
+                        StrokeShape="RoundRectangle 8"
+                        Stroke="Transparent"
+                        WidthRequest="36"
+                        HeightRequest="36">
+                    <Button Text="+"
+                            FontSize="26"
+                            FontAttributes="Bold"
+                            TextColor="White"
+                            BackgroundColor="Transparent"
+                            Padding="0"
+                            Clicked="OnZoomInClicked"/>
+                </Border>
+                <!-- Divider -->
+                <BoxView HeightRequest="1"
+                         Color="#555"
+                         Margin="6,0"/>
+                <!-- Zoom Out -->
+                <Border BackgroundColor="#CC1A1A1A"
+                        StrokeShape="RoundRectangle 8"
+                        Stroke="Transparent"
+                        WidthRequest="36"
+                        HeightRequest="36">
+                    <Button Text="−"
+                            FontSize="28"
+                            FontAttributes="Bold"
+                            TextColor="White"
+                            BackgroundColor="Transparent"
+                            Padding="0"
+                            Clicked="OnZoomOutClicked"/>
+                </Border>
+                <!-- Locate Me -->
+                <Border BackgroundColor="#CCFF6B35"
+                        StrokeShape="RoundRectangle 8"
+                        Stroke="Transparent"
+                        WidthRequest="36"
+                        HeightRequest="36"
+                        Margin="0,8,0,0">
+                    <Button Text="➤"
+                            FontSize="18"
+                            TextColor="White"
+                            BackgroundColor="Transparent"
+                            Padding="0"
+                            Clicked="OnLocateMeClicked"/>
+                </Border>
+            </VerticalStackLayout>
+
             <!-- API Error Banner (top of map) -->
             <Frame VerticalOptions="Start"
                    HorizontalOptions="Fill"
@@ -60,7 +113,7 @@
                    HasShadow="False"
                    IsVisible="{Binding HasPoiError}">
                 <Grid ColumnDefinitions="*,Auto"
-                        ColumnSpacing="8">
+                      ColumnSpacing="8">
                     <Label Grid.Column="0"
                            Text="{Binding PoiLoadError}"
                            FontSize="11"

@@ -1,0 +1,222 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:VK.Mobile.ViewModels"
+             xmlns:models="clr-namespace:VK.Mobile.Models"
+             xmlns:loc="clr-namespace:VK.Mobile.Services"
+             x:Class="VK.Mobile.Views.MenuPage"
+             x:DataType="vm:MenuViewModel"
+             Title="{Binding Source={x:Static loc:LocalizationResourceManager.Instance}, Path=[MenuTitle]}"
+             BackgroundColor="#F8F9FA">
+
+    <Grid RowDefinitions="Auto,Auto,*">
+
+        <!-- Header -->
+        <Grid Grid.Row="0"
+              Padding="16,14,16,14"
+              BackgroundColor="#FF5722">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <VerticalStackLayout Grid.Column="0"
+                                 Spacing="2">
+                <Label Text="{Binding Source={x:Static loc:LocalizationResourceManager.Instance}, Path=[MenuTitle]}"
+                       FontSize="20"
+                       FontAttributes="Bold"
+                       TextColor="White"/>
+                <Label Text="{Binding Source={x:Static loc:LocalizationResourceManager.Instance}, Path=[MenuSubtitle]}"
+                       FontSize="12"
+                       TextColor="#FFD0BA"/>
+            </VerticalStackLayout>
+
+            <Border Grid.Column="1"
+                    BackgroundColor="#CC000000"
+                    StrokeShape="RoundRectangle 16"
+                    Stroke="Transparent"
+                    Padding="10,6">
+                <Label TextColor="White"
+                       FontSize="13"
+                       FontAttributes="Bold">
+                    <Label.FormattedText>
+                        <FormattedString>
+                            <Span Text="{Binding FilteredPois.Count}"/>
+                            <Span Text="{Binding Source={x:Static loc:LocalizationResourceManager.Instance}, Path=[MenuPointsUnit]}"/>
+                        </FormattedString>
+                    </Label.FormattedText>
+                </Label>
+            </Border>
+        </Grid>
+
+        <!-- Search Bar -->
+        <Border Grid.Row="1"
+                BackgroundColor="White"
+                StrokeShape="RoundRectangle 12"
+                Stroke="#E0E0E0"
+                Margin="12,10"
+                Padding="12,0">
+            <Grid ColumnDefinitions="Auto,*,Auto"
+                  ColumnSpacing="8">
+                <Label Grid.Column="0"
+                       Text="🔍"
+                       FontSize="18"
+                       VerticalOptions="Center"/>
+                <Entry Grid.Column="1"
+                       Placeholder="{Binding Source={x:Static loc:LocalizationResourceManager.Instance}, Path=[MenuSearchPlaceholder]}"
+                       Text="{Binding SearchText}"
+                       FontSize="14"
+                       BackgroundColor="Transparent"
+                       PlaceholderColor="#AAAAAA"/>
+                <Label Grid.Column="2"
+                       Text="✕"
+                       FontSize="16"
+                       TextColor="#AAAAAA"
+                       VerticalOptions="Center"
+                       IsVisible="{Binding SearchText, Converter={StaticResource StringNotEmptyConverter}}">
+                    <Label.GestureRecognizers>
+                        <TapGestureRecognizer Command="{Binding ClearSearchCommand}"/>
+                    </Label.GestureRecognizers>
+                </Label>
+            </Grid>
+        </Border>
+
+        <!-- Content -->
+        <Grid Grid.Row="2">
+            <!-- Loading -->
+            <ActivityIndicator IsRunning="{Binding IsLoading}"
+                               IsVisible="{Binding IsLoading}"
+                               Color="#FF5722"
+                               VerticalOptions="Center"
+                               HorizontalOptions="Center"/>
+
+            <!-- Error -->
+            <VerticalStackLayout IsVisible="{Binding ErrorMessage, Converter={StaticResource StringNotEmptyConverter}}"
+                                 VerticalOptions="Center"
+                                 HorizontalOptions="Center"
+                                 Spacing="12"
+                                 Padding="24">
+                <Label Text="⚠️"
+                       FontSize="48"
+                       HorizontalOptions="Center"/>
+                <Label Text="{Binding ErrorMessage}"
+                       TextColor="#666"
+                       FontSize="14"
+                       HorizontalTextAlignment="Center"/>
+                <Button Text="{Binding Source={x:Static loc:LocalizationResourceManager.Instance}, Path=[MenuRetry]}"
+                        Command="{Binding LoadPOIsCommand}"
+                        BackgroundColor="#FF5722"
+                        TextColor="White"
+                        CornerRadius="8"
+                        Padding="24,10"/>
+            </VerticalStackLayout>
+
+            <!-- POI List -->
+            <CollectionView ItemsSource="{Binding FilteredPois}"
+                            IsVisible="{Binding IsLoading, Converter={StaticResource InvertedBoolConverter}}"
+                            Margin="12,0,12,12"
+                            SelectionMode="None">
+                <CollectionView.EmptyView>
+                    <VerticalStackLayout VerticalOptions="Center"
+                                         HorizontalOptions="Center"
+                                         Spacing="8"
+                                         Padding="0,60">
+                        <Label Text="🍽️"
+                               FontSize="48"
+                               HorizontalOptions="Center"/>
+                        <Label Text="{Binding Source={x:Static loc:LocalizationResourceManager.Instance}, Path=[MenuEmpty]}"
+                               TextColor="#999"
+                               FontSize="15"
+                               HorizontalOptions="Center"/>
+                    </VerticalStackLayout>
+                </CollectionView.EmptyView>
+
+                <CollectionView.ItemTemplate>
+                    <DataTemplate x:DataType="models:POIModel">
+                        <Border BackgroundColor="White"
+                                StrokeShape="RoundRectangle 12"
+                                Stroke="#F0F0F0"
+                                Margin="0,0,0,10"
+                                Padding="0">
+                            <Border.Shadow>
+                                <Shadow Brush="#20000000"
+                                        Offset="0,2"
+                                        Radius="6"/>
+                            </Border.Shadow>
+                            <Grid ColumnDefinitions="Auto,*,Auto"
+                                  ColumnSpacing="0">
+                                <!-- Category color strip -->
+                                <BoxView Grid.Column="0"
+                                         WidthRequest="5"
+                                         BackgroundColor="#FF5722"
+                                         CornerRadius="12,0,0,12"/>
+
+                                <!-- Content -->
+                                <VerticalStackLayout Grid.Column="1"
+                                                     Padding="12,10"
+                                                     Spacing="4">
+                                    <Label Text="{Binding Name}"
+                                           FontSize="15"
+                                           FontAttributes="Bold"
+                                           TextColor="#1A1A1A"
+                                           LineBreakMode="TailTruncation"/>
+                                    <Label Text="{Binding Address}"
+                                           FontSize="12"
+                                           TextColor="#888"
+                                           LineBreakMode="TailTruncation"/>
+                                    <Label Text="{Binding Description}"
+                                           FontSize="12"
+                                           TextColor="#666"
+                                           LineBreakMode="TailTruncation"
+                                           MaxLines="2"/>
+                                    <!-- Tags row -->
+                                    <HorizontalStackLayout Spacing="6"
+                                                           Margin="0,4,0,0">
+                                        <Border BackgroundColor="#FFF3EE"
+                                                StrokeShape="RoundRectangle 8"
+                                                Stroke="Transparent"
+                                                Padding="8,3">
+                                            <Label Text="{Binding CategoryName}"
+                                                   FontSize="11"
+                                                   TextColor="#FF5722"/>
+                                        </Border>
+                                        <Border BackgroundColor="#E8F5E9"
+                                                StrokeShape="RoundRectangle 8"
+                                                Stroke="Transparent"
+                                                Padding="8,3"
+                                                IsVisible="{Binding AverageRating, Converter={StaticResource GreaterThanZeroConverter}}">
+                                            <Label FontSize="11"
+                                                   TextColor="#388E3C">
+                                                <Label.FormattedText>
+                                                    <FormattedString>
+                                                        <Span Text="⭐ "/>
+                                                        <Span Text="{Binding AverageRating, StringFormat='{0:F1}'}"/>
+                                                    </FormattedString>
+                                                </Label.FormattedText>
+                                            </Label>
+                                        </Border>
+                                    </HorizontalStackLayout>
+                                </VerticalStackLayout>
+
+                                <!-- Arrow -->
+                                <Label Grid.Column="2"
+                                       Text="›"
+                                       FontSize="28"
+                                       TextColor="#CCC"
+                                       VerticalOptions="Center"
+                                       Margin="0,0,12,0"/>
+                            </Grid>
+
+                            <Border.GestureRecognizers>
+                                <TapGestureRecognizer
+                                    Command="{Binding Source={RelativeSource AncestorType={x:Type vm:MenuViewModel}}, Path=SelectPOICommand}"
+                                    CommandParameter="{Binding .}"/>
+                            </Border.GestureRecognizers>
+                        </Border>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+        </Grid>
+
+    </Grid>
+</ContentPage>

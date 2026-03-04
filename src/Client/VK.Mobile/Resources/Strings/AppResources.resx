@@ -223,4 +223,78 @@
   <data name="ListenAudio" xml:space="preserve">
     <value>Nghe</value>
   </data>
+
+  <!-- Menu / Explore Page -->
+  <data name="TabExplore" xml:space="preserve">
+    <value>Khám phá</value>
+  </data>
+  <data name="MenuTitle" xml:space="preserve">
+    <value>🍜 Thực Đơn Ẩm Thực</value>
+  </data>
+  <data name="MenuSubtitle" xml:space="preserve">
+    <value>Vĩnh Khánh</value>
+  </data>
+  <data name="MenuSearchPlaceholder" xml:space="preserve">
+    <value>Tìm tên, địa chỉ, món ăn...</value>
+  </data>
+  <data name="MenuEmpty" xml:space="preserve">
+    <value>Không tìm thấy điểm ăn</value>
+  </data>
+  <data name="MenuPointsUnit" xml:space="preserve">
+    <value> điểm</value>
+  </data>
+  <data name="MenuRetry" xml:space="preserve">
+    <value>Thử lại</value>
+  </data>
+
+  <!-- Now Playing Page -->
+  <data name="NowPlayingHeader" xml:space="preserve">
+    <value>ĐANG PHÁT</value>
+  </data>
+  <data name="NowPlayingSkipBack" xml:space="preserve">
+    <value>Tua lại 5s</value>
+  </data>
+  <data name="NowPlayingStop" xml:space="preserve">
+    <value>Dừng</value>
+  </data>
+  <data name="NowPlayingSkipForward" xml:space="preserve">
+    <value>Tua qua 5s</value>
+  </data>
+  <data name="NowPlayingClose" xml:space="preserve">
+    <value>Thoát</value>
+  </data>
+
+  <!-- POI Detail Page -->
+  <data name="POIDetailDescription" xml:space="preserve">
+    <value>Mô tả</value>
+  </data>
+  <data name="POIDetailAddress" xml:space="preserve">
+    <value>📍 Địa chỉ</value>
+  </data>
+  <data name="POIDetailAudioGuide" xml:space="preserve">
+    <value>🎧 Thuyết minh âm thanh</value>
+  </data>
+  <data name="POIDetailAudioLang" xml:space="preserve">
+    <value>Ngôn ngữ</value>
+  </data>
+  <data name="POIDetailTranscript" xml:space="preserve">
+    <value>📝 Nội dung thuyết minh</value>
+  </data>
+  <data name="POIDetailRating" xml:space="preserve">
+    <value>⭐ Đánh giá nơi này</value>
+  </data>
+  <data name="POIDetailVendors" xml:space="preserve">
+    <value>🍽️ Quầy hàng</value>
+  </data>
+
+  <!-- POI Action Sheet -->
+  <data name="POIActionListen" xml:space="preserve">
+    <value>🎧 Nghe thuyết minh</value>
+  </data>
+  <data name="POIActionDetail" xml:space="preserve">
+    <value>📍 Xem chi tiết</value>
+  </data>
+  <data name="POIActionClose" xml:space="preserve">
+    <value>Đóng</value>
+  </data>
 </root>

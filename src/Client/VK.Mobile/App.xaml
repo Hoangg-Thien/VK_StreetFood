@@ -19,6 +19,8 @@
             <converters:CountToBoolConverter x:Key="CountToBoolConverter"/>
             <converters:InvertedBoolConverter x:Key="InvertedBoolConverter"/>
             <converters:NullToBoolConverter x:Key="NullToBoolConverter"/>
+            <converters:StringNotEmptyConverter x:Key="StringNotEmptyConverter"/>
+            <converters:GreaterThanZeroConverter x:Key="GreaterThanZeroConverter"/>
         </ResourceDictionary>
     </Application.Resources>
 </Application>

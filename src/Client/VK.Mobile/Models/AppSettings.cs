@@ -15,9 +15,9 @@ public class AppSettings
     /// <summary>Mỗi POI chỉ trigger lại sau X phút (cooldown).</summary>
     public const int GeofenceCooldownMinutes = 10;
 
-    // Map defaults
-    public const double DefaultLatitude = 10.761;
-    public const double DefaultLongitude = 106.703;
+    // Map defaults – fallback: Quận 4, TP.HCM
+    public const double DefaultLatitude = 10.7554;
+    public const double DefaultLongitude = 106.7036;
     public const int DefaultZoomLevel = 15;
 
     // Languages
