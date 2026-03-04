@@ -36,6 +36,7 @@ public static class MauiProgram
 		builder.Services.AddSingleton<IAudioService, AudioService>();
 		builder.Services.AddSingleton<ITTSService, TTSService>();
 		builder.Services.AddSingleton<StorageService>();
+		builder.Services.AddSingleton<LocalPOIDatabase>();
 		builder.Services.AddSingleton(AudioManager.Current);
 
 		// Register HttpClient

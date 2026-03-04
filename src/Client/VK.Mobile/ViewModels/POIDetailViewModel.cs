@@ -10,10 +10,13 @@ namespace VK.Mobile.ViewModels;
 public partial class POIDetailViewModel : ObservableObject
 {
     private readonly IApiService _apiService;
-    private readonly IAudioService _audioService;
+    private readonly ITTSService _ttsService;
     private readonly StorageService _storageService;
     private readonly ILogger<POIDetailViewModel> _logger;
-    private IDispatcherTimer? _positionTimer;
+    private CancellationTokenSource? _ttsCts;
+    private IDispatcherTimer? _progressTimer;
+    private int _elapsedSeconds;
+    private int _totalSeconds;
 
     [ObservableProperty]
     private POIDetailModel? _poi;
@@ -56,61 +59,57 @@ public partial class POIDetailViewModel : ObservableObject
     partial void OnIsPlayingAudioChanged(bool value)
     {
         OnPropertyChanged(nameof(AudioStatusText));
-        if (value) StartPositionTimer();
-        else StopPositionTimer();
+        if (value) StartProgressTimer();
+        else StopProgressTimer();
     }
 
     partial void OnSelectedAudioChanged(AudioInfo? value)
     {
         AudioTranscript = value?.TextContent ?? string.Empty;
         HasTranscript = !string.IsNullOrWhiteSpace(AudioTranscript);
-        var dur = value?.DurationSeconds ?? 0;
-        AudioDurationText = FormatTime(dur);
+        // Estimate duration from word count (~130 wpm)
+        var words = AudioTranscript.Split(' ', StringSplitOptions.RemoveEmptyEntries).Length;
+        _totalSeconds = Math.Max(10, words * 60 / 130);
+        AudioDurationText = FormatTime(_totalSeconds);
         AudioPositionRatio = 0;
         AudioPositionText = "0:00";
+        _elapsedSeconds = 0;
         OnPropertyChanged(nameof(AudioStatusText));
     }
 
     public POIDetailViewModel(
         IApiService apiService,
-        IAudioService audioService,
+        ITTSService ttsService,
         StorageService storageService,
         ILogger<POIDetailViewModel> logger)
     {
         _apiService = apiService;
-        _audioService = audioService;
+        _ttsService = ttsService;
         _storageService = storageService;
         _logger = logger;
-
-        _audioService.PlaybackCompleted += OnAudioCompleted;
     }
 
-    // ── Timer helpers ─────────────────────────────────────────────
-    private void StartPositionTimer()
+    // ── Progress timer (fake elapsed based on word-count estimate) ────────
+    private void StartProgressTimer()
     {
-        if (_positionTimer != null) return;
-        _positionTimer = Application.Current!.Dispatcher.CreateTimer();
-        _positionTimer.Interval = TimeSpan.FromMilliseconds(500);
-        _positionTimer.Tick += (_, _) => UpdateAudioPosition();
-        _positionTimer.Start();
+        StopProgressTimer();
+        _progressTimer = Application.Current!.Dispatcher.CreateTimer();
+        _progressTimer.Interval = TimeSpan.FromSeconds(1);
+        _progressTimer.Tick += (_, _) =>
+        {
+            if (!IsPlayingAudio) { StopProgressTimer(); return; }
+            _elapsedSeconds = Math.Min(_totalSeconds, _elapsedSeconds + 1);
+            AudioPositionRatio = _totalSeconds > 0 ? (double)_elapsedSeconds / _totalSeconds : 0;
+            AudioPositionText = FormatTime(_elapsedSeconds);
+            OnPropertyChanged(nameof(AudioStatusText));
+        };
+        _progressTimer.Start();
     }
 
-    private void StopPositionTimer()
+    private void StopProgressTimer()
     {
-        _positionTimer?.Stop();
-        _positionTimer = null;
-    }
-
-    private void UpdateAudioPosition()
-    {
-        var duration = _audioService.Duration;
-        var position = _audioService.CurrentPosition;
-        if (duration <= 0) return;
-
-        AudioPositionRatio = position / duration;
-        AudioPositionText = FormatTime((int)position);
-        AudioDurationText = FormatTime((int)duration);
-        OnPropertyChanged(nameof(AudioStatusText));
+        _progressTimer?.Stop();
+        _progressTimer = null;
     }
 
     private static string FormatTime(int totalSeconds)
@@ -123,11 +122,12 @@ public partial class POIDetailViewModel : ObservableObject
     [RelayCommand]
     private void SeekAudio(double ratio)
     {
-        // AudioService expose Duration; seek = ratio * duration
-        // Plugin.Maui.Audio không có seek nên chỉ update display
-        var dur = _audioService.Duration;
-        if (dur > 0)
-            AudioPositionText = FormatTime((int)(ratio * dur));
+        // TTS không hỗ trợ seek; chỉ cập nhật display
+        if (_totalSeconds > 0)
+        {
+            _elapsedSeconds = (int)(ratio * _totalSeconds);
+            AudioPositionText = FormatTime(_elapsedSeconds);
+        }
     }
 
     partial void OnPoiChanged(POIDetailModel? value)
@@ -154,8 +154,10 @@ public partial class POIDetailViewModel : ObservableObject
             {
                 Poi = detail;
 
-                // Select audio for current language
-                SelectedAudio = detail.AudioContents.FirstOrDefault(a => a.LanguageCode == language);
+                // API trả về single "audio" (đúng language), không phải list
+                // AudioContents luôn rỗng → dùng Audio trực tiếp
+                SelectedAudio = detail.AudioContents.FirstOrDefault(a => a.LanguageCode == language)
+                             ?? detail.Audio;
 
                 // Check if favorite
                 var touristId = await _storageService.GetTouristIdAsync();
@@ -188,61 +190,64 @@ public partial class POIDetailViewModel : ObservableObject
     {
         try
         {
-            if (SelectedAudio?.AudioFileUrl == null)
+            // Nếu đang phát → dừng
+            if (IsPlayingAudio)
             {
-                await Shell.Current.DisplayAlert("Info", "No audio available", "OK");
+                _ttsCts?.Cancel();
+                await _ttsService.StopAsync();
+                IsPlayingAudio = false;
                 return;
             }
 
-            if (_audioService.IsPlaying)
+            // Lấy text để đọc: ưu tiên TextContent từ audio, fallback về tên POI
+            var text = SelectedAudio?.TextContent;
+            if (string.IsNullOrWhiteSpace(text))
+                text = Poi != null ? $"{Poi.Name}. {Poi.Description}" : string.Empty;
+            if (string.IsNullOrWhiteSpace(text)) return;
+
+            _ttsCts?.Cancel();
+            _ttsCts = new CancellationTokenSource();
+
+            IsPlayingAudio = true;
+            _elapsedSeconds = 0;
+            AudioPositionRatio = 0;
+            AudioPositionText = "0:00";
+
+            // Track audio play
+            var touristId = await _storageService.GetTouristIdAsync();
+            if (touristId != null && Poi != null)
+                await _apiService.TrackEventAsync(touristId, Poi.Id, "audio_play", SelectedLanguage);
+
+            try
             {
-                await _audioService.PauseAsync();
-                IsPlayingAudio = false;
+                await _ttsService.SpeakTextAsync(text, SelectedLanguage, _ttsCts.Token);
             }
-            else
+            finally
             {
-                var fullUrl = SelectedAudio.AudioFileUrl.StartsWith("http")
-                    ? SelectedAudio.AudioFileUrl
-                    : AppSettings.AudioBaseUrl + SelectedAudio.AudioFileUrl.TrimStart('/');
-
-                var success = await _audioService.PlayAudioAsync(fullUrl);
-
-                if (success)
-                {
-                    IsPlayingAudio = true;
-
-                    // Track audio play event
-                    var touristId = await _storageService.GetTouristIdAsync();
-                    if (touristId != null && Poi != null)
-                    {
-                        await _apiService.TrackEventAsync(
-                            touristId,
-                            Poi.Id,
-                            "audio_play",
-                            SelectedLanguage);
-                    }
-                }
-                else
-                {
-                    await Shell.Current.DisplayAlert("Error", "Failed to play audio", "OK");
-                }
+                IsPlayingAudio = false;
+                StopProgressTimer();
+                // Track audio complete
+                if (touristId != null && Poi != null)
+                    await _apiService.TrackEventAsync(touristId, Poi.Id, "audio_complete", SelectedLanguage);
             }
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error playing audio");
-            await Shell.Current.DisplayAlert("Error", "Failed to play audio", "OK");
+            IsPlayingAudio = false;
         }
     }
 
     [RelayCommand]
     private async Task StopAudioAsync()
     {
-        await _audioService.StopAsync();
+        _ttsCts?.Cancel();
+        await _ttsService.StopAsync();
         IsPlayingAudio = false;
+        _elapsedSeconds = 0;
         AudioPositionRatio = 0;
         AudioPositionText = "0:00";
-        StopPositionTimer();
+        StopProgressTimer();
         OnPropertyChanged(nameof(AudioStatusText));
     }
 
@@ -329,29 +334,9 @@ public partial class POIDetailViewModel : ObservableObject
     [RelayCommand]
     private async Task GoBackAsync()
     {
-        StopPositionTimer();
-        await _audioService.StopAsync();
+        _ttsCts?.Cancel();
+        StopProgressTimer();
+        await _ttsService.StopAsync();
         await Shell.Current.GoToAsync("..");
-    }
-
-    private async void OnAudioCompleted(object? sender, EventArgs e)
-    {
-        IsPlayingAudio = false;
-        StopPositionTimer();
-        AudioPositionRatio = 0;
-        AudioPositionText = "0:00";
-        OnPropertyChanged(nameof(AudioStatusText));
-
-        // Track audio complete event
-        var touristId = await _storageService.GetTouristIdAsync();
-        if (touristId != null && Poi != null)
-        {
-            await _apiService.TrackEventAsync(
-                touristId,
-                Poi.Id,
-                "audio_complete",
-                SelectedLanguage,
-                SelectedAudio?.DurationSeconds);
-        }
     }
 }

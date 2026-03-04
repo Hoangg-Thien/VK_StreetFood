@@ -79,7 +79,7 @@ public class TouristController : ControllerBase
 
         tourist.LastLatitude = request.Latitude;
         tourist.LastLongitude = request.Longitude;
-        
+
         await _context.SaveChangesAsync();
 
         // Check for nearby POIs (geofencing logic)
@@ -93,7 +93,7 @@ public class TouristController : ControllerBase
                 poiId = p.Id,
                 name = p.Name,
                 distanceMeters = CalculateDistance(
-                    request.Latitude, request.Longitude, 
+                    request.Latitude, request.Longitude,
                     p.Latitude, p.Longitude) * 1000,
                 shouldTriggerAudio = CalculateDistance(
                     request.Latitude, request.Longitude,
@@ -127,8 +127,8 @@ public class TouristController : ControllerBase
         // Check if already visited today
         var today = DateTime.UtcNow.Date;
         var existingVisit = await _context.VisitLogs
-            .FirstOrDefaultAsync(v => 
-                v.TouristId == touristId && 
+            .FirstOrDefaultAsync(v =>
+                v.TouristId == touristId &&
                 v.PointOfInterestId == request.PoiId &&
                 v.VisitedAt.Date == today);
 
@@ -138,13 +138,12 @@ public class TouristController : ControllerBase
             {
                 TouristId = touristId,
                 PointOfInterestId = request.PoiId,
-                VisitedAt = DateTime.UtcNow,
-                DurationMinutes = 0
+                VisitedAt = DateTime.UtcNow
             };
 
             _context.VisitLogs.Add(visitLog);
             tourist.TotalVisits++;
-            
+
             await _context.SaveChangesAsync();
 
             _logger.LogInformation("Tourist {TouristId} visited POI {PoiId}", touristId, request.PoiId);
@@ -170,8 +169,7 @@ public class TouristController : ControllerBase
                 PoiId = v.PointOfInterestId,
                 PoiName = v.PointOfInterest.Name,
                 PoiImageUrl = v.PointOfInterest.ImageUrl,
-                VisitedAt = v.VisitedAt,
-                DurationMinutes = v.DurationMinutes
+                VisitedAt = v.VisitedAt
             })
             .ToListAsync();
 
@@ -350,11 +348,11 @@ public class TouristController : ControllerBase
         const double R = 6371; // Earth radius in km
         var dLat = ToRadians(lat2 - lat1);
         var dLon = ToRadians(lon2 - lon1);
-        
+
         var a = Math.Sin(dLat / 2) * Math.Sin(dLat / 2) +
                 Math.Cos(ToRadians(lat1)) * Math.Cos(ToRadians(lat2)) *
                 Math.Sin(dLon / 2) * Math.Sin(dLon / 2);
-        
+
         var c = 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
         return R * c;
     }

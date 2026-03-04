@@ -21,8 +21,6 @@ public class VisitLog : BaseEntity
 
     public bool AudioPlayed { get; set; } = false;
 
-    public int DurationMinutes { get; set; } = 0;
-
     // Navigation properties
     public virtual Tourist Tourist { get; set; } = null!;
     public virtual PointOfInterest PointOfInterest { get; set; } = null!;

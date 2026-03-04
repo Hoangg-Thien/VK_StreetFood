@@ -20,9 +20,6 @@ public class AudioContentConfiguration : IEntityTypeConfiguration<AudioContent>
             .IsRequired()
             .HasMaxLength(2000);
 
-        builder.Property(a => a.AudioFileUrl)
-            .HasMaxLength(500);
-
         builder.HasIndex(a => new { a.PointOfInterestId, a.LanguageCode })
             .IsUnique();
     }

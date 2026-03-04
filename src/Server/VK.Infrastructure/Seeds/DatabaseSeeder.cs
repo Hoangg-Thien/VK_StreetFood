@@ -280,28 +280,19 @@ public static class DatabaseSeeder
                 {
                     PointOfInterestId = poi.Id,
                     LanguageCode = LanguageConstants.Vietnamese,
-                    TextContent = poi.Description,
-                    AudioFileUrl = $"/audio/vi/{poi.QRCode}.mp3",
-                    DurationInSeconds = 30,
-                    IsGenerated = false
+                    TextContent = $"{poi.Name}. {poi.Description}"
                 },
                 new AudioContent
                 {
                     PointOfInterestId = poi.Id,
                     LanguageCode = LanguageConstants.English,
-                    TextContent = $"Welcome to {poi.Name}. {poi.Description}",
-                    AudioFileUrl = $"/audio/en/{poi.QRCode}.mp3",
-                    DurationInSeconds = 25,
-                    IsGenerated = false
+                    TextContent = $"Welcome to {poi.Name}. {poi.Description}"
                 },
                 new AudioContent
                 {
                     PointOfInterestId = poi.Id,
                     LanguageCode = LanguageConstants.Korean,
-                    TextContent = $"{poi.Name}에 오신 것을 환영합니다",
-                    AudioFileUrl = $"/audio/ko/{poi.QRCode}.mp3",
-                    DurationInSeconds = 20,
-                    IsGenerated = false
+                    TextContent = $"{poi.Name}에 오신 것을 환영합니다. {poi.Description}"
                 }
             });
         }

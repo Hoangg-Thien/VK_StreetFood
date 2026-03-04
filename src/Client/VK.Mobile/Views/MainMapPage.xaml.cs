@@ -1,4 +1,5 @@
-﻿using Mapsui;
+﻿using Microsoft.Extensions.DependencyInjection;
+using Mapsui;
 using Mapsui.Extensions;
 using Mapsui.Layers;
 using Mapsui.Projections;
@@ -14,6 +15,7 @@ namespace VK.Mobile.Views;
 public partial class MainMapPage : ContentPage
 {
     private readonly MainMapViewModel _viewModel;
+    private readonly IServiceProvider _serviceProvider;
     private MapControl? _mapControl;
     private WritableLayer? _poiLayer;
     private WritableLayer? _locationLayer;
@@ -27,10 +29,11 @@ public partial class MainMapPage : ContentPage
     private static double ZoomResolution(int level) =>
         156543.03392804062 / Math.Pow(2, level);
 
-    public MainMapPage(MainMapViewModel viewModel)
+    public MainMapPage(MainMapViewModel viewModel, IServiceProvider serviceProvider)
     {
         InitializeComponent();
         _viewModel = viewModel;
+        _serviceProvider = serviceProvider;
         BindingContext = _viewModel;
         Loaded += OnPageLoaded;
     }
@@ -48,7 +51,12 @@ public partial class MainMapPage : ContentPage
             {
                 if (args.PropertyName == nameof(_viewModel.CurrentLocation))
                     UpdateCurrentLocationMarker();
+                if (args.PropertyName == nameof(_viewModel.NearestPoi))
+                    UpdatePOIMarkers(); // re-draw để highlight POI gần nhất
             };
+
+            // Geofence tự động mở NowPlayingPage
+            _viewModel.GeofencePOITriggered += OnGeofencePOITriggered;
 
             try { await _viewModel.InitializeCommand.ExecuteAsync(null); }
             catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"VM init error: {ex}"); }
@@ -166,28 +174,53 @@ public partial class MainMapPage : ContentPage
                     feature["poi_id"] = poi.Id;
                     feature["poi_name"] = poi.Name;
 
-                    // Orange marker (lớn hơn, dễ nhìn)
-                    feature.Styles.Add(new SymbolStyle
+                    bool isNearest = _viewModel.NearestPoi?.Id == poi.Id;
+
+                    if (isNearest)
                     {
-                        SymbolScale = 1.0,
-                        Fill = new Mapsui.Styles.Brush(Mapsui.Styles.Color.FromString("#FF5722")),
-                        Outline = new Pen(Mapsui.Styles.Color.White, 2),
-                        SymbolType = SymbolType.Ellipse
-                    });
+                        // Vòng sáng ngoài (glow ring) cho POI gần nhất
+                        feature.Styles.Add(new SymbolStyle
+                        {
+                            SymbolScale = 1.6,
+                            Fill = new Mapsui.Styles.Brush(new Mapsui.Styles.Color(255, 107, 53, 60)), // cam nhạt
+                            Outline = new Pen(Mapsui.Styles.Color.FromString("#FF6B35"), 2),
+                            SymbolType = SymbolType.Ellipse
+                        });
+                        // Điểm chính lớn hơn + màu orange đậm
+                        feature.Styles.Add(new SymbolStyle
+                        {
+                            SymbolScale = 1.0,
+                            Fill = new Mapsui.Styles.Brush(Mapsui.Styles.Color.FromString("#FF6B35")),
+                            Outline = new Pen(Mapsui.Styles.Color.White, 3),
+                            SymbolType = SymbolType.Ellipse
+                        });
+                    }
+                    else
+                    {
+                        // Marker bình thường
+                        feature.Styles.Add(new SymbolStyle
+                        {
+                            SymbolScale = 0.6,
+                            Fill = new Mapsui.Styles.Brush(Mapsui.Styles.Color.FromString("#FF5722")),
+                            Outline = new Pen(Mapsui.Styles.Color.White, 2),
+                            SymbolType = SymbolType.Ellipse
+                        });
+                    }
 
                     // Label below marker
                     feature.Styles.Add(new LabelStyle
                     {
                         Text = poi.Name,
-                        ForeColor = Mapsui.Styles.Color.FromString("#333333"),
+                        ForeColor = isNearest
+                            ? Mapsui.Styles.Color.FromString("#FF6B35")
+                            : Mapsui.Styles.Color.FromString("#333333"),
                         BackColor = new Mapsui.Styles.Brush(new Mapsui.Styles.Color(255, 255, 255, 200)),
-                        Font = new Mapsui.Styles.Font { Size = 10 },
+                        Font = new Mapsui.Styles.Font { Size = isNearest ? 12 : 10 },
                         HorizontalAlignment = LabelStyle.HorizontalAlignmentEnum.Center,
                         Offset = new Offset(0, -20)
                     });
 
                     _poiLayer.Add(feature);
-                    System.Diagnostics.Debug.WriteLine($"  POI marker: '{poi.Name}' at ({poi.Latitude:F6}, {poi.Longitude:F6}) Id={poi.Id}");
                 }
 
                 _mapControl.Map.Refresh();
@@ -428,5 +461,36 @@ public partial class MainMapPage : ContentPage
         }
 
         _viewModel.StopTrackingCommand.Execute(null);
+        _viewModel.GeofencePOITriggered -= OnGeofencePOITriggered;
+    }
+
+    private async void OnGeofencePOITriggered(object? sender, VK.Mobile.Models.POIModel poi)
+    {
+        try
+        {
+            // Đóng NowPlayingPage đang mở (nếu có)
+            NowPlayingViewModel.RequestAutoClose();
+            await Task.Delay(350); // chờ dismiss animation
+
+            // Tạo audioText từ description + address
+            var audioText = string.IsNullOrWhiteSpace(poi.Description)
+                ? poi.Name
+                : $"{poi.Name}. {poi.Description}";
+
+            var page = _serviceProvider.GetRequiredService<NowPlayingPage>();
+            var vm = (NowPlayingViewModel)page.BindingContext;
+            vm.Initialize(
+                poi.Name,
+                poi.CategoryName ?? string.Empty,
+                poi.ImageUrl ?? string.Empty,
+                audioText,
+                _viewModel.SelectedLanguage);
+
+            await Shell.Current.Navigation.PushModalAsync(page, animated: true);
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"OnGeofencePOITriggered error: {ex}");
+        }
     }
 }

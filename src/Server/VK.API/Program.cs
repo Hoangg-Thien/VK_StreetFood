@@ -1,8 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using VK.Infrastructure.Data;
 using VK.API.Extensions;
-using VK.Core.Interfaces;
-using VK.Infrastructure.ExternalServices;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -10,18 +8,15 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContext<VKStreetFoodDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// Register TTS Service
-builder.Services.AddScoped<ITtsService, GoogleCloudTtsService>();
-
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 
 // Add Swagger
 builder.Services.AddSwaggerGen(c =>
 {
-    c.SwaggerDoc("v1", new() 
-    { 
-        Title = "VK Street Food API", 
+    c.SwaggerDoc("v1", new()
+    {
+        Title = "VK Street Food API",
         Version = "v1",
         Description = "API for Vietnamese Food Street Tour - Multilingual Audio Guide System"
     });

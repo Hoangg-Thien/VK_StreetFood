@@ -31,11 +31,8 @@ public class AnalyticsController : ControllerBase
                 TouristId = request.TouristId,
                 PointOfInterestId = request.PoiId,
                 EventType = request.EventType,
-                DeviceInfo = request.DeviceInfo,
                 LanguageCode = request.LanguageCode ?? "vi",
-                DurationSeconds = request.DurationSeconds,
-                Latitude = request.Latitude,
-                Longitude = request.Longitude
+                DurationSeconds = request.DurationSeconds
             };
 
             _context.Analytics.Add(analyticsEvent);
@@ -170,9 +167,6 @@ public class RecordEventRequest
     public int? TouristId { get; set; }
     public int PoiId { get; set; }
     public string EventType { get; set; } = string.Empty; // view, qr_scan, audio_play, audio_complete
-    public string? DeviceInfo { get; set; }
     public string? LanguageCode { get; set; }
     public int? DurationSeconds { get; set; }
-    public double? Latitude { get; set; }
-    public double? Longitude { get; set; }
 }

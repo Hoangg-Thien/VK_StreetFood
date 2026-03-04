@@ -8,13 +8,15 @@ namespace VK.Mobile.ViewModels;
 public partial class SettingsViewModel : ObservableObject
 {
     private readonly StorageService _storageService;
+    private readonly LocalPOIDatabase _localDb;
     private static readonly string[] LanguageCodes = { "vi", "en", "ko" };
 
     public string[] LanguageDisplayNames { get; } = { "Tiếng Việt", "English", "한국어" };
 
-    public SettingsViewModel(StorageService storageService)
+    public SettingsViewModel(StorageService storageService, LocalPOIDatabase localDb)
     {
         _storageService = storageService;
+        _localDb = localDb;
         LoadSettings();
 
         // Sync khi ngôn ngữ được đổi từ trang khác (ví dụ MainMapPage)
@@ -102,9 +104,15 @@ public partial class SettingsViewModel : ObservableObject
 
         if (confirm)
         {
+            // Xóa SQLite POI cache
+            await _localDb.ClearAsync();
+            // Xóa Preferences
+            Preferences.Clear();
+            LoadSettings(); // reload defaults
+
             await Application.Current.MainPage.DisplayAlert(
                 LocalizationResourceManager.Instance["OK"],
-                "Đã xóa bộ nhớ đệm",
+                "Đã xóa bộ nhớ đệm.",
                 LocalizationResourceManager.Instance["OK"]);
         }
     }

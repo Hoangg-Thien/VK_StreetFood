@@ -6,9 +6,7 @@ public class AudioContentDto
 {
     public int AudioId { get; set; }
     public string LanguageCode { get; set; } = string.Empty;
-    public string AudioFileUrl { get; set; } = string.Empty;
     public string TextContent { get; set; } = string.Empty;
-    public int DurationInSeconds { get; set; }
 }
 
 public class VendorDto

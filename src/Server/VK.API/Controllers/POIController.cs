@@ -39,8 +39,8 @@ public class POIController : ControllerBase
 
         if (!string.IsNullOrWhiteSpace(search))
         {
-            query = query.Where(p => 
-                p.Name.Contains(search) || 
+            query = query.Where(p =>
+                p.Name.Contains(search) ||
                 p.Description.Contains(search) ||
                 p.Address.Contains(search));
         }
@@ -107,7 +107,7 @@ public class POIController : ControllerBase
             })
             .ToList();
 
-        _logger.LogInformation("Found {Count} POIs within {Radius}km of ({Lat}, {Lng})", 
+        _logger.LogInformation("Found {Count} POIs within {Radius}km of ({Lat}, {Lng})",
             nearbyPois.Count, radiusKm, latitude, longitude);
 
         return Ok(nearbyPois);
@@ -156,9 +156,7 @@ public class POIController : ControllerBase
             {
                 AudioId = audio.Id,
                 LanguageCode = audio.LanguageCode,
-                AudioFileUrl = audio.AudioFileUrl,
-                TextContent = audio.TextContent,
-                DurationInSeconds = audio.DurationInSeconds
+                TextContent = audio.TextContent
             } : null,
             Vendors = poi.Vendors.Select(v => new VendorDetailDto
             {
@@ -228,11 +226,11 @@ public class POIController : ControllerBase
         const double R = 6371; // Earth radius in km
         var dLat = ToRadians(lat2 - lat1);
         var dLon = ToRadians(lon2 - lon1);
-        
+
         var a = Math.Sin(dLat / 2) * Math.Sin(dLat / 2) +
                 Math.Cos(ToRadians(lat1)) * Math.Cos(ToRadians(lat2)) *
                 Math.Sin(dLon / 2) * Math.Sin(dLon / 2);
-        
+
         var c = 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
         return R * c;
     }

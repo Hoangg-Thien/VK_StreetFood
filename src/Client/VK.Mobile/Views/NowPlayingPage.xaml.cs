@@ -16,6 +16,7 @@ public partial class NowPlayingPage : ContentPage
     protected override async void OnAppearing()
     {
         base.OnAppearing();
+        NowPlayingViewModel.AutoCloseRequested += OnAutoCloseRequested;
         if (!string.IsNullOrWhiteSpace(_viewModel.AudioText))
         {
             _viewModel.IsPlaying = true;
@@ -26,5 +27,12 @@ public partial class NowPlayingPage : ContentPage
     protected override void OnDisappearing()
     {
         base.OnDisappearing();
+        NowPlayingViewModel.AutoCloseRequested -= OnAutoCloseRequested;
+    }
+
+    private async void OnAutoCloseRequested(object? sender, EventArgs e)
+    {
+        // Tự đóng khi geofence khác trigger
+        await _viewModel.CloseCommand.ExecuteAsync(null);
     }
 }

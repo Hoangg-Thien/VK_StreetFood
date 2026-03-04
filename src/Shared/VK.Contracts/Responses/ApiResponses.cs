@@ -30,10 +30,3 @@ public record NearbyPointsResponse
     public int TotalCount { get; init; }
 }
 
-public record AudioGenerationResponse
-{
-    public string AudioFileUrl { get; init; } = string.Empty;
-    public int DurationInSeconds { get; init; }
-    public bool Success { get; init; }
-    public string? ErrorMessage { get; init; }
-}

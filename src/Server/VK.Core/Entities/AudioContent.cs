@@ -15,12 +15,6 @@ public class AudioContent : BaseEntity
     [MaxLength(2000)]
     public string TextContent { get; set; } = string.Empty;
 
-    public string? AudioFileUrl { get; set; }
-
-    public int DurationInSeconds { get; set; }
-
-    public bool IsGenerated { get; set; } = false;
-
     // Navigation properties
     public virtual PointOfInterest PointOfInterest { get; set; } = null!;
 }

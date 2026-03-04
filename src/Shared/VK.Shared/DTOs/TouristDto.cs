@@ -26,7 +26,6 @@ public class VisitHistoryDto
     public string PoiName { get; set; } = string.Empty;
     public string? PoiImageUrl { get; set; }
     public DateTime VisitedAt { get; set; }
-    public int DurationMinutes { get; set; }
 }
 
 public class AddFavoriteRequest

@@ -141,10 +141,12 @@ public class LocationService : ILocationService
                         // Get nearby POIs (with error handling)
                         try
                         {
+                            // Đọc bán kính từ Preferences (người dùng có thể chỉnh trong Settings)
+                            var radiusMeters = Preferences.Get("GeofenceRadius", AppSettings.GeofenceRadiusMeters);
                             var nearbyPOIs = await _apiService.GetNearbyPOIsAsync(
                                 location.Latitude,
                                 location.Longitude,
-                                AppSettings.GeofenceRadiusMeters / 1000.0);
+                                radiusMeters / 1000.0);
 
                             LocationChanged?.Invoke(this, new LocationChangedEventArgs
                             {

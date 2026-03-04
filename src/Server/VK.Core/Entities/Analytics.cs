@@ -16,16 +16,6 @@ public class Analytics : BaseEntity
     [MaxLength(10)]
     public string? LanguageCode { get; set; }
 
-    public double? Latitude { get; set; }
-
-    public double? Longitude { get; set; }
-
-    [MaxLength(200)]
-    public string? DeviceInfo { get; set; }
-
-    [MaxLength(100)]
-    public string? UserAgent { get; set; }
-
     public int? DurationSeconds { get; set; }
 
     public DateTime EventTimestamp { get; set; } = DateTime.UtcNow;

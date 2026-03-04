@@ -14,9 +14,9 @@ public partial class MainMapViewModel : ObservableObject
 {
     private readonly IApiService _apiService;
     private readonly ILocationService _locationService;
-    private readonly IAudioService _audioService;
     private readonly ITTSService _ttsService;
     private readonly StorageService _storageService;
+    private readonly LocalPOIDatabase _localDb;
     private readonly ILogger<MainMapViewModel> _logger;
     private readonly IServiceProvider _serviceProvider;
 
@@ -38,6 +38,12 @@ public partial class MainMapViewModel : ObservableObject
 
     [ObservableProperty]
     private ObservableCollection<POIModel> _nearbyPOIs = new();
+
+    [ObservableProperty]
+    private POIModel? _nearestPoi;
+
+    /// <summary>Fires on MainThread khi geofence trigger – MainMapPage sẽ tự mở NowPlayingPage.</summary>
+    public event EventHandler<POIModel>? GeofencePOITriggered;
 
     [ObservableProperty]
     private Location? _currentLocation;
@@ -80,17 +86,17 @@ public partial class MainMapViewModel : ObservableObject
     public MainMapViewModel(
         IApiService apiService,
         ILocationService locationService,
-        IAudioService audioService,
         ITTSService ttsService,
         StorageService storageService,
+        LocalPOIDatabase localDb,
         ILogger<MainMapViewModel> logger,
         IServiceProvider serviceProvider)
     {
         _apiService = apiService;
         _locationService = locationService;
-        _audioService = audioService;
         _ttsService = ttsService;
         _storageService = storageService;
+        _localDb = localDb;
         _logger = logger;
         _serviceProvider = serviceProvider;
 
@@ -176,19 +182,34 @@ public partial class MainMapViewModel : ObservableObject
             PoiLoadError = null;
             List<POIModel> poiList = new();
 
-            // Luôn load tất cả POIs từ API để hiển thị đầy đủ trên map
+            // Load từ API; nếu lỗi thì dùng SQLite cache (offline)
             try
             {
                 poiList = await _apiService.GetAllPOIsAsync();
                 _logger.LogInformation("API returned {Count} POIs", poiList.Count);
+
+                // Lưu vào SQLite cache để dùng khi offline
+                if (poiList.Count > 0)
+                    await _localDb.SavePOIsAsync(poiList);
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "API not available for loading POIs");
-                PoiLoadError = $"Không thể kết nối API: {ex.Message}";
+                _logger.LogWarning(ex, "API not available, trying SQLite cache");
+
+                // Fallback: đọc từ SQLite cache
+                poiList = await _localDb.GetCachedPOIsAsync();
+                if (poiList.Count > 0)
+                {
+                    _logger.LogInformation("Loaded {Count} POIs from SQLite cache (offline)", poiList.Count);
+                    PoiLoadError = null; // cache hoạt động OK
+                }
+                else
+                {
+                    PoiLoadError = $"Không thể kết nối API và không có dữ liệu offline: {ex.Message}";
+                }
             }
 
-            // Nếu API không trả về gì → set error message
+            // Nếu API trả về rỗng (không có lỗi)
             if (poiList.Count == 0 && PoiLoadError == null)
             {
                 _logger.LogWarning("No POIs returned from API. Check API connection and database.");
@@ -410,6 +431,17 @@ public partial class MainMapViewModel : ObservableObject
         // Update nearby POIs
         NearbyPOIs.Clear();
 
+        // Tính POI gần nhất từ toàn bộ danh sách
+        if (Pois.Count > 0)
+        {
+            NearestPoi = Pois
+                .Where(p => p.Latitude != 0 || p.Longitude != 0)
+                .OrderBy(p => _locationService.CalculateDistance(
+                    e.Location.Latitude, e.Location.Longitude,
+                    p.Latitude, p.Longitude))
+                .FirstOrDefault();
+        }
+
         // Sắp xếp POI theo Priority giảm dần trước khi xử lý geofence
         var sortedPOIs = e.NearbyPOIs.OrderByDescending(p => p.Priority).ToList();
 
@@ -479,14 +511,10 @@ public partial class MainMapViewModel : ObservableObject
                     SelectedLanguage);
             }
 
-            // Show notification
-            await Shell.Current.DisplayAlert(
-                "Point of Interest",
-                $"You are near: {poi.Name}",
-                "OK");
-
-            // Phát thuyết minh qua TTSService (pre-recorded → Google TTS → MAUI TTS)
-            await _ttsService.SpeakPOIAsync(poi, SelectedLanguage);
+            // Phát thuyết minh tự động: đóng NowPlayingPage cũ → mở cái mới
+            await MainThread.InvokeOnMainThreadAsync(() =>
+                GeofencePOITriggered?.Invoke(this, poi)
+            );
         }
         catch (Exception ex)
         {

@@ -12,6 +12,12 @@ namespace VK.Mobile.ViewModels;
 [QueryProperty(nameof(Language), "language")]
 public partial class NowPlayingViewModel : ObservableObject
 {
+    /// <summary>
+    /// Được bắn khi một geofence mới trigger, yêu cầu NowPlayingPage đang mở tự đóng.
+    /// </summary>
+    public static event EventHandler? AutoCloseRequested;
+    public static void RequestAutoClose() => AutoCloseRequested?.Invoke(null, EventArgs.Empty);
+
     private readonly ITTSService _ttsService;
 
     [ObservableProperty] private string _poiName = string.Empty;
