@@ -4,7 +4,7 @@ using VK.Infrastructure.Data;
 
 namespace VK.Web.Controllers;
 
-public class DashboardController : Controller
+public class DashboardController : AdminBaseController
 {
     private readonly VKStreetFoodDbContext _context;
     private readonly IHttpClientFactory _httpClientFactory;

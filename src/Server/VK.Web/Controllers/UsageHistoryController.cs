@@ -4,7 +4,7 @@ using VK.Infrastructure.Data;
 
 namespace VK.Web.Controllers;
 
-public class UsageHistoryController : Controller
+public class UsageHistoryController : AdminBaseController
 {
     private readonly VKStreetFoodDbContext _context;
     private readonly ILogger<UsageHistoryController> _logger;

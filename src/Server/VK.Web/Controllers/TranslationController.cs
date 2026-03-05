@@ -5,7 +5,7 @@ using VK.Core.Entities;
 
 namespace VK.Web.Controllers;
 
-public class TranslationController : Controller
+public class TranslationController : AdminBaseController
 {
     private readonly VKStreetFoodDbContext _context;
     private readonly ILogger<TranslationController> _logger;

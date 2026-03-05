@@ -5,7 +5,7 @@ using VK.Core.Entities;
 
 namespace VK.Web.Controllers;
 
-public class AudioController : Controller
+public class AudioController : AdminBaseController
 {
     private readonly VKStreetFoodDbContext _context;
     private readonly ILogger<AudioController> _logger;

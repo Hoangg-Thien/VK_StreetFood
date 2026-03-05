@@ -4,7 +4,7 @@ using VK.Infrastructure.Data;
 
 namespace VK.Web.Controllers;
 
-public class TourController : Controller
+public class TourController : AdminBaseController
 {
     private readonly VKStreetFoodDbContext _context;
     private readonly ILogger<TourController> _logger;

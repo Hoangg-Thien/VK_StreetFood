@@ -5,7 +5,7 @@ using VK.Core.Entities;
 
 namespace VK.Web.Controllers;
 
-public class PoiController : Controller
+public class PoiController : AdminBaseController
 {
     private readonly VKStreetFoodDbContext _context;
     private readonly ILogger<PoiController> _logger;
