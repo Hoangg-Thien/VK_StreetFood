@@ -77,7 +77,6 @@ public class PoiController : AdminBaseController
                 return RedirectToAction(nameof(Index));
             }
 
-            model.QRCode = Guid.NewGuid().ToString("N")[..8].ToUpper();
             _context.PointsOfInterest.Add(model);
             await _context.SaveChangesAsync();
             TempData["Success"] = "Thêm địa điểm thành công!";

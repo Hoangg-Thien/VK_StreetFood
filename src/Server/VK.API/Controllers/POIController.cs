@@ -147,7 +147,6 @@ public class POIController : ControllerBase
             Longitude = poi.Longitude,
             Address = poi.Address,
             ImageUrl = poi.ImageUrl,
-            QRCode = poi.QRCode,
             AverageRating = poi.AverageRating,
             TotalRatings = poi.TotalRatings,
             Category = poi.Category?.Name,

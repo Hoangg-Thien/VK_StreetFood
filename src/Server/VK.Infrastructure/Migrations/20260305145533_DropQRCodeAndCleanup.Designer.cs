@@ -12,8 +12,8 @@ using VK.Infrastructure.Data;
 namespace VK.Infrastructure.Migrations
 {
     [DbContext(typeof(VKStreetFoodDbContext))]
-    [Migration("20260304131620_CleanSchema")]
-    partial class CleanSchema
+    [Migration("20260305145533_DropQRCodeAndCleanup")]
+    partial class DropQRCodeAndCleanup
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -314,11 +314,6 @@ namespace VK.Infrastructure.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
 
-                    b.Property<string>("QRCode")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
                     b.Property<int>("TotalRatings")
                         .HasColumnType("integer");
 
@@ -328,9 +323,6 @@ namespace VK.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("CategoryId");
-
-                    b.HasIndex("QRCode")
-                        .IsUnique();
 
                     b.ToTable("PointsOfInterest", (string)null);
                 });

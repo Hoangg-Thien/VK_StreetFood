@@ -30,15 +30,8 @@ public class PointOfInterestConfiguration : IEntityTypeConfiguration<PointOfInte
         builder.Property(p => p.Address)
             .HasMaxLength(500);
 
-        builder.Property(p => p.QRCode)
-            .IsRequired()
-            .HasMaxLength(100);
-
         builder.Property(p => p.AverageRating)
             .HasPrecision(3, 2);
-
-        builder.HasIndex(p => p.QRCode)
-            .IsUnique();
 
         builder.HasMany(p => p.AudioContents)
             .WithOne(a => a.PointOfInterest)

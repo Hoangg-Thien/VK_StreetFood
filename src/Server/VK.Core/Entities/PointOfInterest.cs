@@ -22,10 +22,6 @@ public class PointOfInterest : BaseEntity
 
     public string? ImageUrl { get; set; }
 
-    [Required]
-    [MaxLength(100)]
-    public string QRCode { get; set; } = string.Empty;
-
     public bool IsActive { get; set; } = true;
 
     public int? CategoryId { get; set; }

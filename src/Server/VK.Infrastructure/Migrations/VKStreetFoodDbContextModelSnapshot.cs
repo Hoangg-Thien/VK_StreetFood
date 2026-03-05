@@ -311,11 +311,6 @@ namespace VK.Infrastructure.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
 
-                    b.Property<string>("QRCode")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
                     b.Property<int>("TotalRatings")
                         .HasColumnType("integer");
 
@@ -325,9 +320,6 @@ namespace VK.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("CategoryId");
-
-                    b.HasIndex("QRCode")
-                        .IsUnique();
 
                     b.ToTable("PointsOfInterest", (string)null);
                 });

@@ -18,7 +18,6 @@ public class POIListItemDto
 
 public class POIDetailDto : POIListItemDto
 {
-    public string QRCode { get; set; } = string.Empty;
     public AudioContentDto? Audio { get; set; }
     public List<VendorDetailDto> Vendors { get; set; } = new();
     public List<RatingDto> RecentRatings { get; set; } = new();

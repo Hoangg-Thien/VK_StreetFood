@@ -37,7 +37,6 @@ CREATE TABLE points_of_interest (
   latitude      DOUBLE PRECISION NOT NULL,
   longitude     DOUBLE PRECISION NOT NULL,
   address       TEXT,
-  qr_code       TEXT UNIQUE,
   image_url     TEXT,
   category_id   INTEGER REFERENCES categories(id) ON DELETE SET NULL,
   average_rating NUMERIC(3,2) NOT NULL DEFAULT 0,
