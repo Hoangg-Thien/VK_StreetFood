@@ -75,7 +75,6 @@
             <option value="vi" selected="@(ViewBag.Language == "vi" ? "selected" : null)">🇻🇳 Tiếng Việt</option>
             <option value="en" selected="@(ViewBag.Language == "en" ? "selected" : null)">🇺🇸 English</option>
             <option value="ko" selected="@(ViewBag.Language == "ko" ? "selected" : null)">🇰🇷 한국어</option>
-            <option value="zh" selected="@(ViewBag.Language == "zh" ? "selected" : null)">🇨🇳 中文</option>
         </select>
         <button type="submit" class="btn-primary-admin" style="padding:8px 14px;">
             <i class="fa-solid fa-filter"></i> Lọc
@@ -120,7 +119,7 @@
                             <td>
                                 <div style="display:flex;gap:6px;">
                                     <button class="action-btn edit"
-                                        onclick="openEditAudioModal(@audio.Id, @audio.PointOfInterestId, '@audio.LanguageCode', @Html.Raw(System.Text.Json.JsonSerializer.Serialize(audio.TextContent)))"
+                                        onclick='openEditAudioModal(@audio.Id, @audio.PointOfInterestId, @Html.Raw(System.Text.Json.JsonSerializer.Serialize(audio.LanguageCode)), @Html.Raw(System.Text.Json.JsonSerializer.Serialize(audio.TextContent)))'
                                         title="Chỉnh sửa">
                                         <i class="fa-solid fa-pen"></i>
                                     </button>

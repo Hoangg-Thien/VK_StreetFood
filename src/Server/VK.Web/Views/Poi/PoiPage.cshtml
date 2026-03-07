@@ -134,7 +134,7 @@
                             </td>
                             <td>
                                 <div style="display:flex;gap:6px;">
-                                    <button class="action-btn view" onclick="openEditModal(@poi.Id, '@poi.Name', '@poi.Description', '@poi.Address', @poi.Latitude, @poi.Longitude, @poi.IsActive.ToString().ToLower())" title="Chỉnh sửa">
+                    <button class="action-btn edit" onclick='openEditModal(@poi.Id, @Html.Raw(System.Text.Json.JsonSerializer.Serialize(poi.Name)), @Html.Raw(System.Text.Json.JsonSerializer.Serialize(poi.Description)), @Html.Raw(System.Text.Json.JsonSerializer.Serialize(poi.Address)), @poi.Latitude, @poi.Longitude, @poi.IsActive.ToString().ToLower(), @(poi.CategoryId.HasValue ? poi.CategoryId.ToString() : "null"))' title="Chỉnh sửa">
                                         <i class="fa-solid fa-pen"></i>
                                     </button>
                                     <form method="post" action="/Poi/ToggleActive" style="display:inline;">
@@ -271,6 +271,16 @@
                         <input type="number" name="Longitude" id="editPoiLng" step="0.000001" class="form-control-admin" />
                     </div>
                 </div>
+                <div class="form-group">
+                    <label class="form-label">Danh mục</label>
+                    <select name="CategoryId" id="editPoiCategory" class="form-control-admin">
+                        <option value="">-- Chọn danh mục --</option>
+                        @foreach (var cat in categories)
+                        {
+                            <option value="@cat.Id">@cat.Name</option>
+                        }
+                    </select>
+                </div>
                 <div class="form-group" style="display:flex;align-items:center;gap:10px;">
                     <input type="checkbox" name="IsActive" value="true" id="editIsActive" style="width:16px;height:16px;accent-color:var(--accent-orange);" />
                     <label for="editIsActive" style="font-size:13px;color:var(--text-secondary);cursor:pointer;">Đang hoạt động</label>
@@ -286,7 +296,7 @@
 
 @section Scripts {
 <script>
-function openEditModal(id, name, desc, addr, lat, lng, isActive) {
+function openEditModal(id, name, desc, addr, lat, lng, isActive, categoryId) {
     document.getElementById('editPoiId').value = id;
     document.getElementById('editPoiName').value = name;
     document.getElementById('editPoiDesc').value = desc;
@@ -294,6 +304,7 @@ function openEditModal(id, name, desc, addr, lat, lng, isActive) {
     document.getElementById('editPoiLat').value = lat;
     document.getElementById('editPoiLng').value = lng;
     document.getElementById('editIsActive').checked = isActive === 'true';
+    document.getElementById('editPoiCategory').value = categoryId ?? '';
     openModal('editPoiModal');
 }
 </script>

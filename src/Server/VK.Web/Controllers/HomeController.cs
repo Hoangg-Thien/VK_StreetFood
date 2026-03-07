@@ -50,6 +50,7 @@ public class HomeController : Controller
                 HttpContext.Session.SetString("AdminUsername", user?.FullName ?? adminEmail.Split('@')[0]);
                 HttpContext.Session.SetString("AdminEmail", adminEmail);
 
+                TempData["InitAdminTab"] = "1";
                 return RedirectToAction("Index", "Dashboard");
             }
         }
@@ -66,6 +67,7 @@ public class HomeController : Controller
                 HttpContext.Session.SetString("AdminLoggedIn", "true");
                 HttpContext.Session.SetString("AdminUsername", "Admin");
                 HttpContext.Session.SetString("AdminEmail", adminEmail);
+                TempData["InitAdminTab"] = "1";
                 return RedirectToAction("Index", "Dashboard");
             }
         }

@@ -91,7 +91,7 @@
                         <div class="user-role">Admin</div>
                     </div>
                 </div>
-                <a href="/Home/Logout" class="header-icon-btn" title="Đăng xuất"
+                <a href="javascript:void(0)" onclick="confirmLogout()" class="header-icon-btn" title="Đăng xuất"
                        style="color:#EF4444;border-color:rgba(239,68,68,0.3);">
                     <i class="fa-solid fa-right-from-bracket"></i>
                 </a>
@@ -106,6 +106,33 @@
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script>
+        // ── Tab-session: close tab = require re-login ────────────────────
+        (function () {
+        @if (TempData["InitAdminTab"]?.ToString() == "1")
+        {
+            <text>sessionStorage.setItem('vkAdminTab', '1');</text>
+        }
+        if (!sessionStorage.getItem('vkAdminTab')) {
+        // Tab was closed and reopened – clear server session and go to login
+        window.location.replace('/Home/Logout');
+        return;
+        }
+        })();
+
+        // ── Block back-button while in admin ─────────────────────────────
+        history.pushState(null, '', window.location.href);
+        window.addEventListener('popstate', function () {
+        history.pushState(null, '', window.location.href);
+        });
+
+        // ── Logout with confirmation ──────────────────────────────────────
+        function confirmLogout() {
+        if (confirm('Bạn có chắc muốn đăng xuất không?')) {
+        sessionStorage.removeItem('vkAdminTab');
+        window.location.href = '/Home/Logout';
+        }
+        }
+
         // Close action dropdowns when clicking outside
         document.addEventListener('click', function (e) {
         if (!e.target.closest('.action-menu')) {
