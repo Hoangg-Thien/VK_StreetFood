@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("VK.Core.Tests")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+6ec204cfa23a3bca348db45c1a1ad7551fcc5ac1")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+79a181a13709d023898d506114689502574ef502")]
 [assembly: System.Reflection.AssemblyProductAttribute("VK.Core.Tests")]
 [assembly: System.Reflection.AssemblyTitleAttribute("VK.Core.Tests")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

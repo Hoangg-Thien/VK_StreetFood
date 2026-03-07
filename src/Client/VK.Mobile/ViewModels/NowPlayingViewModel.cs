@@ -57,24 +57,28 @@ public partial class NowPlayingViewModel : ObservableObject
         TotalText = FormatTime(_totalSeconds);
     }
 
-    public async Task StartPlayingAsync()
+    public Task StartPlayingAsync()
     {
         _ttsCts?.Cancel();
+        _ttsCts?.Dispose();
         _ttsCts = new CancellationTokenSource();
         _elapsedSeconds = 0;
+        IsPlaying = true;
         UpdateProgress();
         StartTimer();
 
-        try
+        // TTS chạy background — UI progress do timer quản lý độc lập
+        var token = _ttsCts.Token;
+        var text = AudioText;
+        var lang = Language;
+        _ = Task.Run(async () =>
         {
-            await _ttsService.SpeakTextAsync(AudioText, Language, _ttsCts.Token);
-        }
-        catch { }
-        finally
-        {
-            IsPlaying = false;
-            StopTimer();
-        }
+            try { await _ttsService.SpeakTextAsync(text, lang, token); }
+            catch (OperationCanceledException) { }
+            catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"[NowPlaying] TTS error: {ex.Message}"); }
+        });
+
+        return Task.CompletedTask;
     }
 
     [RelayCommand]
@@ -125,6 +129,7 @@ public partial class NowPlayingViewModel : ObservableObject
             {
                 IsPlaying = false;
                 StopTimer();
+                _ttsCts?.Cancel(); // dừng TTS nếu vẫn đang chạy
             }
         };
         _timer.Start();
