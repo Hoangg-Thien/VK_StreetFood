@@ -18,7 +18,6 @@ public record PointOfInterestResponse
 
 public record QRCodeScanResponse
 {
-    public QRScanResponseDto PointOfInterest { get; init; } = null!;
     public AudioContentDto? AudioContent { get; init; }
     public bool IsNearby { get; init; }
     public double DistanceInMeters { get; init; }

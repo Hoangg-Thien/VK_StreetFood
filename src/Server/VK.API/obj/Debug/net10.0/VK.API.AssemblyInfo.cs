@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("VK.API")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+db05388e0a5a34c8cd7f404b9c354d498bef9719")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+6ec204cfa23a3bca348db45c1a1ad7551fcc5ac1")]
 [assembly: System.Reflection.AssemblyProductAttribute("VK.API")]
 [assembly: System.Reflection.AssemblyTitleAttribute("VK.API")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
