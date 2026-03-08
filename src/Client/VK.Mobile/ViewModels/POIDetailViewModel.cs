@@ -6,8 +6,7 @@ using Microsoft.Extensions.Logging;
 
 namespace VK.Mobile.ViewModels;
 
-[QueryProperty("Poi", "POI")]
-public partial class POIDetailViewModel : ObservableObject
+public partial class POIDetailViewModel : ObservableObject, IQueryAttributable
 {
     private readonly IApiService _apiService;
     private readonly ITTSService _ttsService;
@@ -102,6 +101,12 @@ public partial class POIDetailViewModel : ObservableObject
             AudioPositionRatio = _totalSeconds > 0 ? (double)_elapsedSeconds / _totalSeconds : 0;
             AudioPositionText = FormatTime(_elapsedSeconds);
             OnPropertyChanged(nameof(AudioStatusText));
+            if (_elapsedSeconds >= _totalSeconds)
+            {
+                IsPlayingAudio = false;
+                StopProgressTimer();
+                _ttsCts?.Cancel();
+            }
         };
         _progressTimer.Start();
     }
@@ -130,15 +135,18 @@ public partial class POIDetailViewModel : ObservableObject
         }
     }
 
-    partial void OnPoiChanged(POIDetailModel? value)
+    // IQueryAttributable: called by Shell when navigating with { "poiId", id }
+    public void ApplyQueryAttributes(IDictionary<string, object> query)
     {
-        if (value != null)
+        if (query.TryGetValue("poiId", out var val))
         {
-            _ = LoadPOIDetailAsync(value.Id);
+            int id = val is int i ? i : int.TryParse(val?.ToString(), out var parsed) ? parsed : 0;
+            if (id > 0) _ = LoadPOIDetailAsync(id);
         }
     }
 
-    [RelayCommand]
+    partial void OnPoiChanged(POIDetailModel? value) { }
+
     private async Task LoadPOIDetailAsync(int poiId)
     {
         try
@@ -186,20 +194,19 @@ public partial class POIDetailViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private async Task PlayAudioAsync()
+    private async Task ToggleAudioAsync()
     {
-        try
+        if (IsPlayingAudio)
         {
-            // Nếu đang phát → dừng
-            if (IsPlayingAudio)
-            {
-                _ttsCts?.Cancel();
-                await _ttsService.StopAsync();
-                IsPlayingAudio = false;
-                return;
-            }
-
-            // Lấy text để đọc: ưu tiên TextContent từ audio, fallback về tên POI
+            // Pause: stop TTS + timer, keep elapsed
+            _ttsCts?.Cancel();
+            await _ttsService.StopAsync();
+            IsPlayingAudio = false;
+            StopProgressTimer();
+        }
+        else
+        {
+            // Play/Resume
             var text = SelectedAudio?.TextContent;
             if (string.IsNullOrWhiteSpace(text))
                 text = Poi != null ? $"{Poi.Name}. {Poi.Description}" : string.Empty;
@@ -207,35 +214,47 @@ public partial class POIDetailViewModel : ObservableObject
 
             _ttsCts?.Cancel();
             _ttsCts = new CancellationTokenSource();
+            var token = _ttsCts.Token;
+            var lang = SelectedLanguage;
 
             IsPlayingAudio = true;
-            _elapsedSeconds = 0;
-            AudioPositionRatio = 0;
-            AudioPositionText = "0:00";
+            StartProgressTimer();
 
-            // Track audio play
+            // Track
             var touristId = await _storageService.GetTouristIdAsync();
             if (touristId != null && Poi != null)
-                await _apiService.TrackEventAsync(touristId, Poi.Id, "audio_play", SelectedLanguage);
+                await _apiService.TrackEventAsync(touristId, Poi.Id, "audio_play", lang);
 
-            try
+            // TTS background, timer is independent
+            _ = Task.Run(async () =>
             {
-                await _ttsService.SpeakTextAsync(text, SelectedLanguage, _ttsCts.Token);
-            }
-            finally
-            {
-                IsPlayingAudio = false;
-                StopProgressTimer();
-                // Track audio complete
-                if (touristId != null && Poi != null)
-                    await _apiService.TrackEventAsync(touristId, Poi.Id, "audio_complete", SelectedLanguage);
-            }
+                try { await _ttsService.SpeakTextAsync(text, lang, token); }
+                catch (OperationCanceledException) { }
+                catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"[Detail TTS] {ex.Message}"); }
+            });
         }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error playing audio");
-            IsPlayingAudio = false;
-        }
+    }
+
+    [RelayCommand]
+    private void SkipForwardAudio()
+    {
+        _elapsedSeconds = Math.Min(_totalSeconds, _elapsedSeconds + 5);
+        AudioPositionRatio = _totalSeconds > 0 ? (double)_elapsedSeconds / _totalSeconds : 0;
+        AudioPositionText = FormatTime(_elapsedSeconds);
+    }
+
+    [RelayCommand]
+    private void SkipBackAudio()
+    {
+        _elapsedSeconds = Math.Max(0, _elapsedSeconds - 5);
+        AudioPositionRatio = _totalSeconds > 0 ? (double)_elapsedSeconds / _totalSeconds : 0;
+        AudioPositionText = FormatTime(_elapsedSeconds);
+    }
+
+    [RelayCommand]
+    private async Task PlayAudioAsync()
+    {
+        await ToggleAudioAsync();
     }
 
     [RelayCommand]
@@ -258,37 +277,36 @@ public partial class POIDetailViewModel : ObservableObject
         {
             var touristId = await _storageService.GetTouristIdAsync();
             if (touristId == null || Poi == null)
+            {
+                await Shell.Current.DisplayAlert("Thông báo", "Vui lòng đăng ký tài khoản để sử dụng tính năng yêu thích.", "OK");
                 return;
+            }
 
             bool success;
             if (IsFavorite)
             {
                 success = await _apiService.RemoveFavoriteAsync(touristId.Value, Poi.Id);
-                if (success)
-                {
-                    IsFavorite = false;
-                    await Shell.Current.DisplayAlert("Success", "Removed from favorites", "OK");
-                }
+                if (success) IsFavorite = false;
+                else await Shell.Current.DisplayAlert("Lỗi", "Không thể xóa khỏi yêu thích.", "OK");
             }
             else
             {
                 success = await _apiService.AddFavoriteAsync(touristId.Value, Poi.Id);
-                if (success)
-                {
-                    IsFavorite = true;
-                    await Shell.Current.DisplayAlert("Success", "Added to favorites", "OK");
-                }
+                if (success) IsFavorite = true;
+                else await Shell.Current.DisplayAlert("Lỗi", "Không thể thêm vào yêu thích.", "OK");
             }
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error toggling favorite");
+            await Shell.Current.DisplayAlert("Lỗi", $"Lỗi kết nối: {ex.Message}", "OK");
         }
     }
 
     [RelayCommand]
-    private async Task SubmitRatingAsync(int rating)
+    private async Task SubmitRatingAsync(string ratingStr)
     {
+        if (!int.TryParse(ratingStr, out int rating) || rating < 1) return;
         try
         {
             var touristId = await _storageService.GetTouristIdAsync();

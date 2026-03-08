@@ -1,291 +1,329 @@
-<?xml version="1.0" encoding="utf-8" ?>
+﻿<?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:vm="clr-namespace:VK.Mobile.ViewModels"
              xmlns:loc="clr-namespace:VK.Mobile.Services"
              x:Class="VK.Mobile.Views.POIDetailPage"
              x:DataType="vm:POIDetailViewModel"
-             Title="{Binding Poi.Name}">
+             Shell.NavBarIsVisible="False">
 
        <ScrollView>
               <StackLayout Padding="0"
-                           Spacing="0">
+                            Spacing="0">
 
-                     <!-- Header Image -->
-                     <Grid HeightRequest="250">
+                     <!-- Thin toolbar: back + favourite -->
+                     <Grid HeightRequest="48"
+                                   BackgroundColor="Transparent"
+                           ColumnDefinitions="Auto,*,Auto"
+                                   Padding="8,4">
+                            <!-- Back -->
+                            <Border Grid.Column="0"
+                                          StrokeShape="Ellipse"
+                                          BackgroundColor="#22000000"
+                                    StrokeThickness="0"
+                                          WidthRequest="40"
+                                          HeightRequest="40"
+                                    VerticalOptions="Center">
+                                   <Label Text="&#x2190;"
+                                                 TextColor="#333333"
+                                                 FontSize="20"
+                                          HorizontalOptions="Center"
+                                                 VerticalOptions="Center">
+                                          <Label.GestureRecognizers>
+                                                 <TapGestureRecognizer Command="{Binding GoBackCommand}"/>
+                                          </Label.GestureRecognizers>
+                                   </Label>
+                            </Border>
+                            <!-- Favourite -->
+                            <Border Grid.Column="2"
+                                          StrokeShape="Ellipse"
+                                          BackgroundColor="#22000000"
+                                    StrokeThickness="0"
+                                          WidthRequest="40"
+                                          HeightRequest="40"
+                                    VerticalOptions="Center">
+                                   <Label Text="&#x2665;"
+                                          TextColor="{Binding IsFavorite, Converter={StaticResource BoolToFavoriteColorConverter}}"
+                                          FontSize="20"
+                                                 HorizontalOptions="Center"
+                                                 VerticalOptions="Center">
+                                          <Label.GestureRecognizers>
+                                                 <TapGestureRecognizer Command="{Binding ToggleFavoriteCommand}"/>
+                                          </Label.GestureRecognizers>
+                                   </Label>
+                            </Border>
+                     </Grid>
+
+                     <!-- Header: POI name + image -->
+                     <Grid HeightRequest="160">
                             <Image Source="{Binding Poi.ImageUrl}"
-                                   Aspect="AspectFill"/>
-
-                            <BoxView Color="#80000000"
-                                     VerticalOptions="End"
-                                     HeightRequest="60"/>
-
+                                          Aspect="AspectFill"/>
+                            <BoxView Color="#AA000000"
+                                          VerticalOptions="End"
+                                          HeightRequest="70"/>
                             <StackLayout VerticalOptions="End"
-                                         Padding="15,10">
+                                          Padding="12,0,12,10">
                                    <Label Text="{Binding Poi.Name}"
-                                          FontSize="24"
-                                          FontAttributes="Bold"
-                                          TextColor="White"/>
-                                   <Label Text="{Binding Poi.CategoryName}"
-                                          FontSize="14"
+                                                 FontSize="20"
+                                                 FontAttributes="Bold"
                                           TextColor="White"
-                                          Opacity="0.8"/>
+                                                 LineBreakMode="TailTruncation"/>
+                                   <Label Text="{Binding Poi.CategoryName}"
+                                                 FontSize="13"
+                                          TextColor="White"
+                                                 Opacity="0.85"/>
                             </StackLayout>
-
-                            <Button Text="←"
-                                    FontSize="24"
-                                    TextColor="White"
-                                    BackgroundColor="Transparent"
-                                    WidthRequest="50"
-                                    HeightRequest="50"
-                                    HorizontalOptions="Start"
-                                    VerticalOptions="Start"
-                                    Margin="10"
-                                    Command="{Binding GoBackCommand}"/>
-
-                            <Button Text="♥"
-                                    FontSize="24"
-                                    TextColor="{Binding IsFavorite, Converter={StaticResource BoolToFavoriteColorConverter}}"
-                                    BackgroundColor="Transparent"
-                                    WidthRequest="50"
-                                    HeightRequest="50"
-                                    HorizontalOptions="End"
-                                    VerticalOptions="Start"
-                                    Margin="10"
-                                    Command="{Binding ToggleFavoriteCommand}"/>
                      </Grid>
 
                      <!-- Info Section -->
                      <StackLayout Padding="15"
-                                  Spacing="15">
+                                   Spacing="15">
 
                             <!-- Description -->
                             <Border Padding="15"
-                                    BackgroundColor="White"
+                                          BackgroundColor="White"
                                     StrokeShape="RoundRectangle 10"
-                                    Stroke="#EEEEEE">
-                                   <StackLayout Spacing="10">
+                                          Stroke="#EEEEEE">
+                                   <StackLayout Spacing="8">
                                           <Label Text="{Binding Source={x:Static loc:LocalizationResourceManager.Instance}, Path=[POIDetailDescription]}"
-                                                 FontSize="18"
-                                                 FontAttributes="Bold"/>
+                                                 FontSize="16"
+                                                        FontAttributes="Bold"/>
                                           <Label Text="{Binding Poi.Description}"
-                                                 FontSize="14"
-                                                 LineBreakMode="WordWrap"/>
+                                                        FontSize="14"
+                                                        LineBreakMode="WordWrap"/>
                                    </StackLayout>
                             </Border>
 
                             <!-- Address -->
                             <Border Padding="15"
-                                    BackgroundColor="White"
+                                          BackgroundColor="White"
                                     StrokeShape="RoundRectangle 10"
-                                    Stroke="#EEEEEE">
+                                          Stroke="#EEEEEE">
                                    <StackLayout Spacing="5">
                                           <Label Text="{Binding Source={x:Static loc:LocalizationResourceManager.Instance}, Path=[POIDetailAddress]}"
                                                  FontSize="16"
-                                                 FontAttributes="Bold"/>
+                                                        FontAttributes="Bold"/>
                                           <Label Text="{Binding Poi.Address}"
-                                                 FontSize="14"/>
+                                                        FontSize="14"/>
                                    </StackLayout>
                             </Border>
 
                             <!-- Audio Player Card -->
                             <Border Padding="0"
-                                    BackgroundColor="{StaticResource Primary}"
+                                          BackgroundColor="{StaticResource Primary}"
                                     StrokeShape="RoundRectangle 16"
-                                    Stroke="Transparent">
+                                          Stroke="Transparent">
                                    <StackLayout Spacing="0">
 
-                                          <!-- Header -->
-                                          <Grid Padding="16,14,16,10"
-                                                ColumnDefinitions="*,Auto">
-                                                 <StackLayout Grid.Column="0"
-                                                              Spacing="2"
-                                                              VerticalOptions="Center">
-                                                        <Label Text="{Binding Source={x:Static loc:LocalizationResourceManager.Instance}, Path=[POIDetailAudioGuide]}"
-                                                               FontSize="15"
-                                                               FontAttributes="Bold"
-                                                               TextColor="White"/>
-                                                        <Label Text="{Binding AudioStatusText}"
-                                                               FontSize="11"
-                                                               TextColor="#FFCCBC"/>
-                                                 </StackLayout>
-                                                 <!-- Language Picker nhỏ gọn -->
-                                                 <Border Grid.Column="1"
-                                                         BackgroundColor="#33FFFFFF"
-                                                         StrokeThickness="0"
-                                                         StrokeShape="RoundRectangle 20"
-                                                         Padding="4,0"
-                                                         VerticalOptions="Center">
-                                                        <Picker ItemsSource="{Binding Poi.AudioContents}"
-                                                                ItemDisplayBinding="{Binding LanguageCode}"
-                                                                SelectedItem="{Binding SelectedAudio}"
-                                                                TextColor="White"
-                                                                TitleColor="White"
-                                                                FontSize="12"
-                                                                WidthRequest="90"
-                                                                Title="{Binding Source={x:Static loc:LocalizationResourceManager.Instance}, Path=[POIDetailAudioLang]}"/>
-                                                 </Border>
-                                          </Grid>
+                                          <Label Text="{Binding Source={x:Static loc:LocalizationResourceManager.Instance}, Path=[POIDetailAudioGuide]}"
+                                                 FontSize="15"
+                                                        FontAttributes="Bold"
+                                                        TextColor="White"
+                                                 Padding="16,14,16,10"/>
 
-                                          <!-- Divider -->
                                           <BoxView HeightRequest="1"
-                                                   BackgroundColor="#33FFFFFF"
-                                                   Margin="16,0"/>
+                                                        BackgroundColor="#33FFFFFF"
+                                                        Margin="16,0"/>
 
-                                          <!-- Progress Bar + Time -->
                                           <StackLayout Padding="16,12,16,4"
-                                                       Spacing="4">
+                                                        Spacing="4">
                                                  <Slider Minimum="0"
-                                                         Maximum="1"
-                                                         Value="{Binding AudioPositionRatio}"
-                                                         ThumbColor="White"
+                                                               Maximum="1"
+                                                               Value="{Binding AudioPositionRatio}"
+                                                         IsEnabled="False"
+                                                               ThumbColor="White"
                                                          MinimumTrackColor="White"
-                                                         MaximumTrackColor="#66FFFFFF"
-                                                         DragCompletedCommand="{Binding SeekAudioCommand}"/>
+                                                               MaximumTrackColor="#66FFFFFF"/>
                                                  <Grid ColumnDefinitions="*,*">
                                                         <Label Grid.Column="0"
-                                                               Text="{Binding AudioPositionText}"
+                                                                      Text="{Binding AudioPositionText}"
                                                                FontSize="11"
-                                                               TextColor="#FFCCBC"
-                                                               HorizontalOptions="Start"/>
+                                                                      TextColor="#FFCCBC"
+                                                                      HorizontalOptions="Start"/>
                                                         <Label Grid.Column="1"
-                                                               Text="{Binding AudioDurationText}"
+                                                                      Text="{Binding AudioDurationText}"
                                                                FontSize="11"
-                                                               TextColor="#FFCCBC"
-                                                               HorizontalOptions="End"/>
+                                                                      TextColor="#FFCCBC"
+                                                                      HorizontalOptions="End"/>
                                                  </Grid>
                                           </StackLayout>
 
-                                          <!-- Play Controls -->
-                                          <Grid ColumnDefinitions="*,Auto,Auto,*"
-                                                ColumnSpacing="12"
-                                                Padding="16,4,16,16"
-                                                HorizontalOptions="Center">
+                                          <!-- Controls: -5s / play-stop / +5s -->
+                                          <Grid ColumnDefinitions="*,Auto,Auto,Auto,*"
+                                                        ColumnSpacing="16"
+                                                Padding="16,8,16,18"
+                                                        HorizontalOptions="Center">
 
-                                                 <!-- Play/Pause big button -->
                                                  <Border Grid.Column="1"
-                                                         WidthRequest="60"
-                                                         HeightRequest="60"
-                                                         StrokeShape="Ellipse"
-                                                         BackgroundColor="White"
-                                                         Stroke="Transparent"
-                                                         Padding="0">
-                                                        <Button Text="{Binding IsPlayingAudio, Converter={StaticResource BoolToPlayButtonTextConverter}}"
-                                                                Command="{Binding PlayAudioCommand}"
-                                                                BackgroundColor="Transparent"
-                                                                TextColor="{StaticResource Primary}"
-                                                                FontSize="26"
-                                                                Padding="0"/>
+                                                               StrokeShape="Ellipse"
+                                                               BackgroundColor="#33FFFFFF"
+                                                         StrokeThickness="0"
+                                                               WidthRequest="52"
+                                                               HeightRequest="52">
+                                                        <Border.GestureRecognizers>
+                                                               <TapGestureRecognizer Command="{Binding SkipBackAudioCommand}"/>
+                                                        </Border.GestureRecognizers>
+                                                        <VerticalStackLayout HorizontalOptions="Center"
+                                                                      VerticalOptions="Center"
+                                                                      Spacing="0">
+                                                               <Label Text="&#x25C4;&#x25C4;"
+                                                                             TextColor="White"
+                                                                             FontSize="13"
+                                                                             HorizontalOptions="Center"/>
+                                                               <Label Text="-5s"
+                                                                             TextColor="#FFCCBC"
+                                                                             FontSize="9"
+                                                                             HorizontalOptions="Center"/>
+                                                        </VerticalStackLayout>
                                                  </Border>
 
-                                                 <!-- Stop button -->
                                                  <Border Grid.Column="2"
-                                                         WidthRequest="48"
-                                                         HeightRequest="48"
-                                                         StrokeShape="Ellipse"
-                                                         BackgroundColor="#33FFFFFF"
-                                                         Stroke="Transparent"
-                                                         Padding="0"
-                                                         VerticalOptions="Center">
-                                                        <Button Text="⏹"
-                                                                Command="{Binding StopAudioCommand}"
-                                                                BackgroundColor="Transparent"
-                                                                TextColor="White"
-                                                                FontSize="18"
-                                                                Padding="0"/>
+                                                               StrokeShape="Ellipse"
+                                                               BackgroundColor="White"
+                                                         StrokeThickness="0"
+                                                               WidthRequest="64"
+                                                               HeightRequest="64">
+                                                        <Border.GestureRecognizers>
+                                                               <TapGestureRecognizer Command="{Binding ToggleAudioCommand}"/>
+                                                        </Border.GestureRecognizers>
+                                                        <Label FontSize="26"
+                                                                      TextColor="{StaticResource Primary}"
+                                                               HorizontalOptions="Center"
+                                                                      VerticalOptions="Center">
+                                                               <Label.Triggers>
+                                                                      <DataTrigger TargetType="Label"
+                                                                                    Binding="{Binding IsPlayingAudio}"
+                                                                                    Value="True">
+                                                                             <Setter Property="Text"
+                                                                                           Value="&#x25A0;"/>
+                                                                      </DataTrigger>
+                                                                      <DataTrigger TargetType="Label"
+                                                                                    Binding="{Binding IsPlayingAudio}"
+                                                                                    Value="False">
+                                                                             <Setter Property="Text"
+                                                                                           Value="&#x25B6;"/>
+                                                                      </DataTrigger>
+                                                               </Label.Triggers>
+                                                        </Label>
                                                  </Border>
+
+                                                 <Border Grid.Column="3"
+                                                               StrokeShape="Ellipse"
+                                                               BackgroundColor="#33FFFFFF"
+                                                         StrokeThickness="0"
+                                                               WidthRequest="52"
+                                                               HeightRequest="52">
+                                                        <Border.GestureRecognizers>
+                                                               <TapGestureRecognizer Command="{Binding SkipForwardAudioCommand}"/>
+                                                        </Border.GestureRecognizers>
+                                                        <VerticalStackLayout HorizontalOptions="Center"
+                                                                      VerticalOptions="Center"
+                                                                      Spacing="0">
+                                                               <Label Text="&#x25BA;&#x25BA;"
+                                                                             TextColor="White"
+                                                                             FontSize="13"
+                                                                             HorizontalOptions="Center"/>
+                                                               <Label Text="+5s"
+                                                                             TextColor="#FFCCBC"
+                                                                             FontSize="9"
+                                                                             HorizontalOptions="Center"/>
+                                                        </VerticalStackLayout>
+                                                 </Border>
+
                                           </Grid>
                                    </StackLayout>
                             </Border>
 
-                            <!-- Transcript Card -->
+                            <!-- Transcript -->
                             <Border Padding="15"
-                                    BackgroundColor="White"
-                                    StrokeShape="RoundRectangle 10"
+                                          BackgroundColor="White"
+                                          StrokeShape="RoundRectangle 10"
                                     Stroke="#EEEEEE"
-                                    IsVisible="{Binding HasTranscript}">
+                                          IsVisible="{Binding HasTranscript}">
                                    <StackLayout Spacing="8">
                                           <Label Text="{Binding Source={x:Static loc:LocalizationResourceManager.Instance}, Path=[POIDetailTranscript]}"
                                                  FontSize="15"
-                                                 FontAttributes="Bold"
-                                                 TextColor="{StaticResource TextPrimary}"/>
+                                                        FontAttributes="Bold"
+                                                        TextColor="{StaticResource TextPrimary}"/>
                                           <BoxView HeightRequest="1"
-                                                   BackgroundColor="{StaticResource Divider}"/>
+                                                        BackgroundColor="{StaticResource Divider}"/>
                                           <Label Text="{Binding AudioTranscript}"
-                                                 FontSize="13"
+                                                        FontSize="13"
                                                  LineBreakMode="WordWrap"
-                                                 TextColor="{StaticResource TextSecondary}"
-                                                 LineHeight="1.5"/>
+                                                        TextColor="{StaticResource TextSecondary}"
+                                                        LineHeight="1.5"/>
                                    </StackLayout>
                             </Border>
 
                             <!-- Rating -->
                             <Border Padding="15"
-                                    BackgroundColor="White"
+                                          BackgroundColor="White"
                                     StrokeShape="RoundRectangle 10"
-                                    Stroke="#EEEEEE">
+                                          Stroke="#EEEEEE">
                                    <StackLayout Spacing="10">
                                           <Label Text="{Binding Source={x:Static loc:LocalizationResourceManager.Instance}, Path=[POIDetailRating]}"
                                                  FontSize="16"
-                                                 FontAttributes="Bold"/>
-
+                                                        FontAttributes="Bold"/>
                                           <FlexLayout Direction="Row"
-                                                      JustifyContent="SpaceEvenly">
-                                                 <Button Text="1⭐"
-                                                         Command="{Binding SubmitRatingCommand}"
-                                                         CommandParameter="1"
+                                                        JustifyContent="SpaceEvenly">
+                                                 <Button Text="1 &#x2B50;"
+                                                               Command="{Binding SubmitRatingCommand}"
+                                                               CommandParameter="1"
                                                          BackgroundColor="#FFC107"
-                                                         TextColor="White"/>
-                                                 <Button Text="2⭐"
-                                                         Command="{Binding SubmitRatingCommand}"
-                                                         CommandParameter="2"
+                                                               TextColor="White"
+                                                               CornerRadius="8"/>
+                                                 <Button Text="2 &#x2B50;"
+                                                               Command="{Binding SubmitRatingCommand}"
+                                                               CommandParameter="2"
                                                          BackgroundColor="#FFC107"
-                                                         TextColor="White"/>
-                                                 <Button Text="3⭐"
-                                                         Command="{Binding SubmitRatingCommand}"
-                                                         CommandParameter="3"
+                                                               TextColor="White"
+                                                               CornerRadius="8"/>
+                                                 <Button Text="3 &#x2B50;"
+                                                               Command="{Binding SubmitRatingCommand}"
+                                                               CommandParameter="3"
                                                          BackgroundColor="#FFC107"
-                                                         TextColor="White"/>
-                                                 <Button Text="4⭐"
-                                                         Command="{Binding SubmitRatingCommand}"
-                                                         CommandParameter="4"
+                                                               TextColor="White"
+                                                               CornerRadius="8"/>
+                                                 <Button Text="4 &#x2B50;"
+                                                               Command="{Binding SubmitRatingCommand}"
+                                                               CommandParameter="4"
                                                          BackgroundColor="#FFC107"
-                                                         TextColor="White"/>
-                                                 <Button Text="5⭐"
-                                                         Command="{Binding SubmitRatingCommand}"
-                                                         CommandParameter="5"
+                                                               TextColor="White"
+                                                               CornerRadius="8"/>
+                                                 <Button Text="5 &#x2B50;"
+                                                               Command="{Binding SubmitRatingCommand}"
+                                                               CommandParameter="5"
                                                          BackgroundColor="#FFC107"
-                                                         TextColor="White"/>
+                                                               TextColor="White"
+                                                               CornerRadius="8"/>
                                           </FlexLayout>
-
-                                          <Label Text="{Binding Poi.AverageRating, StringFormat='Average: {0:F1} ⭐'}"
+                                          <Label Text="{Binding Poi.AverageRating, StringFormat='Trung b&#236;nh: {0:F1} &#x2B50;'}"
                                                  FontSize="14"
-                                                 HorizontalOptions="Center"/>
+                                                        HorizontalOptions="Center"/>
                                    </StackLayout>
                             </Border>
 
                             <!-- Vendors -->
                             <Border Padding="15"
-                                    BackgroundColor="White"
-                                    StrokeShape="RoundRectangle 10"
+                                          BackgroundColor="White"
+                                          StrokeShape="RoundRectangle 10"
                                     Stroke="#EEEEEE"
                                     IsVisible="{Binding Poi.Vendors.Count, Converter={StaticResource CountToBoolConverter}}">
                                    <StackLayout Spacing="10">
                                           <Label Text="{Binding Source={x:Static loc:LocalizationResourceManager.Instance}, Path=[POIDetailVendors]}"
                                                  FontSize="16"
-                                                 FontAttributes="Bold"/>
-
+                                                        FontAttributes="Bold"/>
                                           <CollectionView ItemsSource="{Binding Poi.Vendors}">
                                                  <CollectionView.ItemTemplate>
                                                         <DataTemplate>
                                                                <StackLayout Padding="0,5"
-                                                                            Spacing="5">
+                                                                             Spacing="5">
                                                                       <Label Text="{Binding Name}"
-                                                                             FontSize="14"
-                                                                             FontAttributes="Bold"/>
+                                                                                    FontSize="14"
+                                                                                    FontAttributes="Bold"/>
                                                                       <Label Text="{Binding ContactPhone}"
-                                                                             FontSize="12"
-                                                                             TextColor="Gray"/>
+                                                                                    FontSize="12"
+                                                                                    TextColor="Gray"/>
                                                                </StackLayout>
                                                         </DataTemplate>
                                                  </CollectionView.ItemTemplate>
@@ -295,12 +333,11 @@
 
                      </StackLayout>
 
-                     <!-- Loading Indicator -->
                      <ActivityIndicator IsRunning="{Binding IsLoading}"
-                                        IsVisible="{Binding IsLoading}"
+                                   IsVisible="{Binding IsLoading}"
                                         Color="#FF5722"
-                                        VerticalOptions="Center"
-                                        HorizontalOptions="Center"
+                                   VerticalOptions="Center"
+                                   HorizontalOptions="Center"
                                         Margin="0,50,0,0"/>
 
               </StackLayout>

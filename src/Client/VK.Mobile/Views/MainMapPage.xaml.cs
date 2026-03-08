@@ -480,6 +480,7 @@ public partial class MainMapPage : ContentPage
             var page = _serviceProvider.GetRequiredService<NowPlayingPage>();
             var vm = (NowPlayingViewModel)page.BindingContext;
             vm.Initialize(
+                poi.Id,
                 poi.Name,
                 poi.CategoryName ?? string.Empty,
                 poi.ImageUrl ?? string.Empty,

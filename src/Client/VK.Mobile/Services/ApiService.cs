@@ -228,7 +228,7 @@ public class ApiService : IApiService
     {
         try
         {
-            var request = new { pointOfInterestId = poiId };
+            var request = new { PoiId = poiId };
             var response = await _httpClient.PostAsJsonAsync($"tourist/{touristId}/favorites", request);
             return response.IsSuccessStatusCode;
         }

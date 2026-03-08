@@ -264,7 +264,7 @@ public partial class MainMapViewModel : ObservableObject
             // Mở NowPlayingPage dạng modal overlay
             var page = _serviceProvider.GetRequiredService<NowPlayingPage>();
             var vm = (NowPlayingViewModel)page.BindingContext;
-            vm.Initialize(poi.Name ?? string.Empty, poi.CategoryName ?? string.Empty,
+            vm.Initialize(poi.Id, poi.Name ?? string.Empty, poi.CategoryName ?? string.Empty,
                           poi.ImageUrl ?? string.Empty, audioText, SelectedLanguage);
             await Shell.Current.Navigation.PushModalAsync(page, animated: true);
         }
@@ -313,16 +313,12 @@ public partial class MainMapViewModel : ObservableObject
     {
         try
         {
-            var navigationParameter = new Dictionary<string, object>
-            {
-                { "POI", poi }
-            };
-
-            await Shell.Current.GoToAsync("poidetail", navigationParameter);
+            await Shell.Current.GoToAsync($"poidetail?poiId={poi.Id}");
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error navigating to POI detail");
+            _logger.LogError(ex, "Error navigating to POI detail for {Name}", poi.Name);
+            await Shell.Current.DisplayAlert("Lỗi", $"Không mở được chi tiết: {ex.Message}", "OK");
         }
     }
 

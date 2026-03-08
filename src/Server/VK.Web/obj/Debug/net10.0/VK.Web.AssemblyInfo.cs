@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("VK.Web")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+79a181a13709d023898d506114689502574ef502")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+a9172a1f157d44d922f8f6a79c109c84349991c5")]
 [assembly: System.Reflection.AssemblyProductAttribute("VK.Web")]
 [assembly: System.Reflection.AssemblyTitleAttribute("VK.Web")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

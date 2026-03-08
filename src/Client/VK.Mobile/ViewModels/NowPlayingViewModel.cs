@@ -20,6 +20,7 @@ public partial class NowPlayingViewModel : ObservableObject
 
     private readonly ITTSService _ttsService;
 
+    [ObservableProperty] private int _poiId;
     [ObservableProperty] private string _poiName = string.Empty;
     [ObservableProperty] private string _poiCategory = string.Empty;
     [ObservableProperty] private string _poiImage = string.Empty;
@@ -40,8 +41,9 @@ public partial class NowPlayingViewModel : ObservableObject
         _ttsService = ttsService;
     }
 
-    public void Initialize(string poiName, string poiCategory, string poiImage, string audioText, string language)
+    public void Initialize(int poiId, string poiName, string poiCategory, string poiImage, string audioText, string language)
     {
+        PoiId = poiId;
         PoiName = poiName;
         PoiCategory = poiCategory;
         PoiImage = poiImage;
@@ -96,14 +98,35 @@ public partial class NowPlayingViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private async Task StopAsync()
+    private async Task TogglePlayAsync()
     {
-        _ttsCts?.Cancel();
-        await _ttsService.StopAsync();
-        IsPlaying = false;
-        StopTimer();
-        _elapsedSeconds = 0;
-        UpdateProgress();
+        if (IsPlaying)
+        {
+            // Pause: stop TTS + timer, keep elapsed position (don't reset to 0)
+            _ttsCts?.Cancel();
+            await _ttsService.StopAsync();
+            IsPlaying = false;
+            StopTimer();
+        }
+        else
+        {
+            // Resume from current elapsed position (timer continues, TTS restarts)
+            _ttsCts?.Cancel();
+            _ttsCts?.Dispose();
+            _ttsCts = new CancellationTokenSource();
+            IsPlaying = true;
+            UpdateProgress();
+            StartTimer();
+            var token = _ttsCts.Token;
+            var text = AudioText;
+            var lang = Language;
+            _ = Task.Run(async () =>
+            {
+                try { await _ttsService.SpeakTextAsync(text, lang, token); }
+                catch (OperationCanceledException) { }
+                catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"[NowPlaying] TTS error: {ex.Message}"); }
+            });
+        }
     }
 
     [RelayCommand]

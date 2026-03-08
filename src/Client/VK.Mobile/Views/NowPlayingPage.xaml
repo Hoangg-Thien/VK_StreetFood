@@ -122,7 +122,7 @@
                         </VerticalStackLayout>
                     </Border>
 
-                    <!-- Stop (big orange) -->
+                    <!-- Play/Stop toggle (big orange) -->
                     <Border Grid.Column="2"
                             StrokeShape="Ellipse"
                             Stroke="Transparent"
@@ -130,13 +130,23 @@
                             WidthRequest="68"
                             HeightRequest="68">
                         <Border.GestureRecognizers>
-                            <TapGestureRecognizer Command="{Binding StopCommand}"/>
+                            <TapGestureRecognizer Command="{Binding TogglePlayCommand}"/>
                         </Border.GestureRecognizers>
-                        <Label Text="■"
+                        <Label x:Name="PlayStopIcon"
+                               Text="■"
                                TextColor="White"
                                FontSize="26"
                                HorizontalOptions="Center"
-                               VerticalOptions="Center"/>
+                               VerticalOptions="Center">
+                            <Label.Triggers>
+                                <DataTrigger TargetType="Label"
+                                             Binding="{Binding IsPlaying}"
+                                             Value="False">
+                                    <Setter Property="Text"
+                                            Value="▶"/>
+                                </DataTrigger>
+                            </Label.Triggers>
+                        </Label>
                     </Border>
 
                     <!-- +5s -->
