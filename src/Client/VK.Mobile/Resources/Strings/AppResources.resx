@@ -118,28 +118,28 @@
 
   <!-- Settings Page -->
   <data name="SettingsLanguageSection" xml:space="preserve">
-    <value>🌐 Ngôn ngữ</value>
+    <value> Ngôn ngữ</value>
   </data>
   <data name="SettingsSaveLanguage" xml:space="preserve">
     <value>Lưu ngôn ngữ</value>
   </data>
   <data name="SettingsNotifications" xml:space="preserve">
-    <value>🔔 Thông báo</value>
+    <value> Thông báo</value>
   </data>
   <data name="SettingsEnableNotifications" xml:space="preserve">
     <value>Kích hoạt thông báo</value>
   </data>
   <data name="SettingsAudio" xml:space="preserve">
-    <value>🎧 Âm thanh</value>
+    <value> Âm thanh</value>
   </data>
   <data name="SettingsAutoPlayAudio" xml:space="preserve">
     <value>Tự động phát audio</value>
   </data>
   <data name="SettingsLocation" xml:space="preserve">
-    <value>📍 Vị trí</value>
+    <value> Vị trí</value>
   </data>
   <data name="SettingsGeofenceLabel" xml:space="preserve">
-    <value>Bán kính geofence:</value>
+    <value>Bán kính:</value>
   </data>
   <data name="SettingsLocationUpdateLabel" xml:space="preserve">
     <value>Cập nhật vị trí:</value>
@@ -148,13 +148,13 @@
     <value>Lưu cài đặt vị trí</value>
   </data>
   <data name="SettingsStorage" xml:space="preserve">
-    <value>💾 Bộ nhớ</value>
+    <value> Bộ nhớ</value>
   </data>
   <data name="SettingsClearCache" xml:space="preserve">
     <value>Xóa bộ nhớ đệm</value>
   </data>
   <data name="SettingsAccount" xml:space="preserve">
-    <value>👤 Tài khoản</value>
+    <value> Tài khoản</value>
   </data>
   <data name="SettingsLogout" xml:space="preserve">
     <value>Đăng xuất</value>

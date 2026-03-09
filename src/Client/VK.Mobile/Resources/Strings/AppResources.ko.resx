@@ -74,25 +74,25 @@
 
   <!-- Settings Page -->
   <data name="SettingsLanguageSection" xml:space="preserve">
-    <value>🌐 언어</value>
+    <value> 언어</value>
   </data>
   <data name="SettingsSaveLanguage" xml:space="preserve">
     <value>언어 저장</value>
   </data>
   <data name="SettingsNotifications" xml:space="preserve">
-    <value>🔔 알림</value>
+    <value> 알림</value>
   </data>
   <data name="SettingsEnableNotifications" xml:space="preserve">
     <value>알림 활성화</value>
   </data>
   <data name="SettingsAudio" xml:space="preserve">
-    <value>🎧 오디오</value>
+    <value> 오디오</value>
   </data>
   <data name="SettingsAutoPlayAudio" xml:space="preserve">
     <value>오디오 자동 재생</value>
   </data>
   <data name="SettingsLocation" xml:space="preserve">
-    <value>📍 위치</value>
+    <value> 위치</value>
   </data>
   <data name="SettingsGeofenceLabel" xml:space="preserve">
     <value>지오펜스 반경:</value>
@@ -104,13 +104,13 @@
     <value>위치 설정 저장</value>
   </data>
   <data name="SettingsStorage" xml:space="preserve">
-    <value>💾 저장소</value>
+    <value> 저장소</value>
   </data>
   <data name="SettingsClearCache" xml:space="preserve">
     <value>캐시 지우기</value>
   </data>
   <data name="SettingsAccount" xml:space="preserve">
-    <value>👤 계정</value>
+    <value> 계정</value>
   </data>
   <data name="SettingsLogout" xml:space="preserve">
     <value>로그아웃</value>

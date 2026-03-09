@@ -172,7 +172,7 @@ public partial class POIDetailViewModel : ObservableObject, IQueryAttributable
                 if (touristId != null)
                 {
                     var favorites = await _apiService.GetFavoritesAsync(touristId.Value);
-                    IsFavorite = favorites.Any(f => f.PointOfInterestId == poiId);
+                    IsFavorite = favorites.Any(f => f.Id == poiId);
                 }
 
                 // Track view event

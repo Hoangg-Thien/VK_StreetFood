@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("VK.Core")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+a9172a1f157d44d922f8f6a79c109c84349991c5")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+0ec3b94e920aab7da0400ce1790202723e15af9d")]
 [assembly: System.Reflection.AssemblyProductAttribute("VK.Core")]
 [assembly: System.Reflection.AssemblyTitleAttribute("VK.Core")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

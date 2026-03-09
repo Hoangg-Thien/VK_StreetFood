@@ -43,11 +43,7 @@ public partial class FavoritesViewModel : ObservableObject
             }
 
             var favorites = await _apiService.GetFavoritesAsync(tourist.Id);
-            var pois = favorites
-                .Where(f => f.Poi != null)
-                .Select(f => f.Poi!)
-                .ToList();
-            Favorites = new ObservableCollection<POIModel>(pois);
+            Favorites = new ObservableCollection<POIModel>(favorites);
             IsEmpty = !Favorites.Any();
         }
         catch (Exception ex)

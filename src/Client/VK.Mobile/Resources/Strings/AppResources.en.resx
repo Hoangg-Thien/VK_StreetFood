@@ -74,25 +74,25 @@
 
   <!-- Settings Page -->
   <data name="SettingsLanguageSection" xml:space="preserve">
-    <value>🌐 Language</value>
+    <value> Language</value>
   </data>
   <data name="SettingsSaveLanguage" xml:space="preserve">
     <value>Save Language</value>
   </data>
   <data name="SettingsNotifications" xml:space="preserve">
-    <value>🔔 Notifications</value>
+    <value> Notifications</value>
   </data>
   <data name="SettingsEnableNotifications" xml:space="preserve">
     <value>Enable Notifications</value>
   </data>
   <data name="SettingsAudio" xml:space="preserve">
-    <value>🎧 Audio</value>
+    <value> Audio</value>
   </data>
   <data name="SettingsAutoPlayAudio" xml:space="preserve">
     <value>Auto play audio</value>
   </data>
   <data name="SettingsLocation" xml:space="preserve">
-    <value>📍 Location</value>
+    <value> Location</value>
   </data>
   <data name="SettingsGeofenceLabel" xml:space="preserve">
     <value>Geofence radius:</value>
@@ -104,13 +104,13 @@
     <value>Save Location Settings</value>
   </data>
   <data name="SettingsStorage" xml:space="preserve">
-    <value>💾 Storage</value>
+    <value> Storage</value>
   </data>
   <data name="SettingsClearCache" xml:space="preserve">
     <value>Clear Cache</value>
   </data>
   <data name="SettingsAccount" xml:space="preserve">
-    <value>👤 Account</value>
+    <value> Account</value>
   </data>
   <data name="SettingsLogout" xml:space="preserve">
     <value>Logout</value>

@@ -195,7 +195,8 @@ public class TouristController : ControllerBase
 
         if (existingFavorite != null)
         {
-            return BadRequest(new { message = "POI đã có trong danh sách yêu thích" });
+            // Already favorited – idempotent: treat as success
+            return Ok(new { success = true, message = "POI đã có trong danh sách yêu thích" });
         }
 
         var favorite = new Favorite

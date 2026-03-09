@@ -24,7 +24,7 @@ public interface IApiService
     // Favorites
     Task<bool> AddFavoriteAsync(int touristId, int poiId);
     Task<bool> RemoveFavoriteAsync(int touristId, int poiId);
-    Task<List<FavoriteModel>> GetFavoritesAsync(int touristId);
+    Task<List<POIModel>> GetFavoritesAsync(int touristId);
 
     // Audio
     Task<AudioContentResult?> GetAudioForPOIAsync(int poiId, string languageCode = "vi");
@@ -253,16 +253,16 @@ public class ApiService : IApiService
         }
     }
 
-    public async Task<List<FavoriteModel>> GetFavoritesAsync(int touristId)
+    public async Task<List<POIModel>> GetFavoritesAsync(int touristId)
     {
         try
         {
-            return await _httpClient.GetFromJsonAsync<List<FavoriteModel>>($"tourist/{touristId}/favorites", _jsonOptions) ?? new List<FavoriteModel>();
+            return await _httpClient.GetFromJsonAsync<List<POIModel>>($"tourist/{touristId}/favorites", _jsonOptions) ?? new List<POIModel>();
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error getting favorites");
-            return new List<FavoriteModel>();
+            return new List<POIModel>();
         }
     }
 
