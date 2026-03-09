@@ -208,30 +208,36 @@ public partial class POIDetailViewModel : ObservableObject, IQueryAttributable
         {
             // Play/Resume
             var text = SelectedAudio?.TextContent;
+            System.Diagnostics.Debug.WriteLine($"[POIDetail] ToggleAudio: SelectedAudio={SelectedAudio != null}, TextContent={text?.Length ?? 0} chars");
             if (string.IsNullOrWhiteSpace(text))
                 text = Poi != null ? $"{Poi.Name}. {Poi.Description}" : string.Empty;
-            if (string.IsNullOrWhiteSpace(text)) return;
+            System.Diagnostics.Debug.WriteLine($"[POIDetail] Final text for TTS ({text?.Length ?? 0} chars): {text?[..Math.Min(60, text?.Length ?? 0)]}");
+            if (string.IsNullOrWhiteSpace(text))
+            {
+                await Shell.Current.DisplayAlert("Thông báo", "Không có nội dung âm thanh cho điểm này", "OK");
+                return;
+            }
 
             _ttsCts?.Cancel();
             _ttsCts = new CancellationTokenSource();
             var token = _ttsCts.Token;
             var lang = SelectedLanguage;
 
+            // Recalculate duration from actual text that will be spoken
+            var wordCount = text.Split(' ', StringSplitOptions.RemoveEmptyEntries).Length;
+            _totalSeconds = Math.Max(30, wordCount * 60 / 130);
+            AudioDurationText = FormatTime(_totalSeconds);
+
             IsPlayingAudio = true;
             StartProgressTimer();
 
-            // Track
+            // Fire TTS immediately - don't wait for tracking
+            _ = _ttsService.SpeakTextAsync(text, lang, token);
+
+            // Track in background (don't block TTS)
             var touristId = await _storageService.GetTouristIdAsync();
             if (touristId != null && Poi != null)
-                await _apiService.TrackEventAsync(touristId, Poi.Id, "audio_play", lang);
-
-            // TTS background, timer is independent
-            _ = Task.Run(async () =>
-            {
-                try { await _ttsService.SpeakTextAsync(text, lang, token); }
-                catch (OperationCanceledException) { }
-                catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"[Detail TTS] {ex.Message}"); }
-            });
+                _ = _apiService.TrackEventAsync(touristId, Poi.Id, "audio_play", lang);
         }
     }
 

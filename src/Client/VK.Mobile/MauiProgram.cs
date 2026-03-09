@@ -40,7 +40,7 @@ public static class MauiProgram
 		builder.Services.AddSingleton(AudioManager.Current);
 
 		// Register HttpClient
-		builder.Services.AddSingleton<HttpClient>();
+		builder.Services.AddSingleton<HttpClient>(_ => new HttpClient { Timeout = TimeSpan.FromSeconds(8) });
 
 		// Register ViewModels
 		builder.Services.AddTransient<WelcomeViewModel>();

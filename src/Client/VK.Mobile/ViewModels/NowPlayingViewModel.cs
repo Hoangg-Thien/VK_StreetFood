@@ -69,16 +69,11 @@ public partial class NowPlayingViewModel : ObservableObject
         UpdateProgress();
         StartTimer();
 
-        // TTS chạy background — UI progress do timer quản lý độc lập
+        // Fire TTS directly — do NOT use Task.Run (background thread breaks Android TTS)
         var token = _ttsCts.Token;
         var text = AudioText;
         var lang = Language;
-        _ = Task.Run(async () =>
-        {
-            try { await _ttsService.SpeakTextAsync(text, lang, token); }
-            catch (OperationCanceledException) { }
-            catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"[NowPlaying] TTS error: {ex.Message}"); }
-        });
+        _ = _ttsService.SpeakTextAsync(text, lang, token);
 
         return Task.CompletedTask;
     }
@@ -120,12 +115,7 @@ public partial class NowPlayingViewModel : ObservableObject
             var token = _ttsCts.Token;
             var text = AudioText;
             var lang = Language;
-            _ = Task.Run(async () =>
-            {
-                try { await _ttsService.SpeakTextAsync(text, lang, token); }
-                catch (OperationCanceledException) { }
-                catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"[NowPlaying] TTS error: {ex.Message}"); }
-            });
+            _ = _ttsService.SpeakTextAsync(text, lang, token);
         }
     }
 
