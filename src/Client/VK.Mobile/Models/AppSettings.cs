@@ -15,10 +15,21 @@ public class AppSettings
     /// <summary>Mỗi POI chỉ trigger lại sau X phút (cooldown).</summary>
     public const int GeofenceCooldownMinutes = 10;
 
-    // Map defaults – fallback: Quận 4, TP.HCM
-    public const double DefaultLatitude = 10.7554;
-    public const double DefaultLongitude = 106.7036;
-    public const int DefaultZoomLevel = 15;
+    // Map defaults – Phố Ẩm thực Vĩnh Khánh, Quận 4, TP.HCM
+    public const double DefaultLatitude = 10.7619;
+    public const double DefaultLongitude = 106.7022;
+    public const int DefaultZoomLevel = 17;
+
+#if DEBUG
+    // Tọa độ fake cho emulator (Phố Vĩnh Khánh Q4)
+    public const bool UseMockLocation = true;
+    public const double MockLatitude = 10.75931;
+    public const double MockLongitude = 106.70701;
+#else
+    public const bool UseMockLocation = false;
+    public const double MockLatitude = DefaultLatitude;
+    public const double MockLongitude = DefaultLongitude;
+#endif
 
     // Languages
     public static readonly string[] SupportedLanguages = { "vi", "en", "ko" };
