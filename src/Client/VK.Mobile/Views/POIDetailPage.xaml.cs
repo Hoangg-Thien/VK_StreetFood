@@ -9,4 +9,5 @@ public partial class POIDetailPage : ContentPage
         InitializeComponent();
         BindingContext = viewModel;
     }
+    
 }

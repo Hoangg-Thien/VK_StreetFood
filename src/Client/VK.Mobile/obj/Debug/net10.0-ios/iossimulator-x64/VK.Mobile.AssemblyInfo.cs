@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("VK.Mobile")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0+1a178d3ccbb0655157a911b18a0bad433d9f6b88")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0+524b9b8cb4ab463699103f52091ef67bf5f22da1")]
 [assembly: System.Reflection.AssemblyProductAttribute("VK.Mobile")]
 [assembly: System.Reflection.AssemblyTitleAttribute("VK.Mobile")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

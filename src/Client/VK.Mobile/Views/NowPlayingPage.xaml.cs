@@ -30,6 +30,17 @@ public partial class NowPlayingPage : ContentPage
         NowPlayingViewModel.AutoCloseRequested -= OnAutoCloseRequested;
     }
 
+    private void OnSliderDragStarted(object sender, EventArgs e)
+    {
+        _viewModel.IsDragging = true;
+    }
+
+    private void OnSliderDragCompleted(object sender, EventArgs e)
+    {
+        _viewModel.SeekTo(((Slider)sender).Value);
+        _viewModel.IsDragging = false;
+    }
+
     private async void OnAutoCloseRequested(object? sender, EventArgs e)
     {
         // Tự đóng khi geofence khác trigger

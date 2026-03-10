@@ -477,15 +477,25 @@ public partial class MainMapPage : ContentPage
                 ? poi.Name
                 : $"{poi.Name}. {poi.Description}";
 
+            static string FormatDist(double? km) => km switch
+            {
+                null or 0 => "",
+                < 0.1 => $"{(km.Value * 1000):F0}m away",
+                _ => $"{km.Value:F1} km away"
+            };
+
             var page = _serviceProvider.GetRequiredService<NowPlayingPage>();
             var vm = (NowPlayingViewModel)page.BindingContext;
+            vm.SetAllPois(_viewModel.NearbyPOIs.Count > 0 ? _viewModel.NearbyPOIs : _viewModel.Pois);
             vm.Initialize(
                 poi.Id,
                 poi.Name,
                 poi.CategoryName ?? string.Empty,
                 poi.ImageUrl ?? string.Empty,
                 audioText,
-                _viewModel.SelectedLanguage);
+                _viewModel.SelectedLanguage,
+                poi.Address ?? string.Empty,
+                FormatDist(poi.DistanceKm));
 
             await Shell.Current.Navigation.PushModalAsync(page, animated: true);
         }

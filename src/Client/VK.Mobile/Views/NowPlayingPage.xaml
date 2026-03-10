@@ -2,181 +2,292 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:vm="clr-namespace:VK.Mobile.ViewModels"
-             xmlns:loc="clr-namespace:VK.Mobile.Services"
              x:Class="VK.Mobile.Views.NowPlayingPage"
              x:DataType="vm:NowPlayingViewModel"
              Shell.NavBarIsVisible="False"
-             BackgroundColor="#80000000">
+             BackgroundColor="White">
 
-    <!-- Full-screen grid: tap overlay to close, card at bottom -->
-    <Grid RowDefinitions="*,Auto">
+    <ScrollView>
+        <VerticalStackLayout Spacing="0"
+                             Padding="0,0,0,24">
 
-        <!-- Tap outside to close -->
-        <Grid Grid.Row="0">
-            <Grid.GestureRecognizers>
-                <TapGestureRecognizer Command="{Binding CloseCommand}"/>
-            </Grid.GestureRecognizers>
-        </Grid>
+            <!-- ── HEADER ── -->
+            <Grid ColumnDefinitions="56,*,56"
+                  Padding="12,52,12,8">
+                <!-- Down chevron = close -->
+                <Border Grid.Column="0"
+                        StrokeShape="Ellipse"
+                        Stroke="Transparent"
+                        BackgroundColor="#F0F0F0"
+                        WidthRequest="40"
+                        HeightRequest="40"
+                        HorizontalOptions="Center"
+                        VerticalOptions="Center">
+                    <Border.GestureRecognizers>
+                        <TapGestureRecognizer Command="{Binding CloseCommand}"/>
+                    </Border.GestureRecognizers>
+                    <Label Text="v"
+                           FontSize="17"
+                           FontAttributes="Bold"
+                           TextColor="#333333"
+                           HorizontalOptions="Center"
+                           VerticalOptions="Center"/>
+                </Border>
 
-        <!-- Bottom Sheet Card -->
-        <Border Grid.Row="1"
-                BackgroundColor="White"
-                StrokeThickness="0"
-                Stroke="Transparent"
-                StrokeShape="RoundRectangle 24,24,0,0"
-                Padding="0,0,0,0">
-
-            <VerticalStackLayout Spacing="0">
-
-                <!-- Drag Handle -->
-                <BoxView WidthRequest="40"
-                         HeightRequest="4"
-                         CornerRadius="2"
-                         Color="#DDDDDD"
-                         HorizontalOptions="Center"
-                         Margin="0,12,0,0"/>
-
-                <!-- Header: tên POI + nút X -->
-                <Grid ColumnDefinitions="*,44"
-                      Padding="20,14,12,0">
-                    <VerticalStackLayout Grid.Column="0"
-                                         Spacing="2">
-                        <Label Text="{Binding PoiName}"
-                               FontSize="18"
-                               FontAttributes="Bold"
-                               TextColor="#1A1A1A"
-                               LineBreakMode="TailTruncation"/>
-                        <Label Text="{Binding PoiCategory}"
-                               FontSize="13"
-                               TextColor="#FF6B35"/>
-                    </VerticalStackLayout>
-                    <Button Grid.Column="1"
-                            Text="✕"
-                            FontSize="18"
-                            TextColor="#888888"
-                            BackgroundColor="Transparent"
-                            Padding="0"
-                            WidthRequest="44"
-                            HeightRequest="44"
-                            VerticalOptions="Center"
-                            Command="{Binding CloseCommand}"/>
-                </Grid>
-
-                <!-- Divider -->
-                <BoxView HeightRequest="1"
-                         Color="#F0F0F0"
-                         Margin="20,12,20,0"/>
-
-                <!-- Progress Bar + Time -->
-                <VerticalStackLayout Padding="20,12,20,0"
-                                     Spacing="2">
-                    <Slider Minimum="0"
-                            Maximum="1"
-                            Value="{Binding ProgressRatio}"
-                            IsEnabled="False"
-                            ThumbColor="#FF6B35"
-                            MinimumTrackColor="#FF6B35"
-                            MaximumTrackColor="#DDDDDD"/>
-                    <Grid ColumnDefinitions="*,*">
-                        <Label Grid.Column="0"
-                               Text="{Binding ElapsedText}"
-                               FontSize="11"
-                               TextColor="#AAAAAA"
-                               HorizontalOptions="Start"/>
-                        <Label Grid.Column="1"
-                               Text="{Binding TotalText}"
-                               FontSize="11"
-                               TextColor="#AAAAAA"
-                               HorizontalOptions="End"/>
-                    </Grid>
+                <!-- Title -->
+                <VerticalStackLayout Grid.Column="1"
+                                     Spacing="1"
+                                     VerticalOptions="Center"
+                                     HorizontalOptions="Center">
+                    <Label Text="NOW PLAYING"
+                           FontSize="10"
+                           TextColor="#AAAAAA"
+                           HorizontalOptions="Center"
+                           CharacterSpacing="2"/>
+                    <Label Text="Vinh Khanh Street Tour"
+                           FontSize="14"
+                           FontAttributes="Bold"
+                           TextColor="#1A1A1A"
+                           HorizontalOptions="Center"/>
                 </VerticalStackLayout>
 
-                <!-- Controls -->
-                <Grid ColumnDefinitions="*,Auto,Auto,Auto,*"
-                      ColumnSpacing="16"
-                      HorizontalOptions="Center"
-                      Padding="20,16,20,32"
-                      Margin="0,0,0,4">
+                <!-- Playlist icon -->
+                <Border Grid.Column="2"
+                        StrokeShape="Ellipse"
+                        Stroke="Transparent"
+                        BackgroundColor="#F0F0F0"
+                        WidthRequest="40"
+                        HeightRequest="40"
+                        HorizontalOptions="Center"
+                        VerticalOptions="Center">
+                    <Label Text="&#x2261;"
+                           FontSize="20"
+                           TextColor="#333333"
+                           HorizontalOptions="Center"
+                           VerticalOptions="Center"/>
+                </Border>
+            </Grid>
 
-                    <!-- -5s -->
-                    <Border Grid.Column="1"
-                            StrokeShape="Ellipse"
-                            Stroke="#EEEEEE"
-                            BackgroundColor="#F5F5F5"
-                            WidthRequest="56"
-                            HeightRequest="56">
-                        <Border.GestureRecognizers>
-                            <TapGestureRecognizer Command="{Binding SkipBackCommand}"/>
-                        </Border.GestureRecognizers>
-                        <VerticalStackLayout HorizontalOptions="Center"
-                                             VerticalOptions="Center"
-                                             Spacing="0">
-                            <Label Text="◄◄"
-                                   TextColor="#333333"
-                                   FontSize="14"
-                                   HorizontalOptions="Center"/>
-                            <Label Text="-5s"
-                                   TextColor="#888888"
-                                   FontSize="9"
-                                   HorizontalOptions="Center"/>
-                        </VerticalStackLayout>
-                    </Border>
+            <!-- ── POI IMAGE ── -->
+            <Border StrokeShape="RoundRectangle 20"
+                    Stroke="#E8E8E8"
+                    StrokeThickness="1"
+                    Margin="20,4,20,0"
+                    HeightRequest="300">
+                <Image Source="{Binding PoiImage}"
+                       Aspect="AspectFill"
+                       HorizontalOptions="Fill"
+                       VerticalOptions="Fill"/>
+            </Border>
 
-                    <!-- Play/Stop toggle (big orange) -->
-                    <Border Grid.Column="2"
-                            StrokeShape="Ellipse"
-                            Stroke="Transparent"
-                            BackgroundColor="#FF6B35"
-                            WidthRequest="68"
-                            HeightRequest="68">
-                        <Border.GestureRecognizers>
-                            <TapGestureRecognizer Command="{Binding TogglePlayCommand}"/>
-                        </Border.GestureRecognizers>
-                        <Label x:Name="PlayStopIcon"
-                               Text="■"
-                               TextColor="White"
-                               FontSize="26"
-                               HorizontalOptions="Center"
-                               VerticalOptions="Center">
-                            <Label.Triggers>
-                                <DataTrigger TargetType="Label"
-                                             Binding="{Binding IsPlaying}"
-                                             Value="False">
-                                    <Setter Property="Text"
-                                            Value="▶"/>
-                                </DataTrigger>
-                            </Label.Triggers>
-                        </Label>
-                    </Border>
+            <!-- ── POI NAME ── -->
+            <Label Padding="22,18,22,0"
+                   Text="{Binding PoiName}"
+                   FontSize="26"
+                   FontAttributes="Bold"
+                   TextColor="#1A1A1A"
+                   LineBreakMode="TailTruncation"/>
 
-                    <!-- +5s -->
-                    <Border Grid.Column="3"
-                            StrokeShape="Ellipse"
-                            Stroke="#EEEEEE"
-                            BackgroundColor="#F5F5F5"
-                            WidthRequest="56"
-                            HeightRequest="56">
-                        <Border.GestureRecognizers>
-                            <TapGestureRecognizer Command="{Binding SkipForwardCommand}"/>
-                        </Border.GestureRecognizers>
-                        <VerticalStackLayout HorizontalOptions="Center"
-                                             VerticalOptions="Center"
-                                             Spacing="0">
-                            <Label Text="►►"
-                                   TextColor="#333333"
-                                   FontSize="14"
-                                   HorizontalOptions="Center"/>
-                            <Label Text="+5s"
-                                   TextColor="#888888"
-                                   FontSize="9"
-                                   HorizontalOptions="Center"/>
-                        </VerticalStackLayout>
-                    </Border>
+            <!-- ── CATEGORY + DISTANCE ── -->
+            <HorizontalStackLayout Padding="22,6,22,0"
+                                   Spacing="6">
+                <Label Text="{Binding PoiCategory}"
+                       FontSize="14"
+                       TextColor="#FF6B35"/>
+                <Label Text="&#x2022;"
+                       FontSize="14"
+                       TextColor="#BBBBBB"
+                       IsVisible="{Binding HasDistance}"/>
+                <Label Text="{Binding PoiDistance}"
+                       FontSize="14"
+                       TextColor="#888888"
+                       IsVisible="{Binding HasDistance}"/>
+            </HorizontalStackLayout>
 
+            <!-- ── PROGRESS BAR + TIME ── -->
+            <Slider x:Name="ProgressSlider"
+                    Minimum="0"
+                    Maximum="1"
+                    Value="{Binding ProgressRatio}"
+                    ThumbColor="#FF6B35"
+                    MinimumTrackColor="#FF6B35"
+                    MaximumTrackColor="#E0E0E0"
+                    Margin="12,20,12,0"
+                    DragStarted="OnSliderDragStarted"
+                    DragCompleted="OnSliderDragCompleted"/>
+            <Grid ColumnDefinitions="*,*"
+                  Padding="22,0,22,0">
+                <Label Grid.Column="0"
+                       Text="{Binding ElapsedText}"
+                       FontSize="12"
+                       TextColor="#888888"
+                       HorizontalOptions="Start"/>
+                <Label Grid.Column="1"
+                       Text="{Binding TotalText}"
+                       FontSize="12"
+                       TextColor="#888888"
+                       HorizontalOptions="End"/>
+            </Grid>
+
+            <!-- ── CONTROLS ── -->
+            <Grid ColumnDefinitions="*,Auto,Auto,Auto,*"
+                  ColumnSpacing="12"
+                  Padding="20,22,20,0"
+                  HorizontalOptions="Fill">
+
+                <!-- -5s -->
+                <Border Grid.Column="1"
+                        StrokeShape="Ellipse"
+                        Stroke="Transparent"
+                        BackgroundColor="#F0F0F0"
+                        WidthRequest="56"
+                        HeightRequest="56">
+                    <Border.GestureRecognizers>
+                        <TapGestureRecognizer Command="{Binding SkipBackCommand}"/>
+                    </Border.GestureRecognizers>
+                    <VerticalStackLayout HorizontalOptions="Center"
+                                         VerticalOptions="Center"
+                                         Spacing="0">
+                        <Label Text="&#x25C4;&#x25C4;"
+                               TextColor="#333333"
+                               FontSize="14"
+                               HorizontalOptions="Center"/>
+                        <Label Text="-5s"
+                               TextColor="#888888"
+                               FontSize="9"
+                               HorizontalOptions="Center"/>
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- Play / Pause -->
+                <Border Grid.Column="2"
+                        StrokeShape="Ellipse"
+                        Stroke="Transparent"
+                        BackgroundColor="#FF6B35"
+                        WidthRequest="72"
+                        HeightRequest="72">
+                    <Border.GestureRecognizers>
+                        <TapGestureRecognizer Command="{Binding TogglePlayCommand}"/>
+                    </Border.GestureRecognizers>
+                    <Label Text="&#x25A0;"
+                           TextColor="White"
+                           FontSize="26"
+                           HorizontalOptions="Center"
+                           VerticalOptions="Center">
+                        <Label.Triggers>
+                            <DataTrigger TargetType="Label"
+                                         Binding="{Binding IsPlaying}"
+                                         Value="False">
+                                <Setter Property="Text"
+                                        Value="&#x25B6;"/>
+                            </DataTrigger>
+                        </Label.Triggers>
+                    </Label>
+                </Border>
+
+                <!-- +5s -->
+                <Border Grid.Column="3"
+                        StrokeShape="Ellipse"
+                        Stroke="Transparent"
+                        BackgroundColor="#F0F0F0"
+                        WidthRequest="56"
+                        HeightRequest="56">
+                    <Border.GestureRecognizers>
+                        <TapGestureRecognizer Command="{Binding SkipForwardCommand}"/>
+                    </Border.GestureRecognizers>
+                    <VerticalStackLayout HorizontalOptions="Center"
+                                         VerticalOptions="Center"
+                                         Spacing="0">
+                        <Label Text="&#x25BA;&#x25BA;"
+                               TextColor="#333333"
+                               FontSize="14"
+                               HorizontalOptions="Center"/>
+                        <Label Text="+5s"
+                               TextColor="#888888"
+                               FontSize="9"
+                               HorizontalOptions="Center"/>
+                    </VerticalStackLayout>
+                </Border>
+
+            </Grid>
+
+            <!-- ── UP NEXT ── -->
+            <VerticalStackLayout IsVisible="{Binding HasNextPoi}"
+                                 Margin="20,32,20,0">
+                <Grid ColumnDefinitions="*,Auto"
+                      Margin="0,0,0,12">
+                    <Label Grid.Column="0"
+                           Text="POI G&#x1EA6;N TI&#x1EBF;P THEO (UP NEXT)"
+                           FontSize="11"
+                           FontAttributes="Bold"
+                           TextColor="#FF6B35"
+                           CharacterSpacing="0.5"/>
+                    <Label Grid.Column="1"
+                           Text="{Binding NextPoiDistance}"
+                           FontSize="12"
+                           TextColor="#888888"/>
                 </Grid>
 
-            </VerticalStackLayout>
-        </Border>
+                <Border StrokeShape="RoundRectangle 14"
+                        BackgroundColor="#F8F8F8"
+                        Stroke="#E8E8E8"
+                        StrokeThickness="1"
+                        Padding="12">
+                    <Grid ColumnDefinitions="70,*,44">
 
-    </Grid>
+                        <!-- Thumbnail -->
+                        <Border Grid.Column="0"
+                                StrokeShape="RoundRectangle 10"
+                                Stroke="#E0E0E0"
+                                WidthRequest="62"
+                                HeightRequest="62">
+                            <Image Source="{Binding NextPoiImage}"
+                                   Aspect="AspectFill"
+                                   WidthRequest="62"
+                                   HeightRequest="62"/>
+                        </Border>
+
+                        <!-- Info -->
+                        <VerticalStackLayout Grid.Column="1"
+                                             Spacing="4"
+                                             VerticalOptions="Center"
+                                             Margin="10,0">
+                            <Label Text="{Binding NextPoiName}"
+                                   FontSize="15"
+                                   FontAttributes="Bold"
+                                   TextColor="#1A1A1A"
+                                   LineBreakMode="TailTruncation"/>
+                            <Label Text="{Binding NextPoiSubtitle}"
+                                   FontSize="13"
+                                   TextColor="#888888"
+                                   LineBreakMode="TailTruncation"/>
+                        </VerticalStackLayout>
+
+                        <!-- Play next button -->
+                        <Border Grid.Column="2"
+                                StrokeShape="Ellipse"
+                                Stroke="Transparent"
+                                BackgroundColor="#F0F0F0"
+                                WidthRequest="36"
+                                HeightRequest="36"
+                                VerticalOptions="Center"
+                                HorizontalOptions="Center">
+                            <Border.GestureRecognizers>
+                                <TapGestureRecognizer Command="{Binding PlayNextCommand}"/>
+                            </Border.GestureRecognizers>
+                            <Label Text="&#x25B6;"
+                                   FontSize="13"
+                                   TextColor="#333333"
+                                   HorizontalOptions="Center"
+                                   VerticalOptions="Center"/>
+                        </Border>
+
+                    </Grid>
+                </Border>
+            </VerticalStackLayout>
+
+        </VerticalStackLayout>
+    </ScrollView>
+
+
 </ContentPage>

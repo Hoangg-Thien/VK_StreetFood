@@ -12,18 +12,23 @@ namespace VK.Mobile.ViewModels;
 [QueryProperty(nameof(Language), "language")]
 public partial class NowPlayingViewModel : ObservableObject
 {
-    /// <summary>
-    /// Được bắn khi một geofence mới trigger, yêu cầu NowPlayingPage đang mở tự đóng.
-    /// </summary>
     public static event EventHandler? AutoCloseRequested;
     public static void RequestAutoClose() => AutoCloseRequested?.Invoke(null, EventArgs.Empty);
 
     private readonly ITTSService _ttsService;
+    private readonly IApiService _apiService;
+    private POIModel? _nextPoiModel;
+    private List<POIModel> _allPois = new();
+
+    public void SetAllPois(IEnumerable<POIModel> pois) => _allPois = pois.ToList();
 
     [ObservableProperty] private int _poiId;
     [ObservableProperty] private string _poiName = string.Empty;
     [ObservableProperty] private string _poiCategory = string.Empty;
     [ObservableProperty] private string _poiImage = string.Empty;
+    [ObservableProperty] private string _poiAddress = "District 4, HCMC";
+    [ObservableProperty] private string _poiDistance = string.Empty;
+    [ObservableProperty] private bool _hasDistance;
     [ObservableProperty] private string _audioText = string.Empty;
     [ObservableProperty] private string _language = "vi";
     [ObservableProperty] private bool _isPlaying = true;
@@ -31,25 +36,57 @@ public partial class NowPlayingViewModel : ObservableObject
     [ObservableProperty] private string _elapsedText = "0:00";
     [ObservableProperty] private string _totalText = "0:00";
 
+    // Up Next POI
+    [ObservableProperty] private string _nextPoiName = string.Empty;
+    [ObservableProperty] private string _nextPoiSubtitle = string.Empty;
+    [ObservableProperty] private string _nextPoiImage = string.Empty;
+    [ObservableProperty] private string _nextPoiDistance = string.Empty;
+    [ObservableProperty] private bool _hasNextPoi;
+
     private IDispatcherTimer? _timer;
     private int _elapsedSeconds = 0;
     private int _totalSeconds = 0;
     private CancellationTokenSource? _ttsCts;
 
-    public NowPlayingViewModel(ITTSService ttsService)
+    public NowPlayingViewModel(ITTSService ttsService, IApiService apiService)
     {
         _ttsService = ttsService;
+        _apiService = apiService;
     }
 
-    public void Initialize(int poiId, string poiName, string poiCategory, string poiImage, string audioText, string language)
+    public void Initialize(int poiId, string poiName, string poiCategory, string poiImage,
+                           string audioText, string language,
+                           string poiAddress = "", string poiDistance = "",
+                           POIModel? nextPoiModel = null)
     {
         PoiId = poiId;
         PoiName = poiName;
         PoiCategory = poiCategory;
         PoiImage = poiImage;
+        PoiAddress = string.IsNullOrEmpty(poiAddress) ? "District 4, HCMC" : poiAddress;
+        PoiDistance = poiDistance;
+        HasDistance = !string.IsNullOrEmpty(poiDistance);
         Language = language;
-        AudioText = audioText; // triggers OnAudioTextChanged to recalculate duration
+
+        // Nếu caller không truyền nextPoiModel, tự tính từ _allPois
+        _nextPoiModel = nextPoiModel ?? _allPois
+            .Where(p => p.Id != poiId)
+            .OrderBy(p => p.DistanceKm ?? double.MaxValue)
+            .FirstOrDefault();
+
+        NextPoiName = _nextPoiModel?.Name ?? string.Empty;
+        NextPoiSubtitle = _nextPoiModel?.CategoryName ?? string.Empty;
+        NextPoiImage = _nextPoiModel?.ImageUrl ?? string.Empty;
+        NextPoiDistance = FormatWalk(_nextPoiModel?.DistanceKm);
+        HasNextPoi = _nextPoiModel != null;
+        AudioText = audioText;
     }
+
+    private static string FormatWalk(double? km) => km switch
+    {
+        null or 0 => "",
+        _ => $"{(int)Math.Ceiling(km.Value * 12)} min walk"
+    };
 
     partial void OnAudioTextChanged(string value)
     {
@@ -128,6 +165,43 @@ public partial class NowPlayingViewModel : ObservableObject
         await Shell.Current.Navigation.PopModalAsync();
     }
 
+    [RelayCommand]
+    private async Task PlayNextAsync()
+    {
+        if (_nextPoiModel == null) return;
+        var next = _nextPoiModel;
+
+        // Dừng audio hiện tại
+        _ttsCts?.Cancel();
+        await _ttsService.StopAsync();
+        StopTimer();
+
+        // Lấy audio text cho POI này
+        string audioText;
+        try
+        {
+            var audio = await _apiService.GetAudioForPOIAsync(next.Id, Language);
+            audioText = !string.IsNullOrWhiteSpace(audio?.TextContent)
+                ? audio!.TextContent!
+                : (string.IsNullOrWhiteSpace(next.Description) ? next.Name : $"{next.Name}. {next.Description}");
+        }
+        catch
+        {
+            audioText = string.IsNullOrWhiteSpace(next.Description) ? next.Name : $"{next.Name}. {next.Description}";
+        }
+
+        // Re-initialize với POI mới — _allPois vẫn còn, tự tính next tiếp theo
+        Initialize(next.Id, next.Name ?? string.Empty, next.CategoryName ?? string.Empty,
+                   next.ImageUrl ?? string.Empty, audioText, Language,
+                   next.Address ?? string.Empty,
+                   next.DistanceKm.HasValue
+                       ? (next.DistanceKm < 0.1 ? $"{next.DistanceKm.Value * 1000:F0}m away" : $"{next.DistanceKm.Value:F1} km away")
+                       : string.Empty);
+
+        _elapsedSeconds = 0;
+        await StartPlayingAsync();
+    }
+
     private void StartTimer()
     {
         StopTimer();
@@ -135,7 +209,7 @@ public partial class NowPlayingViewModel : ObservableObject
         _timer.Interval = TimeSpan.FromSeconds(1);
         _timer.Tick += (_, _) =>
         {
-            if (!IsPlaying) return;
+            if (!IsPlaying || IsDragging) return;
             _elapsedSeconds = Math.Min(_totalSeconds, _elapsedSeconds + 1);
             UpdateProgress();
             if (_elapsedSeconds >= _totalSeconds)
@@ -160,6 +234,17 @@ public partial class NowPlayingViewModel : ObservableObject
         ProgressRatio = _totalSeconds > 0 ? (double)_elapsedSeconds / _totalSeconds : 0;
         TotalText = FormatTime(_totalSeconds);
     }
+
+    /// <summary>Called from code-behind when user drags the slider.</summary>
+    public void SeekTo(double ratio)
+    {
+        _elapsedSeconds = (int)(ratio * _totalSeconds);
+        ElapsedText = FormatTime(_elapsedSeconds);
+        TotalText = FormatTime(_totalSeconds);
+        // Don't set ProgressRatio here – slider already shows the correct value
+    }
+
+    public bool IsDragging { get; set; }
 
     private static string FormatTime(int totalSec)
     {

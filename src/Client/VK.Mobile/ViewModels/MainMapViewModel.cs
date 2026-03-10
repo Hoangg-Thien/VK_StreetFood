@@ -264,8 +264,20 @@ public partial class MainMapViewModel : ObservableObject
             // Mở NowPlayingPage dạng modal overlay
             var page = _serviceProvider.GetRequiredService<NowPlayingPage>();
             var vm = (NowPlayingViewModel)page.BindingContext;
-            vm.Initialize(poi.Id, poi.Name ?? string.Empty, poi.CategoryName ?? string.Empty,
-                          poi.ImageUrl ?? string.Empty, audioText, SelectedLanguage);
+
+            vm.SetAllPois(NearbyPOIs.Count > 0 ? NearbyPOIs : Pois);
+
+            static string FormatDist(double? km) => km switch
+            {
+                null or 0 => "",
+                < 0.1 => $"{(km.Value * 1000):F0}m away",
+                _ => $"{km.Value:F1} km away"
+            };
+
+            vm.Initialize(
+                poi.Id, poi.Name ?? string.Empty, poi.CategoryName ?? string.Empty,
+                poi.ImageUrl ?? string.Empty, audioText, SelectedLanguage,
+                poi.Address ?? string.Empty, FormatDist(poi.DistanceKm));
             await Shell.Current.Navigation.PushModalAsync(page, animated: true);
         }
         catch (Exception ex)
