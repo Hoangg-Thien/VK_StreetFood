@@ -173,6 +173,11 @@ public class TouristController : ControllerBase
             })
             .ToListAsync();
 
+        // Prepend base URL to relative image paths
+        foreach (var v in visits)
+            if (!string.IsNullOrEmpty(v.PoiImageUrl) && !v.PoiImageUrl.StartsWith("http"))
+                v.PoiImageUrl = $"{Request.Scheme}://{Request.Host}{v.PoiImageUrl}";
+
         return Ok(visits);
     }
 
@@ -259,6 +264,11 @@ public class TouristController : ControllerBase
                 Tags = f.PointOfInterest.Tags.Select(t => t.Name).ToList()
             })
             .ToListAsync();
+
+        // Prepend base URL to relative image paths
+        foreach (var fav in favorites)
+            if (!string.IsNullOrEmpty(fav.ImageUrl) && !fav.ImageUrl.StartsWith("http"))
+                fav.ImageUrl = $"{Request.Scheme}://{Request.Host}{fav.ImageUrl}";
 
         return Ok(favorites);
     }

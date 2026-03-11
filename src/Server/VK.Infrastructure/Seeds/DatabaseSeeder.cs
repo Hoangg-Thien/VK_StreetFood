@@ -9,6 +9,9 @@ public static class DatabaseSeeder
 {
     public static async Task SeedAsync(VKStreetFoodDbContext context)
     {
+        // Patch: fix ImageUrl paths that were stored without /images/poi/ prefix
+        await PatchImageUrlsAsync(context);
+
         if (context.PointsOfInterest.Any())
         {
             return; // Database has been seeded
@@ -48,7 +51,7 @@ public static class DatabaseSeeder
                 Latitude = 10.7619058983358,
                 Longitude = 106.702227165271,
                 Address = "Vĩnh Khánh, Phường 9, Quận 4, TP.HCM",
-                ImageUrl = "/images/poi/entrance.jpg",
+                ImageUrl = "/images/poi/cong-chao.jpg",
                 IsActive = true,
                 CategoryId = 4,
                 AverageRating = 0,
@@ -406,5 +409,22 @@ public static class DatabaseSeeder
             }
         }
         await context.SaveChangesAsync();
+    }
+
+    /// <summary>
+    /// One-time patch: POIs seeded before had only filenames (e.g. "oc-vu.jpg") instead of
+    /// full relative paths ("/images/poi/oc-vu.jpg"). Fix any rows that are missing the prefix.
+    /// </summary>
+    private static async Task PatchImageUrlsAsync(VKStreetFoodDbContext context)
+    {
+        var poisToFix = await context.PointsOfInterest
+            .Where(p => p.ImageUrl != null && !p.ImageUrl.StartsWith("/") && !p.ImageUrl.StartsWith("http"))
+            .ToListAsync();
+
+        foreach (var poi in poisToFix)
+            poi.ImageUrl = "/images/poi/" + poi.ImageUrl;
+
+        if (poisToFix.Count > 0)
+            await context.SaveChangesAsync();
     }
 }

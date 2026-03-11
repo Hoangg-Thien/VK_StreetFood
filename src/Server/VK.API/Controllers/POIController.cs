@@ -63,6 +63,10 @@ public class POIController : ControllerBase
             })
             .ToListAsync();
 
+        var baseUrl = $"{Request.Scheme}://{Request.Host}";
+        foreach (var poi in pois)
+            poi.ImageUrl = PrependBase(baseUrl, poi.ImageUrl);
+
         return Ok(pois);
     }
 
@@ -98,7 +102,7 @@ public class POIController : ControllerBase
                 Latitude = x.Poi.Latitude,
                 Longitude = x.Poi.Longitude,
                 Address = x.Poi.Address,
-                ImageUrl = x.Poi.ImageUrl,
+                ImageUrl = FullUrl(x.Poi.ImageUrl),
                 AverageRating = x.Poi.AverageRating,
                 TotalRatings = x.Poi.TotalRatings,
                 Category = x.Poi.Category?.Name ?? "",
@@ -146,7 +150,7 @@ public class POIController : ControllerBase
             Latitude = poi.Latitude,
             Longitude = poi.Longitude,
             Address = poi.Address,
-            ImageUrl = poi.ImageUrl,
+            ImageUrl = FullUrl(poi.ImageUrl),
             AverageRating = poi.AverageRating,
             TotalRatings = poi.TotalRatings,
             Category = poi.Category?.Name,
@@ -166,14 +170,14 @@ public class POIController : ControllerBase
                 Email = v.Email,
                 AverageRating = v.AverageRating,
                 TotalReviews = v.TotalReviews,
-                ImageUrl = v.ImageUrl,
+                ImageUrl = FullUrl(v.ImageUrl),
                 Products = v.Products.Where(p => p.IsAvailable).Select(p => new ProductDto
                 {
                     ProductId = p.Id,
                     Name = p.Name,
                     Description = p.Description,
                     Price = p.Price,
-                    ImageUrl = p.ImageUrl
+                    ImageUrl = FullUrl(p.ImageUrl)
                 }).ToList(),
                 OpeningHours = v.OpeningHours.Select(oh => new OpeningHoursDto
                 {
@@ -235,4 +239,17 @@ public class POIController : ControllerBase
     }
 
     private double ToRadians(double degrees) => degrees * Math.PI / 180;
+
+    private string? FullUrl(string? path)
+    {
+        if (string.IsNullOrEmpty(path)) return path;
+        return PrependBase($"{Request.Scheme}://{Request.Host}", path);
+    }
+
+    private static string? PrependBase(string baseUrl, string? path)
+    {
+        if (string.IsNullOrEmpty(path)) return path;
+        if (path.StartsWith("http", StringComparison.OrdinalIgnoreCase)) return path;
+        return baseUrl + path;
+    }
 }

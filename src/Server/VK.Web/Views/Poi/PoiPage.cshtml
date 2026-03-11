@@ -84,10 +84,20 @@
                         var initials = string.Join("", poi.Name.Split(' ').Where(w => w.Length > 0).Take(2).Select(w => w[0].ToString().ToUpper()));
                         var bgColors = new[] { "#E85D04", "#3B82F6", "#8B5CF6", "#22C55E", "#F59E0B" };
                         var bg = bgColors[Math.Abs(poi.Id.GetHashCode()) % bgColors.Length];
+                        var apiBase = "http://localhost:5089";
                         <tr>
                             <td>
                                 <div class="item-info">
-                                    <div class="table-avatar" style="background:@bg;">@initials</div>
+                                    @if (!string.IsNullOrEmpty(poi.ImageUrl))
+                                    {
+                                        var imgSrc = poi.ImageUrl.StartsWith("http") ? poi.ImageUrl : apiBase + poi.ImageUrl;
+                                        <img src="@imgSrc" class="table-avatar" style="object-fit:cover;border-radius:8px;" alt="@poi.Name" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';" />
+                                        <div class="table-avatar" style="background:@bg;display:none;">@initials</div>
+                                    }
+                                    else
+                                    {
+                                        <div class="table-avatar" style="background:@bg;">@initials</div>
+                                    }
                                     <div>
                                         <div class="item-name">@poi.Name</div>
                                         <div class="item-sub">@poi.Address</div>

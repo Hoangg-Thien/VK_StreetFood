@@ -37,7 +37,7 @@ VALUES
 'Chào mừng bạn đến với Phố Ẩm thực Vĩnh Khánh – thiên đường ẩm thực đêm của Sài Gòn.',
 10.7619058983358,106.702227165271,
 'Vĩnh Khánh, Phường 9, Quận 4, TP.HCM',
-'/images/poi/entrance.jpg',
+'/images/poi/cong-chao.jpg',
 true,4,0,0,NOW(),NULL,false,NULL),
 
 (2,'Ốc Vũ',
