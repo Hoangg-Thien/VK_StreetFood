@@ -13,12 +13,13 @@
 
             <!-- ── HEADER ── -->
             <Grid ColumnDefinitions="56,*,56"
-                  Padding="12,52,12,8">
+                  Padding="12,52,12,12"
+                  BackgroundColor="#111111">
                 <!-- Down chevron = close -->
                 <Border Grid.Column="0"
                         StrokeShape="Ellipse"
                         Stroke="Transparent"
-                        BackgroundColor="#F0F0F0"
+                        BackgroundColor="#2E2E2E"
                         WidthRequest="40"
                         HeightRequest="40"
                         HorizontalOptions="Center"
@@ -29,7 +30,7 @@
                     <Label Text="v"
                            FontSize="17"
                            FontAttributes="Bold"
-                           TextColor="#333333"
+                           TextColor="White"
                            HorizontalOptions="Center"
                            VerticalOptions="Center"/>
                 </Border>
@@ -41,13 +42,13 @@
                                      HorizontalOptions="Center">
                     <Label Text="NOW PLAYING"
                            FontSize="10"
-                           TextColor="#AAAAAA"
+                           TextColor="#888888"
                            HorizontalOptions="Center"
                            CharacterSpacing="2"/>
                     <Label Text="Vinh Khanh Street Tour"
                            FontSize="14"
                            FontAttributes="Bold"
-                           TextColor="#1A1A1A"
+                           TextColor="White"
                            HorizontalOptions="Center"/>
                 </VerticalStackLayout>
 
@@ -55,14 +56,14 @@
                 <Border Grid.Column="2"
                         StrokeShape="Ellipse"
                         Stroke="Transparent"
-                        BackgroundColor="#F0F0F0"
+                        BackgroundColor="#2E2E2E"
                         WidthRequest="40"
                         HeightRequest="40"
                         HorizontalOptions="Center"
                         VerticalOptions="Center">
                     <Label Text="&#x2261;"
                            FontSize="20"
-                           TextColor="#333333"
+                           TextColor="White"
                            HorizontalOptions="Center"
                            VerticalOptions="Center"/>
                 </Border>

@@ -68,11 +68,30 @@ public partial class NowPlayingViewModel : ObservableObject
         HasDistance = !string.IsNullOrEmpty(poiDistance);
         Language = language;
 
-        // Nếu caller không truyền nextPoiModel, tự tính từ _allPois
-        _nextPoiModel = nextPoiModel ?? _allPois
-            .Where(p => p.Id != poiId)
-            .OrderBy(p => p.DistanceKm ?? double.MaxValue)
-            .FirstOrDefault();
+        // Nếu caller không truyền nextPoiModel, tìm POI gần POI hiện tại nhất (theo tọa độ)
+        if (nextPoiModel != null)
+        {
+            _nextPoiModel = nextPoiModel;
+        }
+        else
+        {
+            var currentPoi = _allPois.FirstOrDefault(p => p.Id == poiId);
+            if (currentPoi != null)
+            {
+                _nextPoiModel = _allPois
+                    .Where(p => p.Id != poiId)
+                    .OrderBy(p => HaversineKm(currentPoi.Latitude, currentPoi.Longitude, p.Latitude, p.Longitude))
+                    .FirstOrDefault();
+            }
+            else
+            {
+                // Fallback nếu không tìm thấy tọa độ
+                _nextPoiModel = _allPois
+                    .Where(p => p.Id != poiId)
+                    .OrderBy(p => p.DistanceKm ?? double.MaxValue)
+                    .FirstOrDefault();
+            }
+        }
 
         NextPoiName = _nextPoiModel?.Name ?? string.Empty;
         NextPoiSubtitle = _nextPoiModel?.CategoryName ?? string.Empty;
@@ -87,6 +106,17 @@ public partial class NowPlayingViewModel : ObservableObject
         null or 0 => "",
         _ => $"{(int)Math.Ceiling(km.Value * 12)} min walk"
     };
+
+    private static double HaversineKm(double lat1, double lon1, double lat2, double lon2)
+    {
+        const double R = 6371;
+        var dLat = (lat2 - lat1) * Math.PI / 180;
+        var dLon = (lon2 - lon1) * Math.PI / 180;
+        var a = Math.Sin(dLat / 2) * Math.Sin(dLat / 2)
+              + Math.Cos(lat1 * Math.PI / 180) * Math.Cos(lat2 * Math.PI / 180)
+              * Math.Sin(dLon / 2) * Math.Sin(dLon / 2);
+        return R * 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
+    }
 
     partial void OnAudioTextChanged(string value)
     {
