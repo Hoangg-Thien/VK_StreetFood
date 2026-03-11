@@ -156,4 +156,35 @@ public class PoiController : AdminBaseController
         }
         return RedirectToAction(nameof(Index));
     }
+
+    [HttpPost]
+    public async Task<IActionResult> UploadImage(IFormFile file)
+    {
+        if (file == null || file.Length == 0)
+            return BadRequest(new { error = "No file" });
+
+        var allowed = new[] { ".jpg", ".jpeg", ".png", ".webp" };
+        var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
+        if (!allowed.Contains(ext))
+            return BadRequest(new { error = "Invalid file type" });
+
+        if (file.Length > 5 * 1024 * 1024)
+            return BadRequest(new { error = "File too large (max 5MB)" });
+
+        // Also copy to VK.API wwwroot so the mobile app can load it
+        var apiWwwroot = Path.Combine(Directory.GetCurrentDirectory(),
+            "..", "VK.API", "wwwroot", "images", "poi");
+        Directory.CreateDirectory(apiWwwroot);
+
+        var safeName = Path.GetFileNameWithoutExtension(file.FileName)
+            .ToLowerInvariant()
+            .Replace(" ", "-");
+        var fileName = $"{safeName}{ext}";
+        var destPath = Path.Combine(apiWwwroot, fileName);
+
+        await using (var stream = new FileStream(destPath, FileMode.Create))
+            await file.CopyToAsync(stream);
+
+        return Ok(new { url = $"/images/poi/{fileName}" });
+    }
 }

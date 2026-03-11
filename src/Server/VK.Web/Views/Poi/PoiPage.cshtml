@@ -144,7 +144,7 @@
                             </td>
                             <td>
                                 <div style="display:flex;gap:6px;">
-                    <button class="action-btn edit" onclick='openEditModal(@poi.Id, @Html.Raw(System.Text.Json.JsonSerializer.Serialize(poi.Name)), @Html.Raw(System.Text.Json.JsonSerializer.Serialize(poi.Description)), @Html.Raw(System.Text.Json.JsonSerializer.Serialize(poi.Address)), @poi.Latitude, @poi.Longitude, @poi.IsActive.ToString().ToLower(), @(poi.CategoryId.HasValue ? poi.CategoryId.ToString() : "null"))' title="Chỉnh sửa">
+                    <button class="action-btn edit" onclick='openEditModal(@poi.Id, @Html.Raw(System.Text.Json.JsonSerializer.Serialize(poi.Name)), @Html.Raw(System.Text.Json.JsonSerializer.Serialize(poi.Description)), @Html.Raw(System.Text.Json.JsonSerializer.Serialize(poi.Address)), @poi.Latitude, @poi.Longitude, "@poi.IsActive.ToString().ToLower()", @(poi.CategoryId.HasValue ? poi.CategoryId.ToString() : "null"), @Html.Raw(System.Text.Json.JsonSerializer.Serialize(poi.ImageUrl ?? "")))' title="Chỉnh sửa">
                                         <i class="fa-solid fa-pen"></i>
                                     </button>
                                     <form method="post" action="/Poi/ToggleActive" style="display:inline;">
@@ -256,7 +256,7 @@
             <span class="modal-title"><i class="fa-solid fa-pen" style="color:var(--blue);margin-right:8px;"></i>Chỉnh sửa địa điểm</span>
             <button class="modal-close" onclick="closeModal('editPoiModal')"><i class="fa-solid fa-xmark"></i></button>
         </div>
-        <form method="post" action="/Poi/Edit">
+        <form method="post" action="/Poi/Edit" id="editPoiForm" onsubmit="return false;">
             <div class="modal-body">
                 <input type="hidden" name="Id" id="editPoiId" />
                 <div class="form-group">
@@ -291,6 +291,28 @@
                         }
                     </select>
                 </div>
+                <div class="form-group">
+                    <label class="form-label">Ảnh địa điểm</label>
+                    <!-- Preview -->
+                    <div id="editImgPreviewWrap" style="margin-bottom:10px;display:none;">
+                        <img id="editImgPreview" src="" alt="preview"
+                             style="width:100%;max-height:180px;object-fit:cover;border-radius:10px;border:1px solid var(--border);" />
+                    </div>
+                    <!-- Upload file -->
+                    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin-bottom:8px;">
+                        <span style="background:var(--accent-orange);color:#fff;border-radius:6px;padding:6px 14px;font-size:12px;font-weight:600;">
+                            <i class="fa-solid fa-upload"></i> Tải ảnh lên
+                        </span>
+                        <span id="editImgFileName" style="font-size:12px;color:var(--text-muted);">Chưa chọn file</span>
+                        <input type="file" id="editImgFile" accept="image/*" style="display:none;" onchange="handleEditImgFile(this)" />
+                    </label>
+                    <!-- Hidden: stores final path/url to submit -->
+                    <input type="hidden" name="ImageUrl" id="editPoiImageUrl" />
+                    <!-- Manual URL fallback -->
+                    <input type="text" id="editPoiImageUrlText" class="form-control-admin"
+                           placeholder="Hoặc dán URL ảnh: /images/poi/ten-anh.jpg"
+                           oninput="syncEditImgUrl(this.value)" style="margin-top:4px;" />
+                </div>
                 <div class="form-group" style="display:flex;align-items:center;gap:10px;">
                     <input type="checkbox" name="IsActive" value="true" id="editIsActive" style="width:16px;height:16px;accent-color:var(--accent-orange);" />
                     <label for="editIsActive" style="font-size:13px;color:var(--text-secondary);cursor:pointer;">Đang hoạt động</label>
@@ -298,7 +320,7 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn-secondary-admin" onclick="closeModal('editPoiModal')">Hủy</button>
-                <button type="submit" class="btn-primary-admin"><i class="fa-solid fa-floppy-disk"></i> Cập nhật</button>
+                <button type="button" class="btn-primary-admin" onclick="submitEditForm(this)"><i class="fa-solid fa-floppy-disk"></i> Cập nhật</button>
             </div>
         </form>
     </div>
@@ -306,7 +328,9 @@
 
 @section Scripts {
 <script>
-function openEditModal(id, name, desc, addr, lat, lng, isActive, categoryId) {
+var _pendingImgFile = null; // file chờ upload khi bấm Cập nhật
+
+function openEditModal(id, name, desc, addr, lat, lng, isActive, categoryId, imageUrl) {
     document.getElementById('editPoiId').value = id;
     document.getElementById('editPoiName').value = name;
     document.getElementById('editPoiDesc').value = desc;
@@ -315,7 +339,86 @@ function openEditModal(id, name, desc, addr, lat, lng, isActive, categoryId) {
     document.getElementById('editPoiLng').value = lng;
     document.getElementById('editIsActive').checked = isActive === 'true';
     document.getElementById('editPoiCategory').value = categoryId ?? '';
+
+    // Reset file input và pending file
+    _pendingImgFile = null;
+    document.getElementById('editImgFile').value = '';
+    document.getElementById('editImgFileName').textContent = 'Chưa chọn file';
+
+    // Set image URL và hiện preview ảnh hiện tại
+    var url = imageUrl || '';
+    document.getElementById('editPoiImageUrl').value = url;
+    document.getElementById('editPoiImageUrlText').value = url;
+    showEditPreview(url);
+
     openModal('editPoiModal');
+}
+
+function showEditPreview(url) {
+    var wrap = document.getElementById('editImgPreviewWrap');
+    var img  = document.getElementById('editImgPreview');
+    if (url) {
+        var src = url.startsWith('http') ? url : 'http://localhost:5089' + url;
+        img.src = src;
+        wrap.style.display = 'block';
+    } else {
+        wrap.style.display = 'none';
+        img.src = '';
+    }
+}
+
+function syncEditImgUrl(val) {
+    _pendingImgFile = null; // URL nhập tay → bỏ file đang chờ
+    document.getElementById('editImgFileName').textContent = 'Chưa chọn file';
+    document.getElementById('editImgFile').value = '';
+    document.getElementById('editPoiImageUrl').value = val;
+    showEditPreview(val);
+}
+
+function handleEditImgFile(input) {
+    if (!input.files || !input.files[0]) return;
+    var file = input.files[0];
+    _pendingImgFile = file; // lưu file, chưa upload
+    document.getElementById('editImgFileName').textContent = file.name;
+
+    // Chỉ preview local — chưa upload lên server
+    var reader = new FileReader();
+    reader.onload = function(e) {
+        var wrap = document.getElementById('editImgPreviewWrap');
+        var img  = document.getElementById('editImgPreview');
+        img.src = e.target.result;
+        wrap.style.display = 'block';
+    };
+    reader.readAsDataURL(file);
+    // Xóa URL text vì đang dùng file mới
+    document.getElementById('editPoiImageUrlText').value = '';
+    document.getElementById('editPoiImageUrl').value = '';
+}
+
+function submitEditForm(btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang lưu...';
+
+    if (_pendingImgFile) {
+        // Upload file trước, sau đó submit form
+        var formData = new FormData();
+        formData.append('file', _pendingImgFile);
+        fetch('/Poi/UploadImage', { method: 'POST', body: formData })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.url) {
+                    document.getElementById('editPoiImageUrl').value = data.url;
+                }
+                document.getElementById('editPoiForm').submit();
+            })
+            .catch(function() {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Cập nhật';
+                alert('Upload ảnh thất bại. Vui lòng thử lại hoặc dán URL thủ công.');
+            });
+    } else {
+        document.getElementById('editPoiForm').submit();
+    }
 }
 </script>
 }
