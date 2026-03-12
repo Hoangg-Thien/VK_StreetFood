@@ -195,13 +195,24 @@ public class TouristController : ControllerBase
             return NotFound(new { message = "Tourist không tồn tại" });
         }
 
+        // Include soft-deleted records to prevent unique-index violation on re-add
         var existingFavorite = await _context.Set<Favorite>()
+            .IgnoreQueryFilters()
             .FirstOrDefaultAsync(f => f.TouristId == touristId && f.PointOfInterestId == request.PoiId);
 
         if (existingFavorite != null)
         {
-            // Already favorited – idempotent: treat as success
-            return Ok(new { success = true, message = "POI đã có trong danh sách yêu thích" });
+            if (!existingFavorite.IsDeleted)
+            {
+                // Already active – idempotent
+                return Ok(new { success = true, message = "POI đã có trong danh sách yêu thích" });
+            }
+
+            // Re-activate a previously soft-deleted favorite
+            existingFavorite.IsDeleted = false;
+            existingFavorite.DeletedAt = null;
+            await _context.SaveChangesAsync();
+            return Ok(new { success = true, message = "Đã thêm vào yêu thích" });
         }
 
         var favorite = new Favorite
@@ -223,12 +234,15 @@ public class TouristController : ControllerBase
     [HttpDelete("{touristId}/favorites/{poiId}")]
     public async Task<ActionResult> RemoveFavorite(int touristId, int poiId)
     {
+        // Include soft-deleted to make this idempotent
         var favorite = await _context.Set<Favorite>()
+            .IgnoreQueryFilters()
             .FirstOrDefaultAsync(f => f.TouristId == touristId && f.PointOfInterestId == poiId);
 
-        if (favorite == null)
+        if (favorite == null || favorite.IsDeleted)
         {
-            return NotFound(new { message = "Yêu thích không tồn tại" });
+            // Already removed – idempotent success so client state can sync cleanly
+            return Ok(new { success = true, message = "Yêu thích đã được xóa" });
         }
 
         _context.Set<Favorite>().Remove(favorite);

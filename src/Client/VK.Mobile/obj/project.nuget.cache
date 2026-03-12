@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "ypmfZxETC1I=",
+  "dgSpecHash": "Cz6531oywIo=",
   "success": true,
   "projectFilePath": "D:\\VK_StreetFood\\src\\Client\\VK.Mobile\\VK.Mobile.csproj",
   "expectedPackageFiles": [
@@ -31,17 +31,17 @@
     "C:\\Users\\ASUS\\.nuget\\packages\\microsoft.extensions.logging.debug\\10.0.0\\microsoft.extensions.logging.debug.10.0.0.nupkg.sha512",
     "C:\\Users\\ASUS\\.nuget\\packages\\microsoft.extensions.options\\10.0.0\\microsoft.extensions.options.10.0.0.nupkg.sha512",
     "C:\\Users\\ASUS\\.nuget\\packages\\microsoft.extensions.primitives\\10.0.0\\microsoft.extensions.primitives.10.0.0.nupkg.sha512",
-    "C:\\Users\\ASUS\\.nuget\\packages\\microsoft.maui.controls\\10.0.1\\microsoft.maui.controls.10.0.1.nupkg.sha512",
-    "C:\\Users\\ASUS\\.nuget\\packages\\microsoft.maui.controls.build.tasks\\10.0.1\\microsoft.maui.controls.build.tasks.10.0.1.nupkg.sha512",
-    "C:\\Users\\ASUS\\.nuget\\packages\\microsoft.maui.controls.core\\10.0.1\\microsoft.maui.controls.core.10.0.1.nupkg.sha512",
-    "C:\\Users\\ASUS\\.nuget\\packages\\microsoft.maui.controls.maps\\10.0.1\\microsoft.maui.controls.maps.10.0.1.nupkg.sha512",
-    "C:\\Users\\ASUS\\.nuget\\packages\\microsoft.maui.controls.xaml\\10.0.1\\microsoft.maui.controls.xaml.10.0.1.nupkg.sha512",
-    "C:\\Users\\ASUS\\.nuget\\packages\\microsoft.maui.core\\10.0.1\\microsoft.maui.core.10.0.1.nupkg.sha512",
-    "C:\\Users\\ASUS\\.nuget\\packages\\microsoft.maui.essentials\\10.0.1\\microsoft.maui.essentials.10.0.1.nupkg.sha512",
-    "C:\\Users\\ASUS\\.nuget\\packages\\microsoft.maui.graphics\\10.0.1\\microsoft.maui.graphics.10.0.1.nupkg.sha512",
-    "C:\\Users\\ASUS\\.nuget\\packages\\microsoft.maui.maps\\10.0.1\\microsoft.maui.maps.10.0.1.nupkg.sha512",
-    "C:\\Users\\ASUS\\.nuget\\packages\\microsoft.maui.resizetizer\\10.0.1\\microsoft.maui.resizetizer.10.0.1.nupkg.sha512",
-    "C:\\Users\\ASUS\\.nuget\\packages\\microsoft.net.illink.tasks\\10.0.3\\microsoft.net.illink.tasks.10.0.3.nupkg.sha512",
+    "C:\\Users\\ASUS\\.nuget\\packages\\microsoft.maui.controls\\10.0.20\\microsoft.maui.controls.10.0.20.nupkg.sha512",
+    "C:\\Users\\ASUS\\.nuget\\packages\\microsoft.maui.controls.build.tasks\\10.0.20\\microsoft.maui.controls.build.tasks.10.0.20.nupkg.sha512",
+    "C:\\Users\\ASUS\\.nuget\\packages\\microsoft.maui.controls.core\\10.0.20\\microsoft.maui.controls.core.10.0.20.nupkg.sha512",
+    "C:\\Users\\ASUS\\.nuget\\packages\\microsoft.maui.controls.maps\\10.0.20\\microsoft.maui.controls.maps.10.0.20.nupkg.sha512",
+    "C:\\Users\\ASUS\\.nuget\\packages\\microsoft.maui.controls.xaml\\10.0.20\\microsoft.maui.controls.xaml.10.0.20.nupkg.sha512",
+    "C:\\Users\\ASUS\\.nuget\\packages\\microsoft.maui.core\\10.0.20\\microsoft.maui.core.10.0.20.nupkg.sha512",
+    "C:\\Users\\ASUS\\.nuget\\packages\\microsoft.maui.essentials\\10.0.20\\microsoft.maui.essentials.10.0.20.nupkg.sha512",
+    "C:\\Users\\ASUS\\.nuget\\packages\\microsoft.maui.graphics\\10.0.20\\microsoft.maui.graphics.10.0.20.nupkg.sha512",
+    "C:\\Users\\ASUS\\.nuget\\packages\\microsoft.maui.maps\\10.0.20\\microsoft.maui.maps.10.0.20.nupkg.sha512",
+    "C:\\Users\\ASUS\\.nuget\\packages\\microsoft.maui.resizetizer\\10.0.20\\microsoft.maui.resizetizer.10.0.20.nupkg.sha512",
+    "C:\\Users\\ASUS\\.nuget\\packages\\microsoft.net.illink.tasks\\10.0.4\\microsoft.net.illink.tasks.10.0.4.nupkg.sha512",
     "C:\\Users\\ASUS\\.nuget\\packages\\nettopologysuite\\2.6.0\\nettopologysuite.2.6.0.nupkg.sha512",
     "C:\\Users\\ASUS\\.nuget\\packages\\nettopologysuite.features\\2.1.0\\nettopologysuite.features.2.1.0.nupkg.sha512",
     "C:\\Users\\ASUS\\.nuget\\packages\\nettopologysuite.io.geojson4stj\\4.0.0\\nettopologysuite.io.geojson4stj.4.0.0.nupkg.sha512",
@@ -171,9 +171,7 @@
     "C:\\Users\\ASUS\\.nuget\\packages\\xamarin.kotlinx.serialization.core.jvm\\1.9.0.1\\xamarin.kotlinx.serialization.core.jvm.1.9.0.1.nupkg.sha512",
     "C:\\Users\\ASUS\\.nuget\\packages\\zxing.net\\0.16.9\\zxing.net.0.16.9.nupkg.sha512",
     "C:\\Users\\ASUS\\.nuget\\packages\\zxing.net.maui\\0.4.0\\zxing.net.maui.0.4.0.nupkg.sha512",
-    "C:\\Users\\ASUS\\.nuget\\packages\\zxing.net.maui.controls\\0.4.0\\zxing.net.maui.controls.0.4.0.nupkg.sha512",
-    "C:\\Users\\ASUS\\.nuget\\packages\\microsoft.netcore.app.ref\\10.0.2\\microsoft.netcore.app.ref.10.0.2.nupkg.sha512",
-    "C:\\Users\\ASUS\\.nuget\\packages\\microsoft.netcore.app.ref\\10.0.2\\microsoft.netcore.app.ref.10.0.2.nupkg.sha512"
+    "C:\\Users\\ASUS\\.nuget\\packages\\zxing.net.maui.controls\\0.4.0\\zxing.net.maui.controls.0.4.0.nupkg.sha512"
   ],
   "logs": [
     {
