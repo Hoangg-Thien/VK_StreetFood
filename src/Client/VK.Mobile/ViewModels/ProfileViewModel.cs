@@ -43,15 +43,14 @@ public partial class ProfileViewModel : ObservableObject
         try
         {
             IsLoading = true;
-            Tourist = await _storageService.GetTouristAsync();
+            var touristId = await _storageService.GetTouristIdAsync();
 
-            if (Tourist != null)
+            if (touristId != null)
             {
-                PreferredLanguage = Tourist.PreferredLanguage;
-                TotalVisits = Tourist.TotalVisits;
+                PreferredLanguage = await _storageService.GetPreferredLanguageAsync() ?? "vi";
 
                 // Load favorites count
-                var favorites = await _apiService.GetFavoritesAsync(Tourist.Id);
+                var favorites = await _apiService.GetFavoritesAsync(touristId.Value);
                 TotalFavorites = favorites.Count;
             }
         }

@@ -35,14 +35,14 @@ public partial class FavoritesViewModel : ObservableObject
         try
         {
             IsLoading = true;
-            var tourist = await _storageService.GetTouristAsync();
-            if (tourist == null)
+            var touristId = await _storageService.GetTouristIdAsync();
+            if (touristId == null)
             {
                 _logger.LogWarning("No tourist found");
                 return;
             }
 
-            var favorites = await _apiService.GetFavoritesAsync(tourist.Id);
+            var favorites = await _apiService.GetFavoritesAsync(touristId.Value);
             Favorites = new ObservableCollection<POIModel>(favorites);
             IsEmpty = !Favorites.Any();
         }
@@ -72,10 +72,10 @@ public partial class FavoritesViewModel : ObservableObject
     {
         try
         {
-            var tourist = await _storageService.GetTouristAsync();
-            if (tourist == null) return;
+            var touristId = await _storageService.GetTouristIdAsync();
+            if (touristId == null) return;
 
-            await _apiService.RemoveFavoriteAsync(tourist.Id, poi.Id);
+            await _apiService.RemoveFavoriteAsync(touristId.Value, poi.Id);
             Favorites.Remove(poi);
             IsEmpty = !Favorites.Any();
 
