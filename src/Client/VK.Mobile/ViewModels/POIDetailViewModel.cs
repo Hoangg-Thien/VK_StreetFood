@@ -16,6 +16,7 @@ public partial class POIDetailViewModel : ObservableObject, IQueryAttributable
     private IDispatcherTimer? _progressTimer;
     private int _elapsedSeconds;
     private int _totalSeconds;
+    private string _fullText = string.Empty;
 
     [ObservableProperty]
     private POIDetailModel? _poi;
@@ -124,14 +125,32 @@ public partial class POIDetailViewModel : ObservableObject, IQueryAttributable
         return $"{m}:{s:D2}";
     }
 
-    [RelayCommand]
-    private void SeekAudio(double ratio)
+    // Returns the portion of fullText starting at the word that corresponds to startSeconds
+    private static string GetTextFromPosition(string fullText, int startSeconds, int totalSeconds)
     {
-        // TTS không hỗ trợ seek; chỉ cập nhật display
-        if (_totalSeconds > 0)
+        if (startSeconds <= 0 || totalSeconds <= 0) return fullText;
+        var words = fullText.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (words.Length == 0) return fullText;
+        var startWord = (int)((double)startSeconds / totalSeconds * words.Length);
+        startWord = Math.Clamp(startWord, 0, words.Length - 1);
+        return string.Join(' ', words.Skip(startWord));
+    }
+
+    [RelayCommand]
+    private async Task SeekAudio(double ratio)
+    {
+        if (_totalSeconds <= 0) return;
+        _elapsedSeconds = (int)(ratio * _totalSeconds);
+        AudioPositionRatio = ratio;
+        AudioPositionText = FormatTime(_elapsedSeconds);
+        // If currently playing, restart TTS from the new position
+        if (IsPlayingAudio)
         {
-            _elapsedSeconds = (int)(ratio * _totalSeconds);
-            AudioPositionText = FormatTime(_elapsedSeconds);
+            _ttsCts?.Cancel();
+            await _ttsService.StopAsync();
+            IsPlayingAudio = false;
+            StopProgressTimer();
+            await ToggleAudioAsync();
         }
     }
 
@@ -218,21 +237,35 @@ public partial class POIDetailViewModel : ObservableObject, IQueryAttributable
                 return;
             }
 
+            // Store full text so skip/seek can restart from any position
+            _fullText = text;
+
+            // Recalculate total duration only on a fresh start (no prior seek/skip)
+            if (_elapsedSeconds == 0)
+            {
+                var wordCount = text.Split(' ', StringSplitOptions.RemoveEmptyEntries).Length;
+                _totalSeconds = Math.Max(30, wordCount * 60 / 130);
+                AudioDurationText = FormatTime(_totalSeconds);
+                AudioPositionRatio = 0;
+                AudioPositionText = "0:00";
+            }
+
             _ttsCts?.Cancel();
             _ttsCts = new CancellationTokenSource();
             var token = _ttsCts.Token;
             var lang = SelectedLanguage;
 
-            // Recalculate duration from actual text that will be spoken
-            var wordCount = text.Split(' ', StringSplitOptions.RemoveEmptyEntries).Length;
-            _totalSeconds = Math.Max(30, wordCount * 60 / 130);
-            AudioDurationText = FormatTime(_totalSeconds);
-
+            // Setting IsPlayingAudio = true already triggers StartProgressTimer via OnIsPlayingAudioChanged
             IsPlayingAudio = true;
-            StartProgressTimer();
 
-            // Fire TTS immediately - don't wait for tracking
-            _ = _ttsService.SpeakTextAsync(text, lang, token);
+            // Speak from the current seek position (sub-text starting at _elapsedSeconds)
+            var speakText = GetTextFromPosition(_fullText, _elapsedSeconds, _totalSeconds);
+            _ = _ttsService.SpeakTextAsync(speakText, lang, token)
+                           .ContinueWith(t =>
+                           {
+                               if (t.Exception != null)
+                                   System.Diagnostics.Debug.WriteLine($"[TTS] Exception: {t.Exception.GetBaseException().Message}");
+                           }, TaskContinuationOptions.OnlyOnFaulted);
 
             // Track in background (don't block TTS)
             var touristId = await _storageService.GetTouristIdAsync();
@@ -242,19 +275,39 @@ public partial class POIDetailViewModel : ObservableObject, IQueryAttributable
     }
 
     [RelayCommand]
-    private void SkipForwardAudio()
+    private async Task SkipForwardAudio()
     {
         _elapsedSeconds = Math.Min(_totalSeconds, _elapsedSeconds + 5);
         AudioPositionRatio = _totalSeconds > 0 ? (double)_elapsedSeconds / _totalSeconds : 0;
         AudioPositionText = FormatTime(_elapsedSeconds);
+        OnPropertyChanged(nameof(AudioStatusText));
+        // If playing, cancel current TTS and restart from the new position
+        if (IsPlayingAudio)
+        {
+            _ttsCts?.Cancel();
+            await _ttsService.StopAsync();
+            IsPlayingAudio = false;
+            StopProgressTimer();
+            await ToggleAudioAsync();
+        }
     }
 
     [RelayCommand]
-    private void SkipBackAudio()
+    private async Task SkipBackAudio()
     {
         _elapsedSeconds = Math.Max(0, _elapsedSeconds - 5);
         AudioPositionRatio = _totalSeconds > 0 ? (double)_elapsedSeconds / _totalSeconds : 0;
         AudioPositionText = FormatTime(_elapsedSeconds);
+        OnPropertyChanged(nameof(AudioStatusText));
+        // If playing, cancel current TTS and restart from the new position
+        if (IsPlayingAudio)
+        {
+            _ttsCts?.Cancel();
+            await _ttsService.StopAsync();
+            IsPlayingAudio = false;
+            StopProgressTimer();
+            await ToggleAudioAsync();
+        }
     }
 
     [RelayCommand]

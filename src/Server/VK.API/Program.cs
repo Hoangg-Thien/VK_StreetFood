@@ -2,6 +2,9 @@ using Microsoft.EntityFrameworkCore;
 using VK.Infrastructure.Data;
 using VK.API.Extensions;
 
+// Force IPv4 so DNS doesn't resolve Supabase to IPv6 (unreachable on dev machines)
+AppContext.SetSwitch("System.Net.preferIPv4Stack", true);
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -41,7 +44,7 @@ app.UseStaticFiles();
 app.UseHttpsRedirection();
 app.MapControllers();
 
-// Seed database on startup
-await app.SeedDatabaseAsync();
+// Seed database in background — don't block startup
+app.SeedDatabaseInBackground();
 
 app.Run();
