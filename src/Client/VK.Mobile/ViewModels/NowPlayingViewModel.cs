@@ -145,11 +145,32 @@ public partial class NowPlayingViewModel : ObservableObject
         return Task.CompletedTask;
     }
 
+    // Returns the sub-text starting at the word corresponding to startSeconds
+    private string GetTextFromPosition(int startSeconds)
+    {
+        if (startSeconds <= 0 || _totalSeconds <= 0) return AudioText;
+        var words = AudioText.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (words.Length == 0) return AudioText;
+        var startWord = (int)((double)startSeconds / _totalSeconds * words.Length);
+        startWord = Math.Clamp(startWord, 0, words.Length - 1);
+        return string.Join(' ', words.Skip(startWord));
+    }
+
+    private void RestartTtsFromCurrentPosition()
+    {
+        _ttsCts?.Cancel();
+        _ttsCts?.Dispose();
+        _ttsCts = new CancellationTokenSource();
+        var token = _ttsCts.Token;
+        _ = _ttsService.SpeakTextAsync(GetTextFromPosition(_elapsedSeconds), Language, token);
+    }
+
     [RelayCommand]
     private void SkipForward()
     {
         _elapsedSeconds = Math.Min(_totalSeconds, _elapsedSeconds + 5);
         UpdateProgress();
+        if (IsPlaying) RestartTtsFromCurrentPosition();
     }
 
     [RelayCommand]
@@ -157,6 +178,7 @@ public partial class NowPlayingViewModel : ObservableObject
     {
         _elapsedSeconds = Math.Max(0, _elapsedSeconds - 5);
         UpdateProgress();
+        if (IsPlaying) RestartTtsFromCurrentPosition();
     }
 
     [RelayCommand]
@@ -172,17 +194,11 @@ public partial class NowPlayingViewModel : ObservableObject
         }
         else
         {
-            // Resume from current elapsed position (timer continues, TTS restarts)
-            _ttsCts?.Cancel();
-            _ttsCts?.Dispose();
-            _ttsCts = new CancellationTokenSource();
+            // Resume from current elapsed position
             IsPlaying = true;
             UpdateProgress();
             StartTimer();
-            var token = _ttsCts.Token;
-            var text = AudioText;
-            var lang = Language;
-            _ = _ttsService.SpeakTextAsync(text, lang, token);
+            RestartTtsFromCurrentPosition();
         }
     }
 
@@ -272,6 +288,7 @@ public partial class NowPlayingViewModel : ObservableObject
         ElapsedText = FormatTime(_elapsedSeconds);
         TotalText = FormatTime(_totalSeconds);
         // Don't set ProgressRatio here – slider already shows the correct value
+        if (IsPlaying) RestartTtsFromCurrentPosition();
     }
 
     public bool IsDragging { get; set; }

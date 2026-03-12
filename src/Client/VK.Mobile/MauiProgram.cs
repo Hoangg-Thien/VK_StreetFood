@@ -34,7 +34,11 @@ public static class MauiProgram
 		builder.Services.AddSingleton<IApiService, ApiService>();
 		builder.Services.AddSingleton<ILocationService, LocationService>();
 		builder.Services.AddSingleton<IAudioService, AudioService>();
+#if ANDROID
+		builder.Services.AddSingleton<ITTSService, VK.Mobile.Platforms.Android.AndroidTTSService>();
+#else
 		builder.Services.AddSingleton<ITTSService, TTSService>();
+#endif
 		builder.Services.AddSingleton<StorageService>();
 		builder.Services.AddSingleton<LocalPOIDatabase>();
 		builder.Services.AddSingleton(AudioManager.Current);

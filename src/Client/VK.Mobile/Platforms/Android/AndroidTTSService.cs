@@ -1,88 +1,83 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using Android.OS;
+using Android.Runtime;
+using Microsoft.Extensions.Logging;
 using VK.Mobile.Models;
 using VK.Mobile.Services;
 using AndroidTTS = Android.Speech.Tts.TextToSpeech;
-using QueueMode = Android.Speech.Tts.QueueMode;
-using OperationResult = Android.Speech.Tts.OperationResult;
 using LanguageAvailableResult = Android.Speech.Tts.LanguageAvailableResult;
+using OperationResult = Android.Speech.Tts.OperationResult;
+using QueueMode = Android.Speech.Tts.QueueMode;
 
 namespace VK.Mobile.Platforms.Android;
 
+/// <summary>
+/// Native Android TTS using android.speech.tts.TextToSpeech (API 21+).
+/// Engine is created eagerly in the constructor to avoid deadlock when
+/// SpeakTextAsync is called from the UI thread.
+/// </summary>
 public class AndroidTTSService : Java.Lang.Object, AndroidTTS.IOnInitListener, ITTSService
 {
     private AndroidTTS? _tts;
-    private TaskCompletionSource<bool>? _initTcs;
-    private readonly SemaphoreSlim _initLock = new(1, 1);
+    private readonly TaskCompletionSource<bool> _readyTcs =
+        new(TaskCreationOptions.RunContinuationsAsynchronously);
     private readonly ILogger<AndroidTTSService> _logger;
-    private bool _ready;
+
+    // Required by MAUI JNI for Java peer reconstruction
+    protected AndroidTTSService(IntPtr handle, JniHandleOwnership transfer)
+        : base(handle, transfer) { _logger = null!; }
 
     public AndroidTTSService(ILogger<AndroidTTSService> logger)
     {
         _logger = logger;
-    }
-
-    // Android calls this on main thread when TTS engine is ready
-    void AndroidTTS.IOnInitListener.OnInit(OperationResult status)
-    {
-        _ready = status == OperationResult.Success;
-        System.Diagnostics.Debug.WriteLine($"[TTS] OnInit: {status} ready={_ready}");
-        _initTcs?.TrySetResult(_ready);
-    }
-
-    // Thread-safe lazy init  creates AndroidTTS on main thread, waits for OnInit callback
-    private async Task<bool> EnsureReadyAsync()
-    {
-        if (_ready && _tts != null) return true;
-
-        await _initLock.WaitAsync();
-        try
+        // Post to main thread - non-blocking, constructor returns immediately
+        MainThread.BeginInvokeOnMainThread(() =>
         {
-            if (_ready && _tts != null) return true;
-
-            _initTcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-
-            // new AndroidTTS() must be called on the main thread
-            await MainThread.InvokeOnMainThreadAsync(() =>
-            {
-                _tts = new AndroidTTS(global::Android.App.Application.Context, this);
-            });
-
-            System.Diagnostics.Debug.WriteLine("[TTS] AndroidTTS created, waiting for OnInit...");
-
-            // Wait up to 5 s for OnInit callback
             try
             {
-                return await _initTcs.Task.WaitAsync(TimeSpan.FromSeconds(5));
+                _tts = new AndroidTTS(global::Android.App.Application.Context, this);
+                _logger.LogDebug("[TTS] Engine created, awaiting OnInit...");
             }
-            catch (TimeoutException)
+            catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine("[TTS] OnInit timed out!");
-                return false;
+                _logger.LogError(ex, "[TTS] Failed to create engine");
+                _readyTcs.TrySetResult(false);
             }
-        }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"[TTS] EnsureReady error: {ex.Message}");
-            _logger.LogError(ex, "[TTS] Init failed");
-            return false;
-        }
-        finally
-        {
-            _initLock.Release();
-        }
+        });
+    }
+
+    // Called by Android on main thread once TTS service is bound
+    void AndroidTTS.IOnInitListener.OnInit(OperationResult status)
+    {
+        var ok = status == OperationResult.Success;
+        _logger.LogDebug("[TTS] OnInit: {Status} ready={Ok}", status, ok);
+        _readyTcs.TrySetResult(ok);
     }
 
     public async Task SpeakTextAsync(string text, string languageCode, CancellationToken ct = default)
     {
         if (string.IsNullOrWhiteSpace(text)) return;
-        System.Diagnostics.Debug.WriteLine($"[TTS] SpeakTextAsync: lang={languageCode} len={text.Length}");
+        _logger.LogDebug("[TTS] SpeakTextAsync lang={Lang} chars={Len}", languageCode, text.Length);
 
-        var ready = await EnsureReadyAsync();
-        System.Diagnostics.Debug.WriteLine($"[TTS] Ready={ready}");
+        // Yields the calling thread so OnInit can fire on the main thread
+        bool ready;
+        try
+        {
+            ready = await _readyTcs.Task.WaitAsync(TimeSpan.FromSeconds(8), ct);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "[TTS] Engine ready wait failed");
+            return;
+        }
 
-        if (!ready || _tts == null || ct.IsCancellationRequested) return;
+        if (!ready || _tts == null || ct.IsCancellationRequested)
+        {
+            _logger.LogWarning("[TTS] Aborting: ready={R} hasTts={T} cancelled={C}",
+                ready, _tts != null, ct.IsCancellationRequested);
+            return;
+        }
 
-        // SetLanguage + Speak must run on main thread
+        // Android TTS API must run on the main thread
         await MainThread.InvokeOnMainThreadAsync(() =>
         {
             if (ct.IsCancellationRequested) return;
@@ -95,19 +90,25 @@ public class AndroidTTSService : Java.Lang.Object, AndroidTTS.IOnInitListener, I
             };
 
             var langResult = _tts.SetLanguage(locale);
-            System.Diagnostics.Debug.WriteLine($"[TTS] SetLanguage({languageCode}): {langResult}");
+            _logger.LogDebug("[TTS] SetLanguage({Lang}): {Result}", languageCode, langResult);
 
-            // Fallback to device default if language not available
-            if (langResult == LanguageAvailableResult.MissingData
-             || langResult == LanguageAvailableResult.NotSupported)
+            if (langResult is LanguageAvailableResult.MissingData
+                           or LanguageAvailableResult.NotSupported)
             {
-                System.Diagnostics.Debug.WriteLine("[TTS] Fallback to device default locale");
+                _logger.LogWarning("[TTS] Language unavailable, falling back to Locale.Default");
                 _tts.SetLanguage(Java.Util.Locale.Default);
             }
 
-            // QueueMode.Flush clears queue and speaks immediately
-            var r = _tts.Speak(text, QueueMode.Flush, null, null);
-            System.Diagnostics.Debug.WriteLine($"[TTS] Speak() => {r}");
+            _tts.SetSpeechRate(1.0f);
+            _tts.SetPitch(1.0f);
+
+            // Route to STREAM_MUSIC so audio follows media volume, not ring/notification
+            var bundle = new Bundle();
+            bundle.PutInt("streamType", (int)global::Android.Media.Stream.Music);
+            bundle.PutFloat("volume", 1.0f);
+
+            var result = _tts.Speak(text, QueueMode.Flush, bundle, "vk_utterance");
+            _logger.LogDebug("[TTS] Speak() => {Result}", result);
         });
     }
 
@@ -132,7 +133,6 @@ public class AndroidTTSService : Java.Lang.Object, AndroidTTS.IOnInitListener, I
             _tts?.Stop();
             _tts?.Shutdown();
             _tts = null;
-            _initLock.Dispose();
         }
         base.Dispose(disposing);
     }
