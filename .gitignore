@@ -77,3 +77,11 @@ wwwroot/audio/*.mp3
 wwwroot/images/poi/*.jpg
 wwwroot/images/poi/*.png
 !wwwroot/images/poi/.gitkeep
+
+bin/
+obj/
+.vs/
+*.user
+*.suo
+*.cache
+*.pdb
