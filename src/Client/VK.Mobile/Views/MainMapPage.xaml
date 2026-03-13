@@ -143,8 +143,7 @@
                    CornerRadius="8"
                    HasShadow="False"
                    IsVisible="False">
-                <Label x:Name="OfflineModeBannerText"
-                       Text="Offline map mode: chỉ hiển thị POI đã tải, nền bản đồ online có thể trống."
+                <Label Text="Offline map mode: chỉ hiển thị POI đã tải, nền bản đồ online có thể trống."
                        FontSize="11"
                        TextColor="#2E7D32"
                        LineBreakMode="WordWrap"/>

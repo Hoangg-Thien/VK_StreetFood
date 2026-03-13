@@ -4,8 +4,6 @@ public class AppSettings
 {
     public const string ApiBaseUrl = "http://10.0.2.2:5089/api/";
     public const string AudioBaseUrl = "http://10.0.2.2:5089/";
-    public const string OfflineMapMbTilesUrl = "api/offline/map-package";
-    public const string OfflineMapMbTilesFileName = "vkstreetfood.mbtiles";
 
     // Geofencing
     public const double GeofenceRadiusMeters = 50.0;

@@ -161,10 +161,9 @@ public partial class SettingsViewModel : ObservableObject
         {
             var status = await _offlineContentService.GetStatusAsync();
             var last = status.LastSyncUtc?.ToLocalTime().ToString("dd/MM HH:mm") ?? "chưa sync";
-            var map = status.HasMbTilesMap ? "Có" : "Chưa";
 
             OfflinePackageStatus =
-                $"POI: {status.PoiCount}, Script: {status.ScriptCount}, Audio file: {status.AudioFileCount}, MBTiles: {map}, Lần cuối: {last}";
+                $"POI: {status.PoiCount}, Script: {status.ScriptCount}, Audio file: {status.AudioFileCount}, Lần cuối: {last}";
         }
         catch
         {

@@ -22,8 +22,6 @@ public interface IOfflineContentService
         int? durationInSeconds = null,
         string? localAudioPath = null);
 
-    Task<string?> GetLocalMbTilesPathAsync();
-
     Task<OfflinePackageStatus> GetStatusAsync();
 }
 
@@ -39,8 +37,7 @@ public record OfflinePackageStatus(
     int PoiCount,
     int ScriptCount,
     int AudioFileCount,
-    string LanguageCode,
-    bool HasMbTilesMap);
+    string LanguageCode);
 
 public class OfflineContentService : IOfflineContentService
 {
@@ -49,7 +46,6 @@ public class OfflineContentService : IOfflineContentService
     private const string KeyScriptCount = "Offline.ScriptCount";
     private const string KeyAudioFileCount = "Offline.AudioFileCount";
     private const string KeyLanguage = "Offline.Language";
-    private const string OfflineMapFolderName = "offline_map";
 
     private readonly IApiService _apiService;
     private readonly LocalPOIDatabase _localDb;
@@ -145,9 +141,6 @@ public class OfflineContentService : IOfflineContentService
                 scriptCount++;
             }
 
-            var mbTilesPath = await DownloadMbTilesAsync(ct);
-            var hasMbTilesMap = !string.IsNullOrWhiteSpace(mbTilesPath);
-
             var now = DateTime.UtcNow;
             Preferences.Set(KeyLastSyncTicks, now.Ticks);
             Preferences.Set(KeyPoiCount, pois.Count);
@@ -156,10 +149,7 @@ public class OfflineContentService : IOfflineContentService
             Preferences.Set(KeyLanguage, lang);
 
             var message = $"Đã tải offline: {pois.Count} POI, {scriptCount} script"
-                        + (audioFileCount > 0 ? $", {audioFileCount} file audio" : "")
-                        + (hasMbTilesMap
-                            ? ". MBTiles map đã sẵn sàng."
-                            : ". MBTiles map chưa có trên server (nền map offline có thể trống).");
+                        + (audioFileCount > 0 ? $", {audioFileCount} file audio" : "") + ".";
 
             return new OfflinePackageResult(true, message, pois.Count, scriptCount, audioFileCount);
         }
@@ -214,15 +204,6 @@ public class OfflineContentService : IOfflineContentService
             durationInSeconds,
             localAudioPath);
 
-    public Task<string?> GetLocalMbTilesPathAsync()
-    {
-        var localPath = GetMbTilesLocalPath();
-        if (File.Exists(localPath) && new FileInfo(localPath).Length > 0)
-            return Task.FromResult<string?>(localPath);
-
-        return Task.FromResult<string?>(null);
-    }
-
     public async Task<OfflinePackageStatus> GetStatusAsync()
     {
         var ticks = Preferences.Get(KeyLastSyncTicks, 0L);
@@ -238,82 +219,15 @@ public class OfflineContentService : IOfflineContentService
 
         var audioFileCount = Preferences.Get(KeyAudioFileCount, 0);
         var languageCode = Preferences.Get(KeyLanguage, "vi");
-        var hasMbTilesMap = await GetLocalMbTilesPathAsync() != null;
 
         return new OfflinePackageStatus(
             lastSync,
             poiCount,
             scriptCount,
             audioFileCount,
-            languageCode,
-            hasMbTilesMap);
+            languageCode);
     }
 
-    private async Task<string?> DownloadMbTilesAsync(CancellationToken ct)
-    {
-        try
-        {
-            var existing = await GetLocalMbTilesPathAsync();
-            if (!string.IsNullOrWhiteSpace(existing))
-                return existing;
-
-            foreach (var url in GetMbTilesDownloadUrls())
-            {
-                var absoluteUrl = ToAbsoluteUrl(url);
-
-                using var response = await _downloadClient.GetAsync(
-                    absoluteUrl,
-                    HttpCompletionOption.ResponseHeadersRead,
-                    ct);
-
-                if (!response.IsSuccessStatusCode)
-                    continue;
-
-                var folder = Path.Combine(FileSystem.AppDataDirectory, OfflineMapFolderName);
-                Directory.CreateDirectory(folder);
-
-                var localPath = GetMbTilesLocalPath();
-                await using var source = await response.Content.ReadAsStreamAsync(ct);
-                await using var target = File.Create(localPath);
-                await source.CopyToAsync(target, ct);
-
-                if (new FileInfo(localPath).Length > 0)
-                    return localPath;
-            }
-
-            return null;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogDebug(ex, "Download MBTiles failed");
-            return null;
-        }
-    }
-
-    private static IEnumerable<string> GetMbTilesDownloadUrls()
-    {
-        var candidates = new[]
-        {
-            AppSettings.OfflineMapMbTilesUrl,
-            "api/offline/map-package",
-            "offline/vkstreetfood.mbtiles",
-            "/offline/vkstreetfood.mbtiles"
-        };
-
-        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        foreach (var candidate in candidates)
-        {
-            if (string.IsNullOrWhiteSpace(candidate))
-                continue;
-
-            var trimmed = candidate.Trim();
-            if (seen.Add(trimmed))
-                yield return trimmed;
-        }
-    }
-
-    private static string GetMbTilesLocalPath()
-        => Path.Combine(FileSystem.AppDataDirectory, OfflineMapFolderName, AppSettings.OfflineMapMbTilesFileName);
 
     private async Task<string?> DownloadAudioFileAsync(
         string audioFileUrl,

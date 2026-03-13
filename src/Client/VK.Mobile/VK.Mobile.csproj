@@ -62,7 +62,6 @@
 		
 		<!-- OpenStreetMap -->
 		<PackageReference Include="Mapsui.Maui" Version="5.0.0" />
-		<PackageReference Include="BruTile.MbTiles" Version="6.0.0" />
 		
 		<!-- MVVM Toolkit -->
 		<PackageReference Include="CommunityToolkit.Mvvm" Version="8.3.2" />
