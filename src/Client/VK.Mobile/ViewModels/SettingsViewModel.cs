@@ -9,14 +9,16 @@ public partial class SettingsViewModel : ObservableObject
 {
     private readonly StorageService _storageService;
     private readonly LocalPOIDatabase _localDb;
+    private readonly ILocationService _locationService;
     private static readonly string[] LanguageCodes = { "vi", "en", "ko" };
 
     public string[] LanguageDisplayNames { get; } = { "Tiếng Việt", "English", "한국어" };
 
-    public SettingsViewModel(StorageService storageService, LocalPOIDatabase localDb)
+    public SettingsViewModel(StorageService storageService, LocalPOIDatabase localDb, ILocationService locationService)
     {
         _storageService = storageService;
         _localDb = localDb;
+        _locationService = locationService;
         LoadSettings();
 
         // Sync khi ngôn ngữ được đổi từ trang khác (ví dụ MainMapPage)
@@ -41,6 +43,12 @@ public partial class SettingsViewModel : ObservableObject
 
     [ObservableProperty]
     private int _locationUpdateInterval = AppSettings.LocationUpdateIntervalSeconds;
+
+    partial void OnNotificationsEnabledChanged(bool value)
+        => Preferences.Set("NotificationsEnabled", value);
+
+    partial void OnAutoPlayAudioChanged(bool value)
+        => Preferences.Set("AutoPlayAudio", value);
 
     /// <summary>Index trong LanguageDisplayNames để bind Picker.SelectedIndex</summary>
     public int SelectedLanguageDisplayIndex
@@ -84,13 +92,47 @@ public partial class SettingsViewModel : ObservableObject
     [RelayCommand]
     void SaveGeofenceRadius()
     {
-        Preferences.Set("GeofenceRadius", GeofenceRadius);
+        SaveLocationSettings();
     }
 
     [RelayCommand]
     void SaveLocationInterval()
     {
+        SaveLocationSettings();
+    }
+
+    [RelayCommand]
+    void SaveLocationSettings()
+    {
+        Preferences.Set("GeofenceRadius", GeofenceRadius);
         Preferences.Set("LocationUpdateInterval", LocationUpdateInterval);
+        _locationService.SetUpdateInterval(LocationUpdateInterval * 1000);
+    }
+
+    [RelayCommand]
+    async Task OpenTtsSettings()
+    {
+#if ANDROID
+        try
+        {
+            var intent = new global::Android.Content.Intent(
+                global::Android.Speech.Tts.TextToSpeech.Engine.ActionInstallTtsData);
+            intent.AddFlags(global::Android.Content.ActivityFlags.NewTask);
+            global::Android.App.Application.Context.StartActivity(intent);
+        }
+        catch
+        {
+            await Application.Current!.MainPage!.DisplayAlert(
+                "TTS",
+                "Không mở được cài đặt TTS hệ thống.",
+                "OK");
+        }
+#else
+        await Application.Current!.MainPage!.DisplayAlert(
+            "TTS",
+            "Tính năng này hiện hỗ trợ trên Android.",
+            "OK");
+#endif
     }
 
     [RelayCommand]

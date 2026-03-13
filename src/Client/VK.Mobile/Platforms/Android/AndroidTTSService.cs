@@ -3,7 +3,12 @@ using Android.Runtime;
 using Microsoft.Extensions.Logging;
 using VK.Mobile.Models;
 using VK.Mobile.Services;
+using AndroidAudioFocus = Android.Media.AudioFocus;
+using AndroidAudioFocusRequest = Android.Media.AudioFocusRequest;
+using AndroidAudioFocusRequestClass = Android.Media.AudioFocusRequestClass;
+using AndroidAudioManager = Android.Media.AudioManager;
 using AndroidTTS = Android.Speech.Tts.TextToSpeech;
+using AndroidUtteranceProgressListener = Android.Speech.Tts.UtteranceProgressListener;
 using LanguageAvailableResult = Android.Speech.Tts.LanguageAvailableResult;
 using OperationResult = Android.Speech.Tts.OperationResult;
 using QueueMode = Android.Speech.Tts.QueueMode;
@@ -21,20 +26,38 @@ public class AndroidTTSService : Java.Lang.Object, AndroidTTS.IOnInitListener, I
     private readonly TaskCompletionSource<bool> _readyTcs =
         new(TaskCreationOptions.RunContinuationsAsynchronously);
     private readonly ILogger<AndroidTTSService> _logger;
+    private readonly AndroidAudioManager? _audioManager;
+    private readonly AudioFocusListener _audioFocusListener;
+    private readonly TtsProgressListener _progressListener;
+    private AndroidAudioFocusRequestClass? _audioFocusRequest;
+    private bool _hasAudioFocus;
 
     // Required by MAUI JNI for Java peer reconstruction
     protected AndroidTTSService(IntPtr handle, JniHandleOwnership transfer)
-        : base(handle, transfer) { _logger = null!; }
+        : base(handle, transfer)
+    {
+        _logger = null!;
+        _audioManager = null;
+        _audioFocusListener = new AudioFocusListener(_ => { });
+        _progressListener = new TtsProgressListener(() => { });
+    }
 
     public AndroidTTSService(ILogger<AndroidTTSService> logger)
     {
         _logger = logger;
+        _audioManager = (AndroidAudioManager?)global::Android.App.Application.Context
+            .GetSystemService(global::Android.Content.Context.AudioService);
+        _audioFocusListener = new AudioFocusListener(OnAudioFocusChanged);
+        _progressListener = new TtsProgressListener(() =>
+            MainThread.BeginInvokeOnMainThread(AbandonAudioFocus));
+
         // Post to main thread - non-blocking, constructor returns immediately
         MainThread.BeginInvokeOnMainThread(() =>
         {
             try
             {
                 _tts = new AndroidTTS(global::Android.App.Application.Context, this);
+                _tts.SetOnUtteranceProgressListener(_progressListener);
                 _logger.LogDebug("[TTS] Engine created, awaiting OnInit...");
             }
             catch (Exception ex)
@@ -82,11 +105,17 @@ public class AndroidTTSService : Java.Lang.Object, AndroidTTS.IOnInitListener, I
         {
             if (ct.IsCancellationRequested) return;
 
+            if (!RequestAudioFocus())
+            {
+                _logger.LogWarning("[TTS] Audio focus denied, skip speak");
+                return;
+            }
+
             Java.Util.Locale locale = languageCode switch
             {
                 "en" => Java.Util.Locale.English!,
                 "ko" => Java.Util.Locale.Korean!,
-                _    => new Java.Util.Locale("vi", "VN")
+                _ => new Java.Util.Locale("vi", "VN")
             };
 
             var langResult = _tts.SetLanguage(locale);
@@ -122,8 +151,109 @@ public class AndroidTTSService : Java.Lang.Object, AndroidTTS.IOnInitListener, I
 
     public Task StopAsync()
     {
-        MainThread.BeginInvokeOnMainThread(() => _tts?.Stop());
+        MainThread.BeginInvokeOnMainThread(() =>
+        {
+            _tts?.Stop();
+            AbandonAudioFocus();
+        });
         return Task.CompletedTask;
+    }
+
+    private bool RequestAudioFocus()
+    {
+        if (_audioManager == null) return true;
+
+        try
+        {
+            AndroidAudioFocusRequest result;
+
+            if (global::Android.OS.Build.VERSION.SdkInt >= global::Android.OS.BuildVersionCodes.O)
+            {
+                _audioFocusRequest ??= new AndroidAudioFocusRequestClass
+                    .Builder(AndroidAudioFocus.GainTransientMayDuck)
+                    .SetOnAudioFocusChangeListener(_audioFocusListener)
+                    .Build();
+
+                result = _audioManager.RequestAudioFocus(_audioFocusRequest);
+            }
+            else
+            {
+#pragma warning disable CA1422
+                result = _audioManager.RequestAudioFocus(
+                    _audioFocusListener,
+                    global::Android.Media.Stream.Music,
+                    AndroidAudioFocus.GainTransientMayDuck);
+#pragma warning restore CA1422
+            }
+
+            _hasAudioFocus = result == AndroidAudioFocusRequest.Granted;
+            return _hasAudioFocus;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "[TTS] RequestAudioFocus failed, continue without focus guard");
+            return true;
+        }
+    }
+
+    private void AbandonAudioFocus()
+    {
+        if (!_hasAudioFocus || _audioManager == null) return;
+
+        try
+        {
+            if (global::Android.OS.Build.VERSION.SdkInt >= global::Android.OS.BuildVersionCodes.O)
+            {
+                if (_audioFocusRequest != null)
+                    _audioManager.AbandonAudioFocusRequest(_audioFocusRequest);
+            }
+            else
+            {
+#pragma warning disable CA1422
+                _audioManager.AbandonAudioFocus(_audioFocusListener);
+#pragma warning restore CA1422
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogDebug(ex, "[TTS] AbandonAudioFocus failed");
+        }
+        finally
+        {
+            _hasAudioFocus = false;
+        }
+    }
+
+    private void OnAudioFocusChanged(AndroidAudioFocus focusChange)
+    {
+        if (focusChange is AndroidAudioFocus.Loss
+            or AndroidAudioFocus.LossTransient
+            or AndroidAudioFocus.LossTransientCanDuck)
+        {
+            MainThread.BeginInvokeOnMainThread(() =>
+            {
+                _logger.LogInformation("[TTS] Focus lost ({Focus}), stop narration", focusChange);
+                _tts?.Stop();
+                AbandonAudioFocus();
+            });
+        }
+    }
+
+    private sealed class AudioFocusListener(Action<AndroidAudioFocus> onFocusChanged)
+        : Java.Lang.Object, AndroidAudioManager.IOnAudioFocusChangeListener
+    {
+        private readonly Action<AndroidAudioFocus> _onFocusChanged = onFocusChanged;
+        public void OnAudioFocusChange(AndroidAudioFocus focusChange) => _onFocusChanged(focusChange);
+    }
+
+    private sealed class TtsProgressListener(Action onCompleted)
+        : AndroidUtteranceProgressListener
+    {
+        private readonly Action _onCompleted = onCompleted;
+        public override void OnStart(string? utteranceId) { }
+        public override void OnDone(string? utteranceId) => _onCompleted();
+        [Obsolete]
+        public override void OnError(string? utteranceId) => _onCompleted();
     }
 
     protected override void Dispose(bool disposing)
@@ -133,6 +263,7 @@ public class AndroidTTSService : Java.Lang.Object, AndroidTTS.IOnInitListener, I
             _tts?.Stop();
             _tts?.Shutdown();
             _tts = null;
+            AbandonAudioFocus();
         }
         base.Dispose(disposing);
     }

@@ -78,6 +78,13 @@
                                                         IsToggled="{Binding AutoPlayAudio}"
                                                         OnColor="{StaticResource Primary}"/>
                                         </Grid>
+
+                                        <Button Text="TTS Voice / Offline Data"
+                                                Command="{Binding OpenTtsSettingsCommand}"
+                                                BackgroundColor="{StaticResource Primary}"
+                                                TextColor="White"
+                                                HeightRequest="44"
+                                                CornerRadius="8"/>
                                 </VerticalStackLayout>
                         </Frame>
 
@@ -124,7 +131,7 @@
                                                 MaximumTrackColor="{StaticResource Border}"/>
 
                                         <Button Text="{Binding Source={x:Static loc:LocalizationResourceManager.Instance}, Path=[SettingsSaveLocation]}"
-                                                Command="{Binding SaveGeofenceRadiusCommand}"
+                                                Command="{Binding SaveLocationSettingsCommand}"
                                                 BackgroundColor="{StaticResource Primary}"
                                                 TextColor="White"
                                                 HeightRequest="44"

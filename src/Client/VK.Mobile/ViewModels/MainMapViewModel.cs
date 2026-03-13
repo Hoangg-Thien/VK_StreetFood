@@ -452,6 +452,8 @@ public partial class MainMapViewModel : ObservableObject
 
         // Sắp xếp POI theo Priority giảm dần trước khi xử lý geofence
         var sortedPOIs = e.NearbyPOIs.OrderByDescending(p => p.Priority).ToList();
+        var radiusMeters = Preferences.Get("GeofenceRadius", AppSettings.GeofenceRadiusMeters);
+        var geofenceCandidates = new List<(POIModel Poi, double DistanceMeters)>();
 
         foreach (var poi in sortedPOIs)
         {
@@ -464,11 +466,20 @@ public partial class MainMapViewModel : ObservableObject
                 poi.Latitude,
                 poi.Longitude) * 1000; // to meters
 
-            if (distance <= AppSettings.GeofenceRadiusMeters)
-            {
-                await OnGeofenceTriggeredAsync(poi);
-            }
+            poi.DistanceKm = distance / 1000.0;
+
+            if (distance <= radiusMeters)
+                geofenceCandidates.Add((poi, distance));
         }
+
+        var bestCandidate = geofenceCandidates
+            .OrderByDescending(c => c.Poi.Priority)
+            .ThenBy(c => c.DistanceMeters)
+            .Select(c => c.Poi)
+            .FirstOrDefault();
+
+        if (bestCandidate != null)
+            await OnGeofenceTriggeredAsync(bestCandidate);
     }
 
     private async Task OnGeofenceTriggeredAsync(POIModel poi)
@@ -517,6 +528,12 @@ public partial class MainMapViewModel : ObservableObject
                     poi.Id,
                     "geofence_enter",
                     SelectedLanguage);
+            }
+
+            if (!Preferences.Get("AutoPlayAudio", true))
+            {
+                _logger.LogInformation("AutoPlayAudio disabled, skip narration for POI: {Name}", poi.Name);
+                return;
             }
 
             // Phát thuyết minh tự động: đóng NowPlayingPage cũ → mở cái mới
