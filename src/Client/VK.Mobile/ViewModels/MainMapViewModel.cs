@@ -15,6 +15,7 @@ public partial class MainMapViewModel : ObservableObject
     private readonly IApiService _apiService;
     private readonly ILocationService _locationService;
     private readonly ITTSService _ttsService;
+    private readonly IOfflineContentService _offlineContentService;
     private readonly StorageService _storageService;
     private readonly LocalPOIDatabase _localDb;
     private readonly ILogger<MainMapViewModel> _logger;
@@ -87,6 +88,7 @@ public partial class MainMapViewModel : ObservableObject
         IApiService apiService,
         ILocationService locationService,
         ITTSService ttsService,
+        IOfflineContentService offlineContentService,
         StorageService storageService,
         LocalPOIDatabase localDb,
         ILogger<MainMapViewModel> logger,
@@ -95,6 +97,7 @@ public partial class MainMapViewModel : ObservableObject
         _apiService = apiService;
         _locationService = locationService;
         _ttsService = ttsService;
+        _offlineContentService = offlineContentService;
         _storageService = storageService;
         _localDb = localDb;
         _logger = logger;
@@ -153,6 +156,9 @@ public partial class MainMapViewModel : ObservableObject
                 _logger.LogWarning(ex, "Failed to load POIs");
             }
 
+            // Nếu đang online, đồng bộ cache offline nền (không block UI)
+            _ = _offlineContentService.AutoSyncWhenOnlineAsync(SelectedLanguage);
+
             // Start tracking (non-blocking)
             try
             {
@@ -182,38 +188,30 @@ public partial class MainMapViewModel : ObservableObject
             PoiLoadError = null;
             List<POIModel> poiList = new();
 
-            // Load từ API; nếu lỗi thì dùng SQLite cache (offline)
-            try
+            if (Connectivity.NetworkAccess != NetworkAccess.Internet)
+            {
+                poiList = await _localDb.GetCachedPOIsAsync();
+                _logger.LogInformation("Offline mode: loaded {Count} POIs from SQLite cache", poiList.Count);
+            }
+            else
             {
                 poiList = await _apiService.GetAllPOIsAsync();
                 _logger.LogInformation("API returned {Count} POIs", poiList.Count);
 
-                // Lưu vào SQLite cache để dùng khi offline
-                if (poiList.Count > 0)
-                    await _localDb.SavePOIsAsync(poiList);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "API not available, trying SQLite cache");
-
-                // Fallback: đọc từ SQLite cache
-                poiList = await _localDb.GetCachedPOIsAsync();
                 if (poiList.Count > 0)
                 {
-                    _logger.LogInformation("Loaded {Count} POIs from SQLite cache (offline)", poiList.Count);
-                    PoiLoadError = null; // cache hoạt động OK
+                    await _localDb.SavePOIsAsync(poiList);
                 }
                 else
                 {
-                    PoiLoadError = $"Không thể kết nối API và không có dữ liệu offline: {ex.Message}";
+                    _logger.LogWarning("API returned empty POI list, trying SQLite cache fallback");
+                    poiList = await _localDb.GetCachedPOIsAsync();
                 }
             }
 
-            // Nếu API trả về rỗng (không có lỗi)
-            if (poiList.Count == 0 && PoiLoadError == null)
+            if (poiList.Count == 0)
             {
-                _logger.LogWarning("No POIs returned from API. Check API connection and database.");
-                PoiLoadError = "API không trả về POIs. Hãy kiểm tra server đang chạy tại cổng 5089.";
+                PoiLoadError = "Không có dữ liệu POI offline. Hãy vào online để đồng bộ dữ liệu.";
             }
 
             Pois.Clear();
@@ -222,15 +220,32 @@ public partial class MainMapViewModel : ObservableObject
                 Pois.Add(poi);
             }
 
-            if (Pois.Count > 0)
-                PoiLoadError = null; // Clear error khi load thành công
+            PoiLoadError = Pois.Count > 0 ? null : PoiLoadError;
 
-            _logger.LogInformation("Loaded {Count} POIs from API", Pois.Count);
+            _logger.LogInformation("Loaded {Count} POIs", Pois.Count);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error loading POIs");
-            PoiLoadError = $"Lỗi load POIs: {ex.Message}";
+            _logger.LogWarning(ex, "Primary POI load failed, trying SQLite cache fallback");
+
+            try
+            {
+                var cached = await _localDb.GetCachedPOIsAsync();
+                Pois.Clear();
+                foreach (var poi in cached)
+                {
+                    Pois.Add(poi);
+                }
+
+                PoiLoadError = Pois.Count > 0
+                    ? null
+                    : "Không thể tải POI và không có dữ liệu offline.";
+            }
+            catch (Exception cacheEx)
+            {
+                _logger.LogError(cacheEx, "Error loading POIs from SQLite cache");
+                PoiLoadError = $"Lỗi load POIs: {ex.Message}";
+            }
         }
     }
 
@@ -250,15 +265,31 @@ public partial class MainMapViewModel : ObservableObject
             {
                 var audioContent = await _apiService.GetAudioForPOIAsync(poi.Id, SelectedLanguage);
                 if (audioContent != null && !string.IsNullOrWhiteSpace(audioContent.TextContent))
+                {
                     audioText = audioContent.TextContent.Length > 500
                         ? audioContent.TextContent[..500]
                         : audioContent.TextContent;
+                    await _offlineContentService.CacheNarrationScriptAsync(
+                        poi.Id,
+                        audioContent.LanguageCode,
+                        audioContent.TextContent,
+                        audioContent.AudioFileUrl,
+                        audioContent.DurationInSeconds);
+                }
                 else
-                    audioText = BuildFallbackText(poi);
+                {
+                    var cached = await _offlineContentService.GetCachedNarrationTextAsync(poi.Id, SelectedLanguage);
+                    audioText = !string.IsNullOrWhiteSpace(cached)
+                        ? cached
+                        : BuildFallbackText(poi);
+                }
             }
             catch
             {
-                audioText = BuildFallbackText(poi);
+                var cached = await _offlineContentService.GetCachedNarrationTextAsync(poi.Id, SelectedLanguage);
+                audioText = !string.IsNullOrWhiteSpace(cached)
+                    ? cached
+                    : BuildFallbackText(poi);
             }
 
             // Mở NowPlayingPage dạng modal overlay
@@ -452,6 +483,8 @@ public partial class MainMapViewModel : ObservableObject
 
         // Sắp xếp POI theo Priority giảm dần trước khi xử lý geofence
         var sortedPOIs = e.NearbyPOIs.OrderByDescending(p => p.Priority).ToList();
+        var radiusMeters = Preferences.Get("GeofenceRadius", AppSettings.GeofenceRadiusMeters);
+        var geofenceCandidates = new List<(POIModel Poi, double DistanceMeters)>();
 
         foreach (var poi in sortedPOIs)
         {
@@ -464,11 +497,20 @@ public partial class MainMapViewModel : ObservableObject
                 poi.Latitude,
                 poi.Longitude) * 1000; // to meters
 
-            if (distance <= AppSettings.GeofenceRadiusMeters)
-            {
-                await OnGeofenceTriggeredAsync(poi);
-            }
+            poi.DistanceKm = distance / 1000.0;
+
+            if (distance <= radiusMeters)
+                geofenceCandidates.Add((poi, distance));
         }
+
+        var bestCandidate = geofenceCandidates
+            .OrderByDescending(c => c.Poi.Priority)
+            .ThenBy(c => c.DistanceMeters)
+            .Select(c => c.Poi)
+            .FirstOrDefault();
+
+        if (bestCandidate != null)
+            await OnGeofenceTriggeredAsync(bestCandidate);
     }
 
     private async Task OnGeofenceTriggeredAsync(POIModel poi)
@@ -517,6 +559,12 @@ public partial class MainMapViewModel : ObservableObject
                     poi.Id,
                     "geofence_enter",
                     SelectedLanguage);
+            }
+
+            if (!Preferences.Get("AutoPlayAudio", true))
+            {
+                _logger.LogInformation("AutoPlayAudio disabled, skip narration for POI: {Name}", poi.Name);
+                return;
             }
 
             // Phát thuyết minh tự động: đóng NowPlayingPage cũ → mở cái mới

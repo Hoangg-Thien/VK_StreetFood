@@ -34,6 +34,7 @@ public static class MauiProgram
 		builder.Services.AddSingleton<IApiService, ApiService>();
 		builder.Services.AddSingleton<ILocationService, LocationService>();
 		builder.Services.AddSingleton<IAudioService, AudioService>();
+		builder.Services.AddSingleton<IOfflineContentService, OfflineContentService>();
 #if ANDROID
 		builder.Services.AddSingleton<ITTSService, VK.Mobile.Platforms.Android.AndroidTTSService>();
 #else

@@ -29,6 +29,8 @@ public partial class MainMapPage : ContentPage
     private static double ZoomResolution(int level) =>
         156543.03392804062 / Math.Pow(2, level);
 
+    private static bool IsOfflineMode => Connectivity.NetworkAccess != NetworkAccess.Internet;
+
     public MainMapPage(MainMapViewModel viewModel, IServiceProvider serviceProvider)
     {
         InitializeComponent();
@@ -43,6 +45,9 @@ public partial class MainMapPage : ContentPage
         try
         {
             InitializeMap();
+
+            if (OfflineModeBanner != null)
+                OfflineModeBanner.IsVisible = IsOfflineMode;
 
             // Wire up collection / property changes TRƯỚC KHI load data
             // để đảm bảo mọi thay đổi đều trigger render trên map
@@ -87,8 +92,16 @@ public partial class MainMapPage : ContentPage
             _mapControl = new MapControl();
             var map = new Mapsui.Map();
 
-            // Tile layer (OpenStreetMap)
-            map.Layers.Add(OpenStreetMap.CreateTileLayer());
+            // Tile layer (OpenStreetMap) chỉ dùng khi online.
+            // Offline mode vẫn render marker POI trên nền trống.
+            if (!IsOfflineMode)
+            {
+                map.Layers.Add(OpenStreetMap.CreateTileLayer());
+            }
+            else
+            {
+                System.Diagnostics.Debug.WriteLine("Map offline mode: skip online OSM tile layer");
+            }
 
             // POI markers layer
             _poiLayer = new WritableLayer { Name = "POIs", Style = null };
@@ -472,10 +485,39 @@ public partial class MainMapPage : ContentPage
             NowPlayingViewModel.RequestAutoClose();
             await Task.Delay(350); // chờ dismiss animation
 
-            // Tạo audioText từ description + address
-            var audioText = string.IsNullOrWhiteSpace(poi.Description)
-                ? poi.Name
-                : $"{poi.Name}. {poi.Description}";
+            // Lấy content player theo thứ tự ưu tiên: API -> cache offline -> description fallback
+            var apiService = _serviceProvider.GetRequiredService<IApiService>();
+            var offlineService = _serviceProvider.GetRequiredService<IOfflineContentService>();
+            string audioText;
+
+            try
+            {
+                var audio = await apiService.GetAudioForPOIAsync(poi.Id, _viewModel.SelectedLanguage);
+                if (audio != null && !string.IsNullOrWhiteSpace(audio.TextContent))
+                {
+                    audioText = audio.TextContent;
+                    await offlineService.CacheNarrationScriptAsync(
+                        poi.Id,
+                        audio.LanguageCode,
+                        audio.TextContent,
+                        audio.AudioFileUrl,
+                        audio.DurationInSeconds);
+                }
+                else
+                {
+                    audioText = await offlineService.GetCachedNarrationTextAsync(poi.Id, _viewModel.SelectedLanguage)
+                                ?? (string.IsNullOrWhiteSpace(poi.Description)
+                                    ? poi.Name
+                                    : $"{poi.Name}. {poi.Description}");
+                }
+            }
+            catch
+            {
+                audioText = await offlineService.GetCachedNarrationTextAsync(poi.Id, _viewModel.SelectedLanguage)
+                            ?? (string.IsNullOrWhiteSpace(poi.Description)
+                                ? poi.Name
+                                : $"{poi.Name}. {poi.Description}");
+            }
 
             static string FormatDist(double? km) => km switch
             {

@@ -78,6 +78,13 @@
                                                         IsToggled="{Binding AutoPlayAudio}"
                                                         OnColor="{StaticResource Primary}"/>
                                         </Grid>
+
+                                        <Button Text="TTS Voice / Offline Data"
+                                                Command="{Binding OpenTtsSettingsCommand}"
+                                                BackgroundColor="{StaticResource Primary}"
+                                                TextColor="White"
+                                                HeightRequest="44"
+                                                CornerRadius="8"/>
                                 </VerticalStackLayout>
                         </Frame>
 
@@ -124,7 +131,7 @@
                                                 MaximumTrackColor="{StaticResource Border}"/>
 
                                         <Button Text="{Binding Source={x:Static loc:LocalizationResourceManager.Instance}, Path=[SettingsSaveLocation]}"
-                                                Command="{Binding SaveGeofenceRadiusCommand}"
+                                                Command="{Binding SaveLocationSettingsCommand}"
                                                 BackgroundColor="{StaticResource Primary}"
                                                 TextColor="White"
                                                 HeightRequest="44"
@@ -143,6 +150,38 @@
                                                FontSize="18"
                                                FontAttributes="Bold"
                                                TextColor="{StaticResource TextPrimary}"/>
+
+                                        <Label Text="{Binding OfflinePackageStatus}"
+                                               FontSize="13"
+                                               TextColor="{StaticResource TextSecondary}"/>
+
+                                        <Grid ColumnDefinitions="*,Auto">
+                                                <Label Text="Tải kèm file âm thanh (nếu server có)"
+                                                       VerticalOptions="Center"
+                                                       TextColor="{StaticResource TextPrimary}"/>
+                                                <Switch Grid.Column="1"
+                                                        IsToggled="{Binding IncludeAudioFilesInOfflinePackage}"
+                                                        OnColor="{StaticResource Primary}"/>
+                                        </Grid>
+
+                                        <Button Text="Tải gói offline"
+                                                Command="{Binding DownloadOfflinePackageCommand}"
+                                                BackgroundColor="{StaticResource Primary}"
+                                                TextColor="White"
+                                                HeightRequest="44"
+                                                CornerRadius="8"/>
+
+                                        <ActivityIndicator IsRunning="{Binding IsDownloadingOfflinePackage}"
+                                                           IsVisible="{Binding IsDownloadingOfflinePackage}"
+                                                           Color="{StaticResource Primary}"/>
+
+                                        <Button Text="Cập nhật trạng thái offline"
+                                                Command="{Binding RefreshOfflineStatusCommand}"
+                                                BackgroundColor="{StaticResource PageBackground}"
+                                                TextColor="{StaticResource TextPrimary}"
+                                                HeightRequest="44"
+                                                CornerRadius="8"/>
+
                                         <Button Text="{Binding Source={x:Static loc:LocalizationResourceManager.Instance}, Path=[SettingsClearCache]}"
                                                 Command="{Binding ClearCacheCommand}"
                                                 BackgroundColor="{StaticResource Warning}"

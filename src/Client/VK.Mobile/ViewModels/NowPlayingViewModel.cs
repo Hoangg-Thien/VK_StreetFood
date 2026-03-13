@@ -17,6 +17,7 @@ public partial class NowPlayingViewModel : ObservableObject
 
     private readonly ITTSService _ttsService;
     private readonly IApiService _apiService;
+    private readonly IOfflineContentService _offlineContentService;
     private POIModel? _nextPoiModel;
     private List<POIModel> _allPois = new();
 
@@ -48,10 +49,14 @@ public partial class NowPlayingViewModel : ObservableObject
     private int _totalSeconds = 0;
     private CancellationTokenSource? _ttsCts;
 
-    public NowPlayingViewModel(ITTSService ttsService, IApiService apiService)
+    public NowPlayingViewModel(
+        ITTSService ttsService,
+        IApiService apiService,
+        IOfflineContentService offlineContentService)
     {
         _ttsService = ttsService;
         _apiService = apiService;
+        _offlineContentService = offlineContentService;
     }
 
     public void Initialize(int poiId, string poiName, string poiCategory, string poiImage,
@@ -227,13 +232,30 @@ public partial class NowPlayingViewModel : ObservableObject
         try
         {
             var audio = await _apiService.GetAudioForPOIAsync(next.Id, Language);
-            audioText = !string.IsNullOrWhiteSpace(audio?.TextContent)
-                ? audio!.TextContent!
-                : (string.IsNullOrWhiteSpace(next.Description) ? next.Name : $"{next.Name}. {next.Description}");
+            if (!string.IsNullOrWhiteSpace(audio?.TextContent))
+            {
+                audioText = audio!.TextContent!;
+                await _offlineContentService.CacheNarrationScriptAsync(
+                    next.Id,
+                    audio.LanguageCode,
+                    audio.TextContent!,
+                    audio.AudioFileUrl,
+                    audio.DurationInSeconds);
+            }
+            else
+            {
+                var cached = await _offlineContentService.GetCachedNarrationTextAsync(next.Id, Language);
+                audioText = !string.IsNullOrWhiteSpace(cached)
+                    ? cached
+                    : (string.IsNullOrWhiteSpace(next.Description) ? next.Name : $"{next.Name}. {next.Description}");
+            }
         }
         catch
         {
-            audioText = string.IsNullOrWhiteSpace(next.Description) ? next.Name : $"{next.Name}. {next.Description}";
+            var cached = await _offlineContentService.GetCachedNarrationTextAsync(next.Id, Language);
+            audioText = !string.IsNullOrWhiteSpace(cached)
+                ? cached
+                : (string.IsNullOrWhiteSpace(next.Description) ? next.Name : $"{next.Name}. {next.Description}");
         }
 
         // Re-initialize với POI mới — _allPois vẫn còn, tự tính next tiếp theo
