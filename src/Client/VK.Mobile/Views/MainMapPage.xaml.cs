@@ -33,6 +33,8 @@ public partial class MainMapPage : ContentPage
     private static double ZoomResolution(int level) =>
         156543.03392804062 / Math.Pow(2, level);
 
+    private static bool IsOfflineMode => Connectivity.NetworkAccess != NetworkAccess.Internet;
+
     public MainMapPage(MainMapViewModel viewModel, IServiceProvider serviceProvider)
     {
         InitializeComponent();
@@ -47,8 +49,6 @@ public partial class MainMapPage : ContentPage
         try
         {
             await InitializeMapAsync();
-            InitializeMap();
-
 
             // Wire up collection / property changes TRƯỚC KHI load data
             // để đảm bảo mọi thay đổi đều trigger render trên map
@@ -92,10 +92,9 @@ public partial class MainMapPage : ContentPage
         {
             _mapControl = new MapControl();
             var map = new Mapsui.Map();
-            var hasInternet = Connectivity.NetworkAccess == NetworkAccess.Internet;
             _isUsingOfflineMbTiles = false;
 
-            if (!hasInternet)
+            if (IsOfflineMode)
             {
                 var offlineMbTilesLayer = await TryCreateOfflineMbTilesLayerAsync();
                 if (offlineMbTilesLayer != null)
@@ -106,16 +105,14 @@ public partial class MainMapPage : ContentPage
                 }
                 else
                 {
-                    System.Diagnostics.Debug.WriteLine("Map offline mode: no MBTiles found, base map will be empty");
+                    System.Diagnostics.Debug.WriteLine("Map offline mode: no MBTiles found, using OSM fallback if available");
                 }
             }
 
-            if (!_isUsingOfflineMbTiles && hasInternet)
+            if (!_isUsingOfflineMbTiles)
             {
                 map.Layers.Add(OpenStreetMap.CreateTileLayer());
             }
-            // Tile layer (OpenStreetMap)
-            map.Layers.Add(OpenStreetMap.CreateTileLayer());
 
             // POI markers layer
             _poiLayer = new WritableLayer { Name = "POIs", Style = null };
@@ -182,7 +179,7 @@ public partial class MainMapPage : ContentPage
 
         OfflineModeBannerText.Text = _isUsingOfflineMbTiles
             ? "Offline map mode: đang dùng nền MBTiles đã tải."
-            : "Offline map mode: chưa có MBTiles, chỉ hiển thị POI đã tải.";
+            : "Offline map mode: hiển thị POI offline, nền map sẽ dùng cache/online khi khả dụng.";
     }
 
     private void OnMapControlSizeChanged(object? sender, EventArgs e)
@@ -488,6 +485,20 @@ public partial class MainMapPage : ContentPage
                     }
                 });
             }
+
+            if (_mapControl != null && (_viewModel.Pois.Count == 0 || _viewModel.HasPoiError))
+            {
+                try
+                {
+                    await _viewModel.LoadPOIsCommand.ExecuteAsync(null);
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"OnAppearing LoadPOIs error: {ex}");
+                }
+            }
+
+            UpdateOfflineBanner();
 
             // Redraw markers (layer data is intact, just need refresh)
             UpdatePOIMarkers();

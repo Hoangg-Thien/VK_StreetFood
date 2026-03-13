@@ -188,38 +188,30 @@ public partial class MainMapViewModel : ObservableObject
             PoiLoadError = null;
             List<POIModel> poiList = new();
 
-            // Load từ API; nếu lỗi thì dùng SQLite cache (offline)
-            try
+            if (Connectivity.NetworkAccess != NetworkAccess.Internet)
+            {
+                poiList = await _localDb.GetCachedPOIsAsync();
+                _logger.LogInformation("Offline mode: loaded {Count} POIs from SQLite cache", poiList.Count);
+            }
+            else
             {
                 poiList = await _apiService.GetAllPOIsAsync();
                 _logger.LogInformation("API returned {Count} POIs", poiList.Count);
 
-                // Lưu vào SQLite cache để dùng khi offline
-                if (poiList.Count > 0)
-                    await _localDb.SavePOIsAsync(poiList);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "API not available, trying SQLite cache");
-
-                // Fallback: đọc từ SQLite cache
-                poiList = await _localDb.GetCachedPOIsAsync();
                 if (poiList.Count > 0)
                 {
-                    _logger.LogInformation("Loaded {Count} POIs from SQLite cache (offline)", poiList.Count);
-                    PoiLoadError = null; // cache hoạt động OK
+                    await _localDb.SavePOIsAsync(poiList);
                 }
                 else
                 {
-                    PoiLoadError = $"Không thể kết nối API và không có dữ liệu offline: {ex.Message}";
+                    _logger.LogWarning("API returned empty POI list, trying SQLite cache fallback");
+                    poiList = await _localDb.GetCachedPOIsAsync();
                 }
             }
 
-            // Nếu API trả về rỗng (không có lỗi)
-            if (poiList.Count == 0 && PoiLoadError == null)
+            if (poiList.Count == 0)
             {
-                _logger.LogWarning("No POIs returned from API. Check API connection and database.");
-                PoiLoadError = "API không trả về POIs. Hãy kiểm tra server đang chạy tại cổng 5089.";
+                PoiLoadError = "Không có dữ liệu POI offline. Hãy vào online để đồng bộ dữ liệu.";
             }
 
             Pois.Clear();
@@ -228,15 +220,32 @@ public partial class MainMapViewModel : ObservableObject
                 Pois.Add(poi);
             }
 
-            if (Pois.Count > 0)
-                PoiLoadError = null; // Clear error khi load thành công
+            PoiLoadError = Pois.Count > 0 ? null : PoiLoadError;
 
-            _logger.LogInformation("Loaded {Count} POIs from API", Pois.Count);
+            _logger.LogInformation("Loaded {Count} POIs", Pois.Count);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error loading POIs");
-            PoiLoadError = $"Lỗi load POIs: {ex.Message}";
+            _logger.LogWarning(ex, "Primary POI load failed, trying SQLite cache fallback");
+
+            try
+            {
+                var cached = await _localDb.GetCachedPOIsAsync();
+                Pois.Clear();
+                foreach (var poi in cached)
+                {
+                    Pois.Add(poi);
+                }
+
+                PoiLoadError = Pois.Count > 0
+                    ? null
+                    : "Không thể tải POI và không có dữ liệu offline.";
+            }
+            catch (Exception cacheEx)
+            {
+                _logger.LogError(cacheEx, "Error loading POIs from SQLite cache");
+                PoiLoadError = $"Lỗi load POIs: {ex.Message}";
+            }
         }
     }
 

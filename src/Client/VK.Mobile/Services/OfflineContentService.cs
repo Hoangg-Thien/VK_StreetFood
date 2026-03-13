@@ -257,33 +257,58 @@ public class OfflineContentService : IOfflineContentService
             if (!string.IsNullOrWhiteSpace(existing))
                 return existing;
 
-            var absoluteUrl = ToAbsoluteUrl(AppSettings.OfflineMapMbTilesUrl);
+            foreach (var url in GetMbTilesDownloadUrls())
+            {
+                var absoluteUrl = ToAbsoluteUrl(url);
 
-            using var response = await _downloadClient.GetAsync(
-                absoluteUrl,
-                HttpCompletionOption.ResponseHeadersRead,
-                ct);
+                using var response = await _downloadClient.GetAsync(
+                    absoluteUrl,
+                    HttpCompletionOption.ResponseHeadersRead,
+                    ct);
 
-            if (!response.IsSuccessStatusCode)
-                return null;
+                if (!response.IsSuccessStatusCode)
+                    continue;
 
-            var folder = Path.Combine(FileSystem.AppDataDirectory, OfflineMapFolderName);
-            Directory.CreateDirectory(folder);
+                var folder = Path.Combine(FileSystem.AppDataDirectory, OfflineMapFolderName);
+                Directory.CreateDirectory(folder);
 
-            var localPath = GetMbTilesLocalPath();
-            await using var source = await response.Content.ReadAsStreamAsync(ct);
-            await using var target = File.Create(localPath);
-            await source.CopyToAsync(target, ct);
+                var localPath = GetMbTilesLocalPath();
+                await using var source = await response.Content.ReadAsStreamAsync(ct);
+                await using var target = File.Create(localPath);
+                await source.CopyToAsync(target, ct);
 
-            if (new FileInfo(localPath).Length <= 0)
-                return null;
+                if (new FileInfo(localPath).Length > 0)
+                    return localPath;
+            }
 
-            return localPath;
+            return null;
         }
         catch (Exception ex)
         {
             _logger.LogDebug(ex, "Download MBTiles failed");
             return null;
+        }
+    }
+
+    private static IEnumerable<string> GetMbTilesDownloadUrls()
+    {
+        var candidates = new[]
+        {
+            AppSettings.OfflineMapMbTilesUrl,
+            "api/offline/map-package",
+            "offline/vkstreetfood.mbtiles",
+            "/offline/vkstreetfood.mbtiles"
+        };
+
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var candidate in candidates)
+        {
+            if (string.IsNullOrWhiteSpace(candidate))
+                continue;
+
+            var trimmed = candidate.Trim();
+            if (seen.Add(trimmed))
+                yield return trimmed;
         }
     }
 

@@ -71,6 +71,10 @@
         "net10.0-android36.0": {
           "targetAlias": "net10.0-android",
           "dependencies": {
+            "BruTile.MbTiles": {
+              "target": "Package",
+              "version": "[6.0.0, )"
+            },
             "CommunityToolkit.Maui": {
               "target": "Package",
               "version": "[9.1.1, )"
@@ -427,6 +431,10 @@
         "net10.0-ios26.2": {
           "targetAlias": "net10.0-ios",
           "dependencies": {
+            "BruTile.MbTiles": {
+              "target": "Package",
+              "version": "[6.0.0, )"
+            },
             "CommunityToolkit.Maui": {
               "target": "Package",
               "version": "[9.1.1, )"

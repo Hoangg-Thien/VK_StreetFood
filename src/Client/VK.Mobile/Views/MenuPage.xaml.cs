@@ -16,7 +16,11 @@ public partial class MenuPage : ContentPage
     protected override async void OnAppearing()
     {
         base.OnAppearing();
-        if (!_viewModel.FilteredPois.Any())
+
+        if (_viewModel.IsLoading)
+            return;
+
+        if (!_viewModel.FilteredPois.Any() || !string.IsNullOrWhiteSpace(_viewModel.ErrorMessage))
             await _viewModel.LoadPOIsCommand.ExecuteAsync(null);
     }
 }

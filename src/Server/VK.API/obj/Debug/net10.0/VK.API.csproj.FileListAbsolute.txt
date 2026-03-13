@@ -148,3 +148,4 @@ D:\VK_StreetFood\src\Server\VK.API\obj\Debug\net10.0\refint\VK.API.dll
 D:\VK_StreetFood\src\Server\VK.API\obj\Debug\net10.0\VK.API.pdb
 D:\VK_StreetFood\src\Server\VK.API\obj\Debug\net10.0\VK.API.genruntimeconfig.cache
 D:\VK_StreetFood\src\Server\VK.API\obj\Debug\net10.0\ref\VK.API.dll
+D:\VK_StreetFood\src\Server\VK.API\obj\Debug\net10.0\compressed\njh0cvow8y-{0}-4b20rjcgkx-4b20rjcgkx.gz
