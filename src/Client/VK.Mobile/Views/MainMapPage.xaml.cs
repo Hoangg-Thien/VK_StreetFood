@@ -5,7 +5,10 @@ using Mapsui.Layers;
 using Mapsui.Projections;
 using Mapsui.Styles;
 using Mapsui.Tiling;
+using Mapsui.Tiling.Layers;
 using Mapsui.UI.Maui;
+using BruTile.Cache;
+using BruTile.Predefined;
 using VK.Mobile.ViewModels;
 using VK.Mobile.Models;
 using VK.Mobile.Services;
@@ -92,16 +95,11 @@ public partial class MainMapPage : ContentPage
             _mapControl = new MapControl();
             var map = new Mapsui.Map();
 
-            // Tile layer (OpenStreetMap) chỉ dùng khi online.
-            // Offline mode vẫn render marker POI trên nền trống.
-            if (!IsOfflineMode)
-            {
-                map.Layers.Add(OpenStreetMap.CreateTileLayer());
-            }
-            else
-            {
-                System.Diagnostics.Debug.WriteLine("Map offline mode: skip online OSM tile layer");
-            }
+            // Tile layer với FileCache để lưu tile xuống disk.
+            // Khi online: fetch từ OSM và cache. Khi offline: dùng tile đã cache.
+            map.Layers.Add(CreateCachedOsmTileLayer());
+            if (IsOfflineMode)
+                System.Diagnostics.Debug.WriteLine("Map offline mode: using cached OSM tiles");
 
             // POI markers layer
             _poiLayer = new WritableLayer { Name = "POIs", Style = null };
@@ -128,6 +126,23 @@ public partial class MainMapPage : ContentPage
                 VerticalOptions = LayoutOptions.Center,
                 TextColor = Colors.Red
             };
+        }
+    }
+
+    private static TileLayer CreateCachedOsmTileLayer()
+    {
+        try
+        {
+            var tileCacheDir = Path.Combine(FileSystem.CacheDirectory, "osm_tiles");
+            Directory.CreateDirectory(tileCacheDir);
+            var fileCache = new FileCache(tileCacheDir, "png", TimeSpan.FromDays(30));
+            var tileSource = KnownTileSources.Create(KnownTileSource.OpenStreetMap, persistentCache: fileCache);
+            return new TileLayer(tileSource);
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[Map] FileCache init failed, using default: {ex.Message}");
+            return OpenStreetMap.CreateTileLayer();
         }
     }
 
