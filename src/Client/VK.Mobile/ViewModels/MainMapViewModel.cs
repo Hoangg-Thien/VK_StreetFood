@@ -196,18 +196,7 @@ public partial class MainMapViewModel : ObservableObject
 
                 // Lưu vào SQLite cache để dùng khi offline
                 if (poiList.Count > 0)
-                {
                     await _localDb.SavePOIsAsync(poiList);
-                }
-                else
-                {
-                    var cached = await _localDb.GetCachedPOIsAsync();
-                    if (cached.Count > 0)
-                    {
-                        poiList = cached;
-                        _logger.LogInformation("API empty, loaded {Count} POIs from SQLite cache", poiList.Count);
-                    }
-                }
             }
             catch (Exception ex)
             {

@@ -81,21 +81,8 @@
             </Grid>
         </Border>
 
-        <Border Grid.Row="1"
-                Margin="12,58,12,0"
-                Padding="10,4"
-                BackgroundColor="#E8F5E9"
-                Stroke="#4CAF50"
-                StrokeShape="RoundRectangle 8"
-                IsVisible="{Binding IsUsingOfflineData}">
-            <Label Text="Đang dùng dữ liệu offline đã tải"
-                   FontSize="11"
-                   TextColor="#2E7D32"/>
-        </Border>
-
         <!-- Content -->
-        <Grid Grid.Row="2"
-              Margin="0,20,0,0">
+        <Grid Grid.Row="2">
             <!-- Loading -->
             <ActivityIndicator IsRunning="{Binding IsLoading}"
                                IsVisible="{Binding IsLoading}"

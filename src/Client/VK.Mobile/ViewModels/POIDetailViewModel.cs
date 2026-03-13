@@ -10,8 +10,6 @@ public partial class POIDetailViewModel : ObservableObject, IQueryAttributable
 {
     private readonly IApiService _apiService;
     private readonly ITTSService _ttsService;
-    private readonly IOfflineContentService _offlineContentService;
-    private readonly LocalPOIDatabase _localDb;
     private readonly StorageService _storageService;
     private readonly ILogger<POIDetailViewModel> _logger;
     private CancellationTokenSource? _ttsCts;
@@ -82,49 +80,13 @@ public partial class POIDetailViewModel : ObservableObject, IQueryAttributable
     public POIDetailViewModel(
         IApiService apiService,
         ITTSService ttsService,
-        IOfflineContentService offlineContentService,
-        LocalPOIDatabase localDb,
         StorageService storageService,
         ILogger<POIDetailViewModel> logger)
     {
         _apiService = apiService;
         _ttsService = ttsService;
-        _offlineContentService = offlineContentService;
-        _localDb = localDb;
         _storageService = storageService;
         _logger = logger;
-    }
-
-    private async Task<POIDetailModel?> BuildOfflineDetailAsync(int poiId, string languageCode)
-    {
-        var cachedPois = await _localDb.GetCachedPOIsAsync();
-        var poi = cachedPois.FirstOrDefault(p => p.Id == poiId);
-        if (poi == null) return null;
-
-        var text = await _offlineContentService.GetCachedNarrationTextAsync(poiId, languageCode)
-                   ?? (!string.IsNullOrWhiteSpace(poi.Description)
-                        ? $"{poi.Name}. {poi.Description}"
-                        : poi.Name);
-
-        return new POIDetailModel
-        {
-            Id = poi.Id,
-            Name = poi.Name,
-            Description = poi.Description,
-            Latitude = poi.Latitude,
-            Longitude = poi.Longitude,
-            Address = poi.Address,
-            ImageUrl = poi.ImageUrl,
-            CategoryName = poi.CategoryName,
-            AverageRating = poi.AverageRating,
-            TotalRatings = poi.TotalRatings,
-            Tags = poi.Tags,
-            Audio = new AudioInfo
-            {
-                LanguageCode = languageCode,
-                TextContent = text
-            }
-        };
     }
 
     // ── Progress timer (fake elapsed based on word-count estimate) ────────
@@ -213,18 +175,7 @@ public partial class POIDetailViewModel : ObservableObject, IQueryAttributable
             var language = await _storageService.GetPreferredLanguageAsync() ?? "vi";
             SelectedLanguage = language;
 
-            POIDetailModel? detail = null;
-            try
-            {
-                detail = await _apiService.GetPOIDetailAsync(poiId, language);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "API detail failed, trying offline cache");
-            }
-
-            if (detail == null)
-                detail = await BuildOfflineDetailAsync(poiId, language);
+            var detail = await _apiService.GetPOIDetailAsync(poiId, language);
 
             if (detail != null)
             {
@@ -235,63 +186,19 @@ public partial class POIDetailViewModel : ObservableObject, IQueryAttributable
                 SelectedAudio = detail.AudioContents.FirstOrDefault(a => a.LanguageCode == language)
                              ?? detail.Audio;
 
-                if (string.IsNullOrWhiteSpace(SelectedAudio?.TextContent))
-                {
-                    var cachedText = await _offlineContentService.GetCachedNarrationTextAsync(poiId, language);
-                    if (!string.IsNullOrWhiteSpace(cachedText))
-                    {
-                        SelectedAudio = new AudioInfo
-                        {
-                            LanguageCode = language,
-                            TextContent = cachedText
-                        };
-                    }
-                }
-
-                if (!string.IsNullOrWhiteSpace(SelectedAudio?.TextContent))
-                {
-                    await _offlineContentService.CacheNarrationScriptAsync(
-                        poiId,
-                        language,
-                        SelectedAudio.TextContent!,
-                        SelectedAudio.AudioFileUrl,
-                        SelectedAudio.DurationSeconds);
-                }
-
                 // Check if favorite
                 var touristId = await _storageService.GetTouristIdAsync();
                 if (touristId != null)
                 {
-                    try
-                    {
-                        var favorites = await _apiService.GetFavoritesAsync(touristId.Value);
-                        IsFavorite = favorites.Any(f => f.Id == poiId);
-                    }
-                    catch
-                    {
-                        IsFavorite = false;
-                    }
+                    var favorites = await _apiService.GetFavoritesAsync(touristId.Value);
+                    IsFavorite = favorites.Any(f => f.Id == poiId);
                 }
 
                 // Track view event
                 if (touristId != null)
                 {
-                    try
-                    {
-                        await _apiService.TrackEventAsync(touristId, poiId, "view", language);
-                    }
-                    catch
-                    {
-                        // offline mode, ignore analytics failure
-                    }
+                    await _apiService.TrackEventAsync(touristId, poiId, "view", language);
                 }
-            }
-            else
-            {
-                await Shell.Current.DisplayAlert(
-                    "Offline",
-                    "Không có dữ liệu POI trong máy. Hãy tải gói offline khi có mạng.",
-                    "OK");
             }
         }
         catch (Exception ex)
