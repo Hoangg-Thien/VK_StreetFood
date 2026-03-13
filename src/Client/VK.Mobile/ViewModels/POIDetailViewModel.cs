@@ -11,6 +11,7 @@ public partial class POIDetailViewModel : ObservableObject, IQueryAttributable
     private readonly IApiService _apiService;
     private readonly ITTSService _ttsService;
     private readonly StorageService _storageService;
+    private readonly LocalPOIDatabase _localDb;
     private readonly ILogger<POIDetailViewModel> _logger;
     private CancellationTokenSource? _ttsCts;
     private IDispatcherTimer? _progressTimer;
@@ -81,11 +82,13 @@ public partial class POIDetailViewModel : ObservableObject, IQueryAttributable
         IApiService apiService,
         ITTSService ttsService,
         StorageService storageService,
+        LocalPOIDatabase localDb,
         ILogger<POIDetailViewModel> logger)
     {
         _apiService = apiService;
         _ttsService = ttsService;
         _storageService = storageService;
+        _localDb = localDb;
         _logger = logger;
     }
 
@@ -175,7 +178,50 @@ public partial class POIDetailViewModel : ObservableObject, IQueryAttributable
             var language = await _storageService.GetPreferredLanguageAsync() ?? "vi";
             SelectedLanguage = language;
 
-            var detail = await _apiService.GetPOIDetailAsync(poiId, language);
+            POIDetailModel? detail = null;
+
+            // Thử lấy từ API nếu online
+            if (Connectivity.NetworkAccess == NetworkAccess.Internet)
+            {
+                detail = await _apiService.GetPOIDetailAsync(poiId, language);
+            }
+
+            // Offline fallback: dùng dữ liệu cache
+            if (detail == null)
+            {
+                var cached = await _localDb.GetCachedPOIsAsync();
+                var poi = cached.FirstOrDefault(p => p.Id == poiId);
+                if (poi != null)
+                {
+                    detail = new POIDetailModel
+                    {
+                        Id = poi.Id,
+                        Name = poi.Name,
+                        Description = poi.Description,
+                        Address = poi.Address,
+                        Latitude = poi.Latitude,
+                        Longitude = poi.Longitude,
+                        ImageUrl = poi.ImageUrl,
+                        CategoryName = poi.CategoryName,
+                        AverageRating = poi.AverageRating,
+                        ViewCount = poi.ViewCount,
+                        Tags = poi.Tags,
+                    };
+
+                    // Lấy audio script từ cache
+                    var script = await _localDb.GetAudioScriptAsync(poiId, language);
+                    if (script != null)
+                    {
+                        detail.Audio = new AudioInfo
+                        {
+                            LanguageCode = script.LanguageCode,
+                            TextContent = script.TextContent,
+                            AudioFileUrl = script.AudioFileUrl,
+                            DurationSeconds = script.DurationInSeconds
+                        };
+                    }
+                }
+            }
 
             if (detail != null)
             {
@@ -186,18 +232,21 @@ public partial class POIDetailViewModel : ObservableObject, IQueryAttributable
                 SelectedAudio = detail.AudioContents.FirstOrDefault(a => a.LanguageCode == language)
                              ?? detail.Audio;
 
-                // Check if favorite
-                var touristId = await _storageService.GetTouristIdAsync();
-                if (touristId != null)
+                // Check if favorite (chỉ khi online)
+                if (Connectivity.NetworkAccess == NetworkAccess.Internet)
                 {
-                    var favorites = await _apiService.GetFavoritesAsync(touristId.Value);
-                    IsFavorite = favorites.Any(f => f.Id == poiId);
-                }
+                    var touristId = await _storageService.GetTouristIdAsync();
+                    if (touristId != null)
+                    {
+                        var favorites = await _apiService.GetFavoritesAsync(touristId.Value);
+                        IsFavorite = favorites.Any(f => f.Id == poiId);
+                    }
 
-                // Track view event
-                if (touristId != null)
-                {
-                    await _apiService.TrackEventAsync(touristId, poiId, "view", language);
+                    // Track view event
+                    if (touristId != null)
+                    {
+                        await _apiService.TrackEventAsync(touristId, poiId, "view", language);
+                    }
                 }
             }
         }

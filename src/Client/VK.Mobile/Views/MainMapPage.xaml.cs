@@ -92,16 +92,11 @@ public partial class MainMapPage : ContentPage
             _mapControl = new MapControl();
             var map = new Mapsui.Map();
 
-            // Tile layer (OpenStreetMap) chỉ dùng khi online.
-            // Offline mode vẫn render marker POI trên nền trống.
-            if (!IsOfflineMode)
-            {
-                map.Layers.Add(OpenStreetMap.CreateTileLayer());
-            }
-            else
-            {
-                System.Diagnostics.Debug.WriteLine("Map offline mode: skip online OSM tile layer");
-            }
+            // Luôn thêm OSM tile layer; Mapsui tự cache tile xuống disk.
+            // Khi offline, các tile đã cache sẽ được dùng; vùng chưa cache hiện trắng.
+            map.Layers.Add(OpenStreetMap.CreateTileLayer());
+            if (IsOfflineMode)
+                System.Diagnostics.Debug.WriteLine("Map offline mode: using cached OSM tiles");
 
             // POI markers layer
             _poiLayer = new WritableLayer { Name = "POIs", Style = null };
