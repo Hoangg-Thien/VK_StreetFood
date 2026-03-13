@@ -27,6 +27,7 @@ public class LocalPOIDatabase
         {
             _db = new SQLiteAsyncConnection(DbPath);
             await _db.CreateTableAsync<PoiCacheEntry>();
+            await _db.CreateTableAsync<AudioScriptCacheEntry>();
         }
         return _db;
     }
@@ -74,6 +75,112 @@ public class LocalPOIDatabase
         }
     }
 
+    /// <summary>Số lượng POI hiện có trong cache.</summary>
+    public async Task<int> GetCachedPoiCountAsync()
+    {
+        var list = await GetCachedPOIsAsync();
+        return list.Count;
+    }
+
+    /// <summary>Lưu script thuyết minh theo từng POI + ngôn ngữ.</summary>
+    public async Task SaveAudioScriptAsync(
+        int poiId,
+        string languageCode,
+        string textContent,
+        string? audioFileUrl = null,
+        int? durationInSeconds = null,
+        string? localAudioPath = null)
+    {
+        if (string.IsNullOrWhiteSpace(textContent)) return;
+
+        try
+        {
+            var db = await GetDbAsync();
+            var lang = string.IsNullOrWhiteSpace(languageCode)
+                ? "vi"
+                : languageCode.Trim().ToLowerInvariant();
+
+            var existing = await db.Table<AudioScriptCacheEntry>()
+                .FirstOrDefaultAsync(x => x.PoiId == poiId && x.LanguageCode == lang);
+
+            if (existing == null)
+            {
+                await db.InsertAsync(new AudioScriptCacheEntry
+                {
+                    PoiId = poiId,
+                    LanguageCode = lang,
+                    TextContent = textContent,
+                    AudioFileUrl = audioFileUrl,
+                    DurationInSeconds = durationInSeconds,
+                    LocalAudioPath = localAudioPath,
+                    CachedAt = DateTime.UtcNow
+                });
+            }
+            else
+            {
+                existing.TextContent = textContent;
+                existing.AudioFileUrl = audioFileUrl;
+                existing.DurationInSeconds = durationInSeconds;
+                existing.LocalAudioPath = localAudioPath;
+                existing.CachedAt = DateTime.UtcNow;
+                await db.UpdateAsync(existing);
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[LocalPOIDatabase] SaveAudioScript error: {ex.Message}");
+        }
+    }
+
+    public async Task<AudioScriptCacheEntry?> GetAudioScriptAsync(int poiId, string languageCode)
+    {
+        try
+        {
+            var db = await GetDbAsync();
+            var lang = string.IsNullOrWhiteSpace(languageCode)
+                ? "vi"
+                : languageCode.Trim().ToLowerInvariant();
+
+            return await db.Table<AudioScriptCacheEntry>()
+                .FirstOrDefaultAsync(x => x.PoiId == poiId && x.LanguageCode == lang);
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[LocalPOIDatabase] GetAudioScript error: {ex.Message}");
+            return null;
+        }
+    }
+
+    /// <summary>Lấy text script từ cache, fallback sang tiếng Việt nếu thiếu ngôn ngữ hiện tại.</summary>
+    public async Task<string?> GetCachedNarrationTextAsync(int poiId, string languageCode)
+    {
+        var script = await GetAudioScriptAsync(poiId, languageCode);
+        if (!string.IsNullOrWhiteSpace(script?.TextContent))
+            return script!.TextContent;
+
+        if (!string.Equals(languageCode, "vi", StringComparison.OrdinalIgnoreCase))
+        {
+            var viScript = await GetAudioScriptAsync(poiId, "vi");
+            if (!string.IsNullOrWhiteSpace(viScript?.TextContent))
+                return viScript!.TextContent;
+        }
+
+        return null;
+    }
+
+    public async Task<int> GetAudioScriptCountAsync()
+    {
+        try
+        {
+            var db = await GetDbAsync();
+            return await db.Table<AudioScriptCacheEntry>().CountAsync();
+        }
+        catch
+        {
+            return 0;
+        }
+    }
+
     /// <summary>Thời điểm cache cuối (null nếu chưa có cache).</summary>
     public async Task<DateTime?> GetCacheAgeAsync()
     {
@@ -93,6 +200,7 @@ public class LocalPOIDatabase
         {
             var db = await GetDbAsync();
             await db.DeleteAllAsync<PoiCacheEntry>();
+            await db.DeleteAllAsync<AudioScriptCacheEntry>();
         }
         catch (Exception ex)
         {
@@ -108,6 +216,29 @@ public class PoiCacheEntry
     public int Id { get; set; } = 1;
 
     public string JsonData { get; set; } = string.Empty;
+
+    public DateTime CachedAt { get; set; }
+}
+
+[SQLite.Table("audio_script_cache")]
+public class AudioScriptCacheEntry
+{
+    [PrimaryKey, AutoIncrement]
+    public int Id { get; set; }
+
+    [Indexed(Name = "IX_AudioScript_PoiLang", Order = 1, Unique = true)]
+    public int PoiId { get; set; }
+
+    [Indexed(Name = "IX_AudioScript_PoiLang", Order = 2, Unique = true)]
+    public string LanguageCode { get; set; } = "vi";
+
+    public string TextContent { get; set; } = string.Empty;
+
+    public string? AudioFileUrl { get; set; }
+
+    public int? DurationInSeconds { get; set; }
+
+    public string? LocalAudioPath { get; set; }
 
     public DateTime CachedAt { get; set; }
 }

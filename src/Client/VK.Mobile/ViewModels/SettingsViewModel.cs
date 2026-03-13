@@ -10,15 +10,21 @@ public partial class SettingsViewModel : ObservableObject
     private readonly StorageService _storageService;
     private readonly LocalPOIDatabase _localDb;
     private readonly ILocationService _locationService;
+    private readonly IOfflineContentService _offlineContentService;
     private static readonly string[] LanguageCodes = { "vi", "en", "ko" };
 
     public string[] LanguageDisplayNames { get; } = { "Tiếng Việt", "English", "한국어" };
 
-    public SettingsViewModel(StorageService storageService, LocalPOIDatabase localDb, ILocationService locationService)
+    public SettingsViewModel(
+        StorageService storageService,
+        LocalPOIDatabase localDb,
+        ILocationService locationService,
+        IOfflineContentService offlineContentService)
     {
         _storageService = storageService;
         _localDb = localDb;
         _locationService = locationService;
+        _offlineContentService = offlineContentService;
         LoadSettings();
 
         // Sync khi ngôn ngữ được đổi từ trang khác (ví dụ MainMapPage)
@@ -27,6 +33,8 @@ public partial class SettingsViewModel : ObservableObject
             _selectedLanguage = LocalizationResourceManager.Instance.CurrentLanguage;
             OnPropertyChanged(nameof(SelectedLanguageDisplayIndex));
         };
+
+        _ = RefreshOfflineStatusAsync();
     }
 
     [ObservableProperty]
@@ -43,6 +51,15 @@ public partial class SettingsViewModel : ObservableObject
 
     [ObservableProperty]
     private int _locationUpdateInterval = AppSettings.LocationUpdateIntervalSeconds;
+
+    [ObservableProperty]
+    private bool _isDownloadingOfflinePackage;
+
+    [ObservableProperty]
+    private bool _includeAudioFilesInOfflinePackage;
+
+    [ObservableProperty]
+    private string _offlinePackageStatus = "Chưa tải gói offline.";
 
     partial void OnNotificationsEnabledChanged(bool value)
         => Preferences.Set("NotificationsEnabled", value);
@@ -110,6 +127,51 @@ public partial class SettingsViewModel : ObservableObject
     }
 
     [RelayCommand]
+    async Task DownloadOfflinePackageAsync()
+    {
+        if (IsDownloadingOfflinePackage)
+            return;
+
+        try
+        {
+            IsDownloadingOfflinePackage = true;
+            OfflinePackageStatus = "Đang tải gói offline...";
+
+            var result = await _offlineContentService.DownloadOfflinePackageAsync(
+                SelectedLanguage,
+                IncludeAudioFilesInOfflinePackage);
+
+            OfflinePackageStatus = result.Message;
+            await Application.Current!.MainPage!.DisplayAlert(
+                result.Success ? "Offline" : "Lỗi",
+                result.Message,
+                "OK");
+        }
+        finally
+        {
+            IsDownloadingOfflinePackage = false;
+            await RefreshOfflineStatusAsync();
+        }
+    }
+
+    [RelayCommand]
+    async Task RefreshOfflineStatusAsync()
+    {
+        try
+        {
+            var status = await _offlineContentService.GetStatusAsync();
+            var last = status.LastSyncUtc?.ToLocalTime().ToString("dd/MM HH:mm") ?? "chưa sync";
+
+            OfflinePackageStatus =
+                $"POI: {status.PoiCount}, Script: {status.ScriptCount}, Audio file: {status.AudioFileCount}, Lần cuối: {last}";
+        }
+        catch
+        {
+            OfflinePackageStatus = "Không đọc được trạng thái offline.";
+        }
+    }
+
+    [RelayCommand]
     async Task OpenTtsSettings()
     {
 #if ANDROID
@@ -151,6 +213,7 @@ public partial class SettingsViewModel : ObservableObject
             // Xóa Preferences
             Preferences.Clear();
             LoadSettings(); // reload defaults
+            await RefreshOfflineStatusAsync();
 
             await Application.Current.MainPage.DisplayAlert(
                 LocalizationResourceManager.Instance["OK"],

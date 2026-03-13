@@ -15,6 +15,7 @@ public partial class MainMapViewModel : ObservableObject
     private readonly IApiService _apiService;
     private readonly ILocationService _locationService;
     private readonly ITTSService _ttsService;
+    private readonly IOfflineContentService _offlineContentService;
     private readonly StorageService _storageService;
     private readonly LocalPOIDatabase _localDb;
     private readonly ILogger<MainMapViewModel> _logger;
@@ -87,6 +88,7 @@ public partial class MainMapViewModel : ObservableObject
         IApiService apiService,
         ILocationService locationService,
         ITTSService ttsService,
+        IOfflineContentService offlineContentService,
         StorageService storageService,
         LocalPOIDatabase localDb,
         ILogger<MainMapViewModel> logger,
@@ -95,6 +97,7 @@ public partial class MainMapViewModel : ObservableObject
         _apiService = apiService;
         _locationService = locationService;
         _ttsService = ttsService;
+        _offlineContentService = offlineContentService;
         _storageService = storageService;
         _localDb = localDb;
         _logger = logger;
@@ -152,6 +155,9 @@ public partial class MainMapViewModel : ObservableObject
             {
                 _logger.LogWarning(ex, "Failed to load POIs");
             }
+
+            // Nếu đang online, đồng bộ cache offline nền (không block UI)
+            _ = _offlineContentService.AutoSyncWhenOnlineAsync(SelectedLanguage);
 
             // Start tracking (non-blocking)
             try
@@ -250,15 +256,31 @@ public partial class MainMapViewModel : ObservableObject
             {
                 var audioContent = await _apiService.GetAudioForPOIAsync(poi.Id, SelectedLanguage);
                 if (audioContent != null && !string.IsNullOrWhiteSpace(audioContent.TextContent))
+                {
                     audioText = audioContent.TextContent.Length > 500
                         ? audioContent.TextContent[..500]
                         : audioContent.TextContent;
+                    await _offlineContentService.CacheNarrationScriptAsync(
+                        poi.Id,
+                        audioContent.LanguageCode,
+                        audioContent.TextContent,
+                        audioContent.AudioFileUrl,
+                        audioContent.DurationInSeconds);
+                }
                 else
-                    audioText = BuildFallbackText(poi);
+                {
+                    var cached = await _offlineContentService.GetCachedNarrationTextAsync(poi.Id, SelectedLanguage);
+                    audioText = !string.IsNullOrWhiteSpace(cached)
+                        ? cached
+                        : BuildFallbackText(poi);
+                }
             }
             catch
             {
-                audioText = BuildFallbackText(poi);
+                var cached = await _offlineContentService.GetCachedNarrationTextAsync(poi.Id, SelectedLanguage);
+                audioText = !string.IsNullOrWhiteSpace(cached)
+                    ? cached
+                    : BuildFallbackText(poi);
             }
 
             // Mở NowPlayingPage dạng modal overlay
