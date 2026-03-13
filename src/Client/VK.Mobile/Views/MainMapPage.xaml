@@ -132,6 +132,23 @@
                 </Grid>
             </Frame>
 
+            <!-- Offline Map Banner -->
+            <Frame x:Name="OfflineModeBanner"
+                   VerticalOptions="Start"
+                   HorizontalOptions="Fill"
+                   Margin="8,56,8,0"
+                   Padding="8,6"
+                   BackgroundColor="#E8F5E9"
+                   BorderColor="#4CAF50"
+                   CornerRadius="8"
+                   HasShadow="False"
+                   IsVisible="False">
+                <Label Text="Offline map mode: chỉ hiển thị POI đã tải, nền bản đồ online có thể trống."
+                       FontSize="11"
+                       TextColor="#2E7D32"
+                       LineBreakMode="WordWrap"/>
+            </Frame>
+
             <!-- POI List Drawer (Bottom) -->
             <Frame VerticalOptions="End"
                    Margin="8,0,8,8"
