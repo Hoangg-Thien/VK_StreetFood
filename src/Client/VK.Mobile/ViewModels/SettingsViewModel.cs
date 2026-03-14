@@ -163,7 +163,7 @@ public partial class SettingsViewModel : ObservableObject
             var last = status.LastSyncUtc?.ToLocalTime().ToString("dd/MM HH:mm") ?? "chưa sync";
 
             OfflinePackageStatus =
-                $"POI: {status.PoiCount}, Script: {status.ScriptCount}, Audio file: {status.AudioFileCount}, Lần cuối: {last}";
+                $"POI: {status.PoiCount}, Script: {status.ScriptCount}, Lần cuối: {last}";
         }
         catch
         {
