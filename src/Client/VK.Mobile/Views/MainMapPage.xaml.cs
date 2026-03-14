@@ -49,9 +49,6 @@ public partial class MainMapPage : ContentPage
         {
             InitializeMap();
 
-            if (OfflineModeBanner != null)
-                OfflineModeBanner.IsVisible = IsOfflineMode;
-
             // Wire up collection / property changes TRƯỚC KHI load data
             // để đảm bảo mọi thay đổi đều trigger render trên map
             _viewModel.Pois.CollectionChanged += (_, _) => UpdatePOIMarkers();
