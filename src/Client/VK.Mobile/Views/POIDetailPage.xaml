@@ -126,13 +126,15 @@
 
                                           <StackLayout Padding="16,12,16,4"
                                                        Spacing="4">
-                                                 <Slider Minimum="0"
+                                                 <Slider x:Name="AudioSlider"
+                                                         Minimum="0"
                                                          Maximum="1"
                                                          Value="{Binding AudioPositionRatio}"
-                                                         IsEnabled="False"
                                                          ThumbColor="White"
                                                          MinimumTrackColor="White"
-                                                         MaximumTrackColor="#66FFFFFF"/>
+                                                         MaximumTrackColor="#66FFFFFF"
+                                                         DragStarted="OnSliderDragStarted"
+                                                         DragCompleted="OnSliderDragCompleted"/>
                                                  <Grid ColumnDefinitions="*,*">
                                                         <Label Grid.Column="0"
                                                                Text="{Binding AudioPositionText}"

@@ -55,6 +55,8 @@ public partial class POIDetailViewModel : ObservableObject, IQueryAttributable
     [ObservableProperty]
     private bool _hasTranscript;
 
+    public bool IsDragging { get; set; }
+
     public string AudioStatusText => IsPlayingAudio
         ? "⏸ Đang phát..."
         : (AudioPositionRatio > 0 ? "Đã tạm dừng" : "Nhấn ▶ để nghe");
@@ -107,6 +109,7 @@ public partial class POIDetailViewModel : ObservableObject, IQueryAttributable
         _progressTimer.Tick += (_, _) =>
         {
             if (!IsPlayingAudio) { StopProgressTimer(); return; }
+            if (IsDragging) return;
 
             if (_usingAudioService)
             {

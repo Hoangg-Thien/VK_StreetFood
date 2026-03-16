@@ -41,6 +41,12 @@ public partial class NowPlayingPage : ContentPage
         _viewModel.IsDragging = false;
     }
 
+    private async void OnPlaylistTapped(object sender, EventArgs e)
+    {
+        if (_viewModel.HasNextPoi)
+            await MainScrollView.ScrollToAsync(UpNextSection, ScrollToPosition.Start, animated: true);
+    }
+
     private async void OnAutoCloseRequested(object? sender, EventArgs e)
     {
         // Tự đóng khi geofence khác trigger

@@ -26,7 +26,6 @@
             ContentTemplate="{DataTemplate local:MainMapPage}">
             <ShellContent.Icon>
                 <FontImageSource Glyph="🗺️"
-                                 FontFamily="OpenSansRegular"
                                  Size="22"/>
             </ShellContent.Icon>
         </ShellContent>
@@ -39,7 +38,6 @@
             ContentTemplate="{DataTemplate local:MenuPage}">
             <ShellContent.Icon>
                 <FontImageSource Glyph="🍜"
-                                 FontFamily="OpenSansRegular"
                                  Size="22"/>
             </ShellContent.Icon>
         </ShellContent>
@@ -52,7 +50,6 @@
             ContentTemplate="{DataTemplate local:FavoritesPage}">
             <ShellContent.Icon>
                 <FontImageSource Glyph="❤️"
-                                 FontFamily="OpenSansRegular"
                                  Size="22"/>
             </ShellContent.Icon>
         </ShellContent>
@@ -65,7 +62,6 @@
             ContentTemplate="{DataTemplate local:ProfilePage}">
             <ShellContent.Icon>
                 <FontImageSource Glyph="👤"
-                                 FontFamily="OpenSansRegular"
                                  Size="22"/>
             </ShellContent.Icon>
         </ShellContent>
@@ -78,7 +74,6 @@
             ContentTemplate="{DataTemplate local:SettingsPage}">
             <ShellContent.Icon>
                 <FontImageSource Glyph="⚙️"
-                                 FontFamily="OpenSansRegular"
                                  Size="22"/>
             </ShellContent.Icon>
         </ShellContent>
