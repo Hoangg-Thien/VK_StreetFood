@@ -23,6 +23,8 @@ public interface IAudioService
     string? CurrentUrl { get; }
     int? CurrentPOIId { get; }
 
+    Task SeekAsync(double positionSeconds);
+
     event EventHandler? PlaybackCompleted;
     event EventHandler<string>? PlaybackError;
 }
@@ -237,6 +239,13 @@ public class AudioService : IAudioService
     {
         try { _currentPlayer?.Play(); }
         catch (Exception ex) { _logger.LogError(ex, "Error resuming"); }
+        return Task.CompletedTask;
+    }
+
+    public Task SeekAsync(double positionSeconds)
+    {
+        try { _currentPlayer?.Seek(positionSeconds); }
+        catch (Exception ex) { _logger.LogError(ex, "Error seeking"); }
         return Task.CompletedTask;
     }
 
