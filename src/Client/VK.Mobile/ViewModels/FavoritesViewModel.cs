@@ -60,11 +60,7 @@ public partial class FavoritesViewModel : ObservableObject
     [RelayCommand]
     async Task NavigateToPOI(POIModel poi)
     {
-        var parameters = new Dictionary<string, object>
-        {
-            { "POI", poi }
-        };
-        await Shell.Current.GoToAsync("POIDetail", parameters);
+        await Shell.Current.GoToAsync($"POIDetail?poiId={poi.Id}");
     }
 
     [RelayCommand]
