@@ -21,6 +21,7 @@
             <converters:NullToBoolConverter x:Key="NullToBoolConverter"/>
             <converters:StringNotEmptyConverter x:Key="StringNotEmptyConverter"/>
             <converters:GreaterThanZeroConverter x:Key="GreaterThanZeroConverter"/>
+            <converters:IntToBoolInvertedConverter x:Key="IntToBoolInvertedConverter"/>
         </ResourceDictionary>
     </Application.Resources>
 </Application>
