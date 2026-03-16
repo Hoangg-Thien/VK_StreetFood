@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using VK.Infrastructure.Data;
 using VK.API.Extensions;
+using VK.API.Services;
 
 // Force IPv4 so DNS doesn't resolve Supabase to IPv6 (unreachable on dev machines)
 AppContext.SetSwitch("System.Net.preferIPv4Stack", true);
@@ -13,6 +14,9 @@ builder.Services.AddDbContext<VKStreetFoodDbContext>(options =>
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
+
+// TTS generation service (Edge TTS — Microsoft Edge Read Aloud, miễn phí, không cần API key)
+builder.Services.AddScoped<ITtsGenerationService, TtsGenerationService>();
 
 // Add Swagger
 builder.Services.AddSwaggerGen(c =>

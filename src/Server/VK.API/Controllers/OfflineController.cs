@@ -56,7 +56,7 @@ public class OfflineController : ControllerBase
 
     [HttpPost("map-package")]
     [Consumes("multipart/form-data")]
-    public async Task<IActionResult> UploadMapPackage([FromForm] IFormFile file, CancellationToken ct)
+    public async Task<IActionResult> UploadMapPackage(IFormFile file, CancellationToken ct)
     {
         if (file == null || file.Length <= 0)
         {

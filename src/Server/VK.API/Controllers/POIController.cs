@@ -153,13 +153,16 @@ public class POIController : ControllerBase
             ImageUrl = FullUrl(poi.ImageUrl),
             AverageRating = poi.AverageRating,
             TotalRatings = poi.TotalRatings,
-            Category = poi.Category?.Name,
+            Category = poi.Category?.Name ?? string.Empty,
             Tags = poi.Tags.Select(t => t.Name).ToList(),
             Audio = audio != null ? new AudioContentDto
             {
                 AudioId = audio.Id,
                 LanguageCode = audio.LanguageCode,
-                TextContent = audio.TextContent
+                TextContent = audio.TextContent,
+                AudioFileUrl = audio.AudioFileUrl != null ? FullUrl(audio.AudioFileUrl) : null,
+                IsGenerated = audio.IsGenerated,
+                DurationSeconds = audio.DurationSeconds
             } : null,
             Vendors = poi.Vendors.Select(v => new VendorDetailDto
             {

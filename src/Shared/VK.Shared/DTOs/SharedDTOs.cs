@@ -7,6 +7,9 @@ public class AudioContentDto
     public int AudioId { get; set; }
     public string LanguageCode { get; set; } = string.Empty;
     public string TextContent { get; set; } = string.Empty;
+    public string? AudioFileUrl { get; set; }
+    public bool IsGenerated { get; set; }
+    public int? DurationSeconds { get; set; }
 }
 
 public class VendorDto
