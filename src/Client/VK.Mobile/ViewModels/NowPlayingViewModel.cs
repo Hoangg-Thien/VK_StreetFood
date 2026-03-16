@@ -267,6 +267,8 @@ public partial class NowPlayingViewModel : ObservableObject
         // Dừng audio hiện tại
         _ttsCts?.Cancel();
         await _ttsService.StopAsync();
+        if (_usingAudioService)
+            await _audioService.StopAsync();
         StopTimer();
 
         // Lấy audio text cho POI này

@@ -43,6 +43,7 @@ public class AudioService : IAudioService
     private readonly Queue<AudioQueueItem> _queue = new();
     private readonly SemaphoreSlim _lock = new(1, 1);
     private bool _isProcessingQueue;
+    private TaskCompletionSource<bool>? _currentPlayTcs;
 
     public event EventHandler? PlaybackCompleted;
     public event EventHandler<string>? PlaybackError;
@@ -152,6 +153,7 @@ public class AudioService : IAudioService
             CurrentPOIId = item.POIId;
 
             var tcs = new TaskCompletionSource<bool>();
+            _currentPlayTcs = tcs;
             _currentPlayer.PlaybackEnded += (s, e) =>
             {
                 PlaybackCompleted?.Invoke(this, EventArgs.Empty);
@@ -160,6 +162,7 @@ public class AudioService : IAudioService
 
             _currentPlayer.Play();
             await tcs.Task;
+            _currentPlayTcs = null;
         }
         catch (Exception ex)
         {
@@ -215,6 +218,10 @@ public class AudioService : IAudioService
     {
         try
         {
+            // Unblock any awaiting tcs in PlayItemAsync before stopping the player
+            _currentPlayTcs?.TrySetResult(false);
+            _currentPlayTcs = null;
+
             if (_currentPlayer != null)
             {
                 _currentPlayer.Stop();
