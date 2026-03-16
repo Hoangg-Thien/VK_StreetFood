@@ -227,7 +227,7 @@ public partial class SettingsViewModel : ObservableObject
     {
         bool confirm = await Application.Current!.MainPage!.DisplayAlert(
             LocalizationResourceManager.Instance["SettingsLogout"],
-            "Bạn có chắc muốn đăng xuất?",
+            "Bạn có chắc muốn thoát?",
             LocalizationResourceManager.Instance["SettingsLogout"],
             LocalizationResourceManager.Instance["Cancel"]);
 

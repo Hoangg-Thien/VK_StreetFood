@@ -157,7 +157,7 @@
     <value> Tài khoản</value>
   </data>
   <data name="SettingsLogout" xml:space="preserve">
-    <value>Đăng xuất</value>
+    <value>Thoát ứng dụng</value>
   </data>
 
   <!-- Favorites Page -->

@@ -113,7 +113,7 @@
     <value> Account</value>
   </data>
   <data name="SettingsLogout" xml:space="preserve">
-    <value>Logout</value>
+    <value>Exit</value>
   </data>
 
   <!-- Favorites Page -->
