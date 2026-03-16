@@ -127,6 +127,46 @@
                                    </Grid>
                             </Frame>
 
+                            <!-- Visit History / Analytics -->
+                            <Frame Padding="0"
+                                   BackgroundColor="{StaticResource CardBackground}"
+                                   BorderColor="Transparent"
+                                   CornerRadius="12"
+                                   Margin="0,0,0,12">
+                                   <Frame.GestureRecognizers>
+                                          <TapGestureRecognizer Command="{Binding NavigateToAnalyticsCommand}"/>
+                                   </Frame.GestureRecognizers>
+                                   <Grid ColumnDefinitions="Auto,*,Auto"
+                                         Padding="16">
+                                          <Border Grid.Column="0"
+                                                  StrokeShape="RoundRectangle 10"
+                                                  BackgroundColor="{StaticResource Info}"
+                                                  WidthRequest="44"
+                                                  HeightRequest="44">
+                                                 <Label Text="📊"
+                                                        FontSize="20"
+                                                        HorizontalOptions="Center"
+                                                        VerticalOptions="Center"/>
+                                          </Border>
+                                          <VerticalStackLayout Grid.Column="1"
+                                                               VerticalOptions="Center"
+                                                               Padding="12,0,0,0">
+                                                 <Label Text="{Binding Source={x:Static loc:LocalizationResourceManager.Instance}, Path=[ProfileVisitHistory]}"
+                                                        FontSize="16"
+                                                        FontAttributes="Bold"
+                                                        TextColor="{StaticResource TextPrimary}"/>
+                                                 <Label Text="{Binding Source={x:Static loc:LocalizationResourceManager.Instance}, Path=[ProfileVisitHistoryDesc]}"
+                                                        FontSize="12"
+                                                        TextColor="{StaticResource TextSecondary}"/>
+                                          </VerticalStackLayout>
+                                          <Label Grid.Column="2"
+                                                 Text="›"
+                                                 FontSize="24"
+                                                 TextColor="{StaticResource TextSecondary}"
+                                                 VerticalOptions="Center"/>
+                                   </Grid>
+                            </Frame>
+
                             <!-- Settings -->
                             <Frame Padding="0"
                                    BackgroundColor="{StaticResource CardBackground}"

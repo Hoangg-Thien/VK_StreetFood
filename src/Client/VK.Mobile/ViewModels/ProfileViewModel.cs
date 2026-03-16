@@ -52,6 +52,11 @@ public partial class ProfileViewModel : ObservableObject
                 // Load favorites count
                 var favorites = await _apiService.GetFavoritesAsync(touristId.Value);
                 TotalFavorites = favorites.Count;
+
+                // Load visit / activity stats
+                var stats = await _apiService.GetMyStatsAsync(touristId.Value);
+                if (stats != null)
+                    TotalVisits = stats.TotalVisits;
             }
         }
         catch (Exception ex)
@@ -74,6 +79,12 @@ public partial class ProfileViewModel : ObservableObject
     async Task NavigateToFavorites()
     {
         await Shell.Current.GoToAsync("///Favorites");
+    }
+
+    [RelayCommand]
+    async Task NavigateToAnalytics()
+    {
+        await Shell.Current.GoToAsync("analytics");
     }
 
     public string GetLanguageDisplayName(string code)

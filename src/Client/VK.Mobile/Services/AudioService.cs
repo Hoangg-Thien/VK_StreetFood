@@ -23,6 +23,8 @@ public interface IAudioService
     string? CurrentUrl { get; }
     int? CurrentPOIId { get; }
 
+    Task SeekAsync(double positionSeconds);
+
     event EventHandler? PlaybackCompleted;
     event EventHandler<string>? PlaybackError;
 }
@@ -41,6 +43,7 @@ public class AudioService : IAudioService
     private readonly Queue<AudioQueueItem> _queue = new();
     private readonly SemaphoreSlim _lock = new(1, 1);
     private bool _isProcessingQueue;
+    private TaskCompletionSource<bool>? _currentPlayTcs;
 
     public event EventHandler? PlaybackCompleted;
     public event EventHandler<string>? PlaybackError;
@@ -150,6 +153,7 @@ public class AudioService : IAudioService
             CurrentPOIId = item.POIId;
 
             var tcs = new TaskCompletionSource<bool>();
+            _currentPlayTcs = tcs;
             _currentPlayer.PlaybackEnded += (s, e) =>
             {
                 PlaybackCompleted?.Invoke(this, EventArgs.Empty);
@@ -158,6 +162,7 @@ public class AudioService : IAudioService
 
             _currentPlayer.Play();
             await tcs.Task;
+            _currentPlayTcs = null;
         }
         catch (Exception ex)
         {
@@ -213,6 +218,10 @@ public class AudioService : IAudioService
     {
         try
         {
+            // Unblock any awaiting tcs in PlayItemAsync before stopping the player
+            _currentPlayTcs?.TrySetResult(false);
+            _currentPlayTcs = null;
+
             if (_currentPlayer != null)
             {
                 _currentPlayer.Stop();
@@ -237,6 +246,13 @@ public class AudioService : IAudioService
     {
         try { _currentPlayer?.Play(); }
         catch (Exception ex) { _logger.LogError(ex, "Error resuming"); }
+        return Task.CompletedTask;
+    }
+
+    public Task SeekAsync(double positionSeconds)
+    {
+        try { _currentPlayer?.Seek(positionSeconds); }
+        catch (Exception ex) { _logger.LogError(ex, "Error seeking"); }
         return Task.CompletedTask;
     }
 

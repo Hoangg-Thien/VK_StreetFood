@@ -16,10 +16,15 @@ public partial class NowPlayingViewModel : ObservableObject
     public static void RequestAutoClose() => AutoCloseRequested?.Invoke(null, EventArgs.Empty);
 
     private readonly ITTSService _ttsService;
+    private readonly IAudioService _audioService;
     private readonly IApiService _apiService;
     private readonly IOfflineContentService _offlineContentService;
     private POIModel? _nextPoiModel;
     private List<POIModel> _allPois = new();
+
+    // Khi API trả về MP3 URL → dùng AudioService; ngược lại dùng TTS
+    private string _audioFileUrl = "";
+    private bool _usingAudioService;
 
     public void SetAllPois(IEnumerable<POIModel> pois) => _allPois = pois.ToList();
 
@@ -51,18 +56,21 @@ public partial class NowPlayingViewModel : ObservableObject
 
     public NowPlayingViewModel(
         ITTSService ttsService,
+        IAudioService audioService,
         IApiService apiService,
         IOfflineContentService offlineContentService)
     {
         _ttsService = ttsService;
+        _audioService = audioService;
         _apiService = apiService;
         _offlineContentService = offlineContentService;
+        _audioService.PlaybackCompleted += OnAudioServicePlaybackCompleted;
     }
 
     public void Initialize(int poiId, string poiName, string poiCategory, string poiImage,
                            string audioText, string language,
                            string poiAddress = "", string poiDistance = "",
-                           POIModel? nextPoiModel = null)
+                           POIModel? nextPoiModel = null, string audioFileUrl = "")
     {
         PoiId = poiId;
         PoiName = poiName;
@@ -104,6 +112,8 @@ public partial class NowPlayingViewModel : ObservableObject
         NextPoiDistance = FormatWalk(_nextPoiModel?.DistanceKm);
         HasNextPoi = _nextPoiModel != null;
         AudioText = audioText;
+        _audioFileUrl = audioFileUrl;
+        _usingAudioService = false; // reset; set to true in StartPlayingAsync if URL available
     }
 
     private static string FormatWalk(double? km) => km switch
@@ -135,17 +145,28 @@ public partial class NowPlayingViewModel : ObservableObject
     {
         _ttsCts?.Cancel();
         _ttsCts?.Dispose();
-        _ttsCts = new CancellationTokenSource();
+        _ttsCts = null;
         _elapsedSeconds = 0;
         IsPlaying = true;
         UpdateProgress();
         StartTimer();
 
-        // Fire TTS directly — do NOT use Task.Run (background thread breaks Android TTS)
-        var token = _ttsCts.Token;
-        var text = AudioText;
-        var lang = Language;
-        _ = _ttsService.SpeakTextAsync(text, lang, token);
+        if (!string.IsNullOrWhiteSpace(_audioFileUrl))
+        {
+            // Tier 1: phát file MP3 từ server
+            _usingAudioService = true;
+            _ = _audioService.PlayAudioAsync(_audioFileUrl, PoiId);
+        }
+        else
+        {
+            // Fallback: device TTS — path cũ không thay đổi
+            _usingAudioService = false;
+            _ttsCts = new CancellationTokenSource();
+            var token = _ttsCts.Token;
+            var text = AudioText;
+            var lang = Language;
+            _ = _ttsService.SpeakTextAsync(text, lang, token);
+        }
 
         return Task.CompletedTask;
     }
@@ -171,19 +192,31 @@ public partial class NowPlayingViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private void SkipForward()
+    private async Task SkipForwardAsync()
     {
         _elapsedSeconds = Math.Min(_totalSeconds, _elapsedSeconds + 5);
         UpdateProgress();
-        if (IsPlaying) RestartTtsFromCurrentPosition();
+        if (IsPlaying)
+        {
+            if (_usingAudioService)
+                await _audioService.SeekAsync(_elapsedSeconds);
+            else
+                RestartTtsFromCurrentPosition();
+        }
     }
 
     [RelayCommand]
-    private void SkipBack()
+    private async Task SkipBackAsync()
     {
         _elapsedSeconds = Math.Max(0, _elapsedSeconds - 5);
         UpdateProgress();
-        if (IsPlaying) RestartTtsFromCurrentPosition();
+        if (IsPlaying)
+        {
+            if (_usingAudioService)
+                await _audioService.SeekAsync(_elapsedSeconds);
+            else
+                RestartTtsFromCurrentPosition();
+        }
     }
 
     [RelayCommand]
@@ -191,19 +224,25 @@ public partial class NowPlayingViewModel : ObservableObject
     {
         if (IsPlaying)
         {
-            // Pause: stop TTS + timer, keep elapsed position (don't reset to 0)
-            _ttsCts?.Cancel();
-            await _ttsService.StopAsync();
+            if (_usingAudioService)
+                await _audioService.PauseAsync();
+            else
+            {
+                _ttsCts?.Cancel();
+                await _ttsService.StopAsync();
+            }
             IsPlaying = false;
             StopTimer();
         }
         else
         {
-            // Resume from current elapsed position
             IsPlaying = true;
             UpdateProgress();
             StartTimer();
-            RestartTtsFromCurrentPosition();
+            if (_usingAudioService)
+                await _audioService.ResumeAsync();
+            else
+                RestartTtsFromCurrentPosition();
         }
     }
 
@@ -211,8 +250,11 @@ public partial class NowPlayingViewModel : ObservableObject
     private async Task CloseAsync()
     {
         _ttsCts?.Cancel();
-        await _ttsService.StopAsync();
         StopTimer();
+        if (_usingAudioService)
+            await _audioService.StopAsync();
+        else
+            await _ttsService.StopAsync();
         await Shell.Current.Navigation.PopModalAsync();
     }
 
@@ -225,16 +267,20 @@ public partial class NowPlayingViewModel : ObservableObject
         // Dừng audio hiện tại
         _ttsCts?.Cancel();
         await _ttsService.StopAsync();
+        if (_usingAudioService)
+            await _audioService.StopAsync();
         StopTimer();
 
         // Lấy audio text cho POI này
         string audioText;
+        string nextAudioFileUrl = "";
         try
         {
             var audio = await _apiService.GetAudioForPOIAsync(next.Id, Language);
             if (!string.IsNullOrWhiteSpace(audio?.TextContent))
             {
                 audioText = audio!.TextContent!;
+                nextAudioFileUrl = audio.AudioFileUrl ?? "";
                 await _offlineContentService.CacheNarrationScriptAsync(
                     next.Id,
                     audio.LanguageCode,
@@ -264,7 +310,8 @@ public partial class NowPlayingViewModel : ObservableObject
                    next.Address ?? string.Empty,
                    next.DistanceKm.HasValue
                        ? (next.DistanceKm < 0.1 ? $"{next.DistanceKm.Value * 1000:F0}m away" : $"{next.DistanceKm.Value:F1} km away")
-                       : string.Empty);
+                       : string.Empty,
+                   audioFileUrl: nextAudioFileUrl);
 
         _elapsedSeconds = 0;
         await StartPlayingAsync();
@@ -278,13 +325,25 @@ public partial class NowPlayingViewModel : ObservableObject
         _timer.Tick += (_, _) =>
         {
             if (!IsPlaying || IsDragging) return;
-            _elapsedSeconds = Math.Min(_totalSeconds, _elapsedSeconds + 1);
+
+            if (_usingAudioService)
+            {
+                // Poll duration thực từ AudioService (có thể chưa có ngay khi download xong)
+                var realDur = (int)_audioService.Duration;
+                if (realDur > 0) _totalSeconds = realDur;
+                _elapsedSeconds = Math.Min(_totalSeconds, (int)_audioService.CurrentPosition);
+            }
+            else
+            {
+                _elapsedSeconds = Math.Min(_totalSeconds, _elapsedSeconds + 1);
+            }
+
             UpdateProgress();
             if (_elapsedSeconds >= _totalSeconds)
             {
                 IsPlaying = false;
                 StopTimer();
-                _ttsCts?.Cancel(); // dừng TTS nếu vẫn đang chạy
+                _ttsCts?.Cancel(); // no-op nếu AudioService path
             }
         };
         _timer.Start();
@@ -310,7 +369,13 @@ public partial class NowPlayingViewModel : ObservableObject
         ElapsedText = FormatTime(_elapsedSeconds);
         TotalText = FormatTime(_totalSeconds);
         // Don't set ProgressRatio here – slider already shows the correct value
-        if (IsPlaying) RestartTtsFromCurrentPosition();
+        if (IsPlaying)
+        {
+            if (_usingAudioService)
+                _ = _audioService.SeekAsync(_elapsedSeconds);
+            else
+                RestartTtsFromCurrentPosition();
+        }
     }
 
     public bool IsDragging { get; set; }
@@ -320,5 +385,14 @@ public partial class NowPlayingViewModel : ObservableObject
         var m = totalSec / 60;
         var s = totalSec % 60;
         return $"{m}:{s:D2}";
+    }
+
+    private void OnAudioServicePlaybackCompleted(object? sender, EventArgs e)
+    {
+        MainThread.BeginInvokeOnMainThread(() =>
+        {
+            IsPlaying = false;
+            StopTimer();
+        });
     }
 }

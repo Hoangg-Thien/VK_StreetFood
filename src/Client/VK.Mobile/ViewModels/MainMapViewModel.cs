@@ -261,6 +261,7 @@ public partial class MainMapViewModel : ObservableObject
 
             // Fetch nội dung audio đúng ngôn ngữ từ API
             string audioText;
+            string audioFileUrl = "";
             try
             {
                 var audioContent = await _apiService.GetAudioForPOIAsync(poi.Id, SelectedLanguage);
@@ -269,6 +270,7 @@ public partial class MainMapViewModel : ObservableObject
                     audioText = audioContent.TextContent.Length > 500
                         ? audioContent.TextContent[..500]
                         : audioContent.TextContent;
+                    audioFileUrl = audioContent.AudioFileUrl ?? "";
                     await _offlineContentService.CacheNarrationScriptAsync(
                         poi.Id,
                         audioContent.LanguageCode,
@@ -308,7 +310,8 @@ public partial class MainMapViewModel : ObservableObject
             vm.Initialize(
                 poi.Id, poi.Name ?? string.Empty, poi.CategoryName ?? string.Empty,
                 poi.ImageUrl ?? string.Empty, audioText, SelectedLanguage,
-                poi.Address ?? string.Empty, FormatDist(poi.DistanceKm));
+                poi.Address ?? string.Empty, FormatDist(poi.DistanceKm),
+                audioFileUrl: audioFileUrl);
             await Shell.Current.Navigation.PushModalAsync(page, animated: true);
         }
         catch (Exception ex)
