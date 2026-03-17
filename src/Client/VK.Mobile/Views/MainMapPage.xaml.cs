@@ -428,6 +428,13 @@ public partial class MainMapPage : ContentPage
 
         try
         {
+            // Sync ngôn ngữ nếu bị lệch (ví dụ từ WelcomePage đổi ngôn ngữ rồi navigate vào)
+            var currentLang = LocalizationResourceManager.Instance.CurrentLanguage;
+            if (!string.IsNullOrEmpty(currentLang) && currentLang != _viewModel.SelectedLanguage)
+            {
+                await _viewModel.ChangeLanguageCommand.ExecuteAsync(currentLang);
+            }
+
             // Restore map viewport nếu đã save trước đó
             if (_mapControl?.Map != null && !double.IsNaN(_savedCenterX))
             {

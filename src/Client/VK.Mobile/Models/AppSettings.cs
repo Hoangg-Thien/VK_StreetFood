@@ -13,7 +13,7 @@ public class AppSettings
     /// <summary>Sau khi khởi động app, bỏ qua trigger trong X ms đầu tiên (debounce).</summary>
     public const int GeofenceDebounceMs = 3_000;
     /// <summary>Mỗi POI chỉ trigger lại sau X phút (cooldown).</summary>
-    public const int GeofenceCooldownMinutes = 10;
+    public const int GeofenceCooldownMinutes = 5;
 
     // Map defaults – Phố Ẩm thực Vĩnh Khánh, Quận 4, TP.HCM
     public const double DefaultLatitude = 10.7619;

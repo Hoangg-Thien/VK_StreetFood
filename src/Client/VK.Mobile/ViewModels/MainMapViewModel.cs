@@ -377,9 +377,11 @@ public partial class MainMapViewModel : ObservableObject
         // Cập nhật LocalizationResourceManager → XAML tự cập nhật
         LocalizationResourceManager.Instance.SetLanguage(languageCode);
 
-        if (CurrentTourist != null)
+        if (CurrentTourist != null && !string.IsNullOrEmpty(CurrentTourist.DeviceId))
         {
             // Update tourist language preference via API if needed
+            CurrentTourist.PreferredLanguage = languageCode;
+            await _apiService.RegisterTouristAsync(CurrentTourist.DeviceId, languageCode);
         }
 
         // Reload POIs with new language
@@ -392,7 +394,10 @@ public partial class MainMapViewModel : ObservableObject
         {
             var touristId = await _storageService.GetTouristIdAsync();
             var deviceId = await _storageService.GetDeviceIdAsync();
-            var language = await _storageService.GetPreferredLanguageAsync() ?? "vi";
+            // Ưu tiên LocalizationResourceManager (dùng Preferences, đáng tin hơn SecureStorage)
+            var language = LocalizationResourceManager.Instance.CurrentLanguage
+                           ?? await _storageService.GetPreferredLanguageAsync()
+                           ?? "vi";
 
             SelectedLanguage = language;
 
