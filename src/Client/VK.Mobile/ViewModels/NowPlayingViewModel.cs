@@ -49,6 +49,9 @@ public partial class NowPlayingViewModel : ObservableObject
     [ObservableProperty] private string _nextPoiDistance = string.Empty;
     [ObservableProperty] private bool _hasNextPoi;
 
+    /// <summary>True khi server trả về ngôn ngữ fallback thay vì ngôn ngữ yêu cầu.</summary>
+    [ObservableProperty] private bool _isFallback;
+
     private IDispatcherTimer? _timer;
     private int _elapsedSeconds = 0;
     private int _totalSeconds = 0;
@@ -70,7 +73,8 @@ public partial class NowPlayingViewModel : ObservableObject
     public void Initialize(int poiId, string poiName, string poiCategory, string poiImage,
                            string audioText, string language,
                            string poiAddress = "", string poiDistance = "",
-                           POIModel? nextPoiModel = null, string audioFileUrl = "")
+                           POIModel? nextPoiModel = null, string audioFileUrl = "",
+                           bool isFallback = false)
     {
         PoiId = poiId;
         PoiName = poiName;
@@ -113,6 +117,7 @@ public partial class NowPlayingViewModel : ObservableObject
         HasNextPoi = _nextPoiModel != null;
         AudioText = audioText;
         _audioFileUrl = audioFileUrl;
+        IsFallback = isFallback;
         _usingAudioService = false; // reset; set to true in StartPlayingAsync if URL available
     }
 
@@ -291,6 +296,7 @@ public partial class NowPlayingViewModel : ObservableObject
         // Lấy audio text cho POI này
         string audioText;
         string nextAudioFileUrl = "";
+        bool nextIsFallback = false;
         try
         {
             var audio = await _apiService.GetAudioForPOIAsync(next.Id, Language);
@@ -298,6 +304,7 @@ public partial class NowPlayingViewModel : ObservableObject
             {
                 audioText = audio!.TextContent!;
                 nextAudioFileUrl = audio.AudioFileUrl ?? "";
+                nextIsFallback = audio.IsFallback;
                 await _offlineContentService.CacheNarrationScriptAsync(
                     next.Id,
                     audio.LanguageCode,
@@ -328,7 +335,8 @@ public partial class NowPlayingViewModel : ObservableObject
                    next.DistanceKm.HasValue
                        ? (next.DistanceKm < 0.1 ? $"{next.DistanceKm.Value * 1000:F0}m away" : $"{next.DistanceKm.Value:F1} km away")
                        : string.Empty,
-                   audioFileUrl: nextAudioFileUrl);
+                   audioFileUrl: nextAudioFileUrl,
+                   isFallback: nextIsFallback);
 
         _elapsedSeconds = 0;
         await StartPlayingAsync();

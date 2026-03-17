@@ -41,6 +41,12 @@ public interface IApiService
     Task<bool> TrackEventAsync(int? touristId, int poiId, string eventType, string? languageCode = null, int? durationSeconds = null);
     Task<TouristStatsModel?> GetMyStatsAsync(int touristId);
     Task<List<TopPOIModel>> GetTopPOIsAsync(int count = 10);
+
+    // Localization
+    /// <summary>Hotset: Pre-warm audio cho top N POI gần nhất khi mở app.</summary>
+    Task PrepareHotsetAsync(IEnumerable<int> poiIds, string languageCode = "vi", CancellationToken ct = default);
+    /// <summary>Warmup: Generate toàn bộ audio corpus còn thiếu dưới nền.</summary>
+    Task WarmupAsync(string languageCode = "vi", CancellationToken ct = default);
 }
 
 public class ApiService : IApiService
@@ -341,6 +347,32 @@ public class ApiService : IApiService
         {
             _logger.LogError(ex, "Error getting top POIs");
             return new List<TopPOIModel>();
+        }
+    }
+
+    public async Task PrepareHotsetAsync(IEnumerable<int> poiIds, string languageCode = "vi", CancellationToken ct = default)
+    {
+        try
+        {
+            var body = new { poiIds = poiIds.ToList(), languageCode };
+            await _httpClient.PostAsJsonAsync("localizations/prepare-hotset", body, ct);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogDebug(ex, "[ApiService] PrepareHotsetAsync failed (non-critical)");
+        }
+    }
+
+    public async Task WarmupAsync(string languageCode = "vi", CancellationToken ct = default)
+    {
+        try
+        {
+            var body = new { languageCode };
+            await _httpClient.PostAsJsonAsync("localizations/warmup", body, ct);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogDebug(ex, "[ApiService] WarmupAsync failed (non-critical)");
         }
     }
 }
