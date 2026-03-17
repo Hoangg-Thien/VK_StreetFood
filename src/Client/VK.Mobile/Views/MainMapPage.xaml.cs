@@ -428,11 +428,12 @@ public partial class MainMapPage : ContentPage
 
         try
         {
-            // Sync ngôn ngữ nếu bị lệch (ví dụ từ WelcomePage đổi ngôn ngữ rồi navigate vào)
+            // Sync ngôn ngữ nếu bị lệch (từ WelcomePage) — chỉ update property,
+            // không gọi API hay reload POI để tránh lag
             var currentLang = LocalizationResourceManager.Instance.CurrentLanguage;
             if (!string.IsNullOrEmpty(currentLang) && currentLang != _viewModel.SelectedLanguage)
             {
-                await _viewModel.ChangeLanguageCommand.ExecuteAsync(currentLang);
+                _viewModel.SelectedLanguage = currentLang;
             }
 
             // Restore map viewport nếu đã save trước đó
