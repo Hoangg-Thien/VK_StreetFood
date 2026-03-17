@@ -29,6 +29,11 @@ public interface IApiService
     // Audio
     Task<AudioContentResult?> GetAudioForPOIAsync(int poiId, string languageCode = "vi");
 
+    /// <summary>
+    /// Tier 2: On-demand TTS — server tự generate MP3 nếu chưa có, trả về URL để play.
+    /// </summary>
+    Task<AudioContentResult?> RequestOnDemandTtsAsync(int poiId, string languageCode = "vi", CancellationToken ct = default);
+
     // Rating
     Task<bool> SubmitRatingAsync(int touristId, int poiId, int rating, string? comment = null);
 
@@ -178,6 +183,23 @@ public class ApiService : IApiService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error getting audio for POI {Id}", poiId);
+            return null;
+        }
+    }
+
+    public async Task<AudioContentResult?> RequestOnDemandTtsAsync(
+        int poiId, string languageCode = "vi", CancellationToken ct = default)
+    {
+        try
+        {
+            var request = new { poiId, languageCode };
+            var response = await _httpClient.PostAsJsonAsync("audio/tts", request, ct);
+            if (!response.IsSuccessStatusCode) return null;
+            return await response.Content.ReadFromJsonAsync<AudioContentResult>(_jsonOptions, ct);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "[ApiService] On-demand TTS failed for POI {Id}", poiId);
             return null;
         }
     }
