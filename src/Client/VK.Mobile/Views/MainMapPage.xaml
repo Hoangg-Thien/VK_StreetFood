@@ -32,8 +32,7 @@
                     TextColor="White"
                     TitleColor="White"
                     WidthRequest="130"
-                    Margin="10,0"
-                    SelectedIndexChanged="OnLanguageChanged">
+                    Margin="10,0">
                 <Picker.ItemsSource>
                     <x:Array Type="{x:Type x:String}">
                         <x:String>Tiếng Việt</x:String>

@@ -89,9 +89,8 @@ public partial class WelcomeViewModel : ObservableObject
     [RelayCommand]
     async Task GetStarted()
     {
-        // Fire-and-forget: storage write không cần block navigation
-        // LocalizationResourceManager đã set ngôn ngữ rồi, lưu storage chỉ để persist restart
-        _ = _storageService.SetPreferredLanguageAsync(SelectedLanguage);
+        // Language đã được lưu bởi LocalizationResourceManager.SetLanguage (dùng Preferences)
+        // ngay khi SelectLanguage được gọi → không cần lưu SecureStorage nữa
         await Shell.Current.GoToAsync("//MainMap");
     }
 }

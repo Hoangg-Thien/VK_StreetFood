@@ -389,15 +389,6 @@ public partial class MainMapPage : ContentPage
         }
     }
 
-    private async void OnLanguageChanged(object sender, EventArgs e)
-    {
-        if (sender is Picker picker && picker.SelectedIndex >= 0)
-        {
-            var langCode = AppSettings.SupportedLanguages[picker.SelectedIndex];
-            await _viewModel.ChangeLanguageCommand.ExecuteAsync(langCode);
-        }
-    }
-
     private void OnZoomInClicked(object? sender, EventArgs e)
     {
         if (_mapControl?.Map?.Navigator == null) return;
