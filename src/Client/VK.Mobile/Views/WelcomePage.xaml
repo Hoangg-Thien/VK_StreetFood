@@ -12,19 +12,19 @@
         <BoxView>
             <BoxView.Background>
                 <LinearGradientBrush StartPoint="0,0"
-                        EndPoint="1,1">
+                                     EndPoint="1,1">
                     <GradientStop Color="#FFF27A4F"
-                            Offset="0.0"/>
+                                  Offset="0.0"/>
                     <GradientStop Color="#FFF27A4F"
-                            Offset="1.0"/>
+                                  Offset="1.0"/>
                 </LinearGradientBrush>
             </BoxView.Background>
         </BoxView>
 
         <!-- Content -->
         <VerticalStackLayout VerticalOptions="Center"
-                Padding="40"
-                Spacing="30">
+                             Padding="40"
+                             Spacing="30">
 
             <!-- App Icon/Logo -->
             <Border StrokeShape="RoundRectangle 80"
@@ -47,19 +47,57 @@
                    HorizontalTextAlignment="Center"/>
 
             <!-- Tagline -->
-            <Label Text="Khám phá ẩm thực đường phố Sài Gòn"
+            <Label Text="{Binding Tagline}"
                    FontSize="18"
                    TextColor="White"
                    Opacity="0.9"
                    HorizontalTextAlignment="Center"/>
 
+            <!-- Language Selection -->
+            <HorizontalStackLayout HorizontalOptions="Center"
+                                   Spacing="8">
+                <Button Text="Tiếng Việt"
+                        Command="{Binding SelectLanguageCommand}"
+                        CommandParameter="vi"
+                        BackgroundColor="{Binding ViBackground}"
+                        TextColor="{Binding ViTextColor}"
+                        FontSize="13"
+                        HeightRequest="40"
+                        CornerRadius="20"
+                        Padding="14,0"
+                        BorderColor="White"
+                        BorderWidth="1.5"/>
+                <Button Text="English"
+                        Command="{Binding SelectLanguageCommand}"
+                        CommandParameter="en"
+                        BackgroundColor="{Binding EnBackground}"
+                        TextColor="{Binding EnTextColor}"
+                        FontSize="13"
+                        HeightRequest="40"
+                        CornerRadius="20"
+                        Padding="14,0"
+                        BorderColor="White"
+                        BorderWidth="1.5"/>
+                <Button Text="한국어"
+                        Command="{Binding SelectLanguageCommand}"
+                        CommandParameter="ko"
+                        BackgroundColor="{Binding KoBackground}"
+                        TextColor="{Binding KoTextColor}"
+                        FontSize="13"
+                        HeightRequest="40"
+                        CornerRadius="20"
+                        Padding="14,0"
+                        BorderColor="White"
+                        BorderWidth="1.5"/>
+            </HorizontalStackLayout>
+
             <!-- Features List -->
             <VerticalStackLayout Spacing="15"
-                    Margin="0,20,0,0">
+                                 Margin="0,20,0,0">
                 <HorizontalStackLayout Spacing="15">
                     <Label Text="📍"
-                            FontSize="24"/>
-                    <Label Text="Tìm kiếm địa điểm gần bạn"
+                           FontSize="24"/>
+                    <Label Text="{Binding FeatureLocation}"
                            TextColor="White"
                            FontSize="16"
                            VerticalOptions="Center"/>
@@ -67,8 +105,8 @@
 
                 <HorizontalStackLayout Spacing="15">
                     <Label Text="🎧"
-                            FontSize="24"/>
-                    <Label Text="Nghe hướng dẫn đa ngôn ngữ"
+                           FontSize="24"/>
+                    <Label Text="{Binding FeatureAudio}"
                            TextColor="White"
                            FontSize="16"
                            VerticalOptions="Center"/>
@@ -76,8 +114,8 @@
 
                 <HorizontalStackLayout Spacing="15">
                     <Label Text="📱"
-                            FontSize="24"/>
-                    <Label Text="Quét QR để nhận ưu đãi"
+                           FontSize="24"/>
+                    <Label Text="{Binding FeatureQR}"
                            TextColor="White"
                            FontSize="16"
                            VerticalOptions="Center"/>
@@ -85,7 +123,7 @@
             </VerticalStackLayout>
 
             <!-- Get Started Button -->
-            <Button Text="BẮT ĐẦU KHÁM PHÁ"
+            <Button Text="{Binding GetStartedText}"
                     Command="{Binding GetStartedCommand}"
                     BackgroundColor="White"
                     TextColor="{StaticResource Primary}"
