@@ -141,7 +141,7 @@ public partial class NowPlayingViewModel : ObservableObject
         TotalText = FormatTime(_totalSeconds);
     }
 
-    public Task StartPlayingAsync()
+    public async Task StartPlayingAsync()
     {
         _ttsCts?.Cancel();
         _ttsCts?.Dispose();
@@ -149,26 +149,43 @@ public partial class NowPlayingViewModel : ObservableObject
         _elapsedSeconds = 0;
         IsPlaying = true;
         UpdateProgress();
-        StartTimer();
 
+        // Tier 1: Pre-generated MP3 → play immediately
         if (!string.IsNullOrWhiteSpace(_audioFileUrl))
         {
-            // Tier 1: phát file MP3 từ server
             _usingAudioService = true;
+            StartTimer();
             _ = _audioService.PlayAudioAsync(_audioFileUrl, PoiId);
-        }
-        else
-        {
-            // Fallback: device TTS — path cũ không thay đổi
-            _usingAudioService = false;
-            _ttsCts = new CancellationTokenSource();
-            var token = _ttsCts.Token;
-            var text = AudioText;
-            var lang = Language;
-            _ = _ttsService.SpeakTextAsync(text, lang, token);
+            return;
         }
 
-        return Task.CompletedTask;
+        // Tier 2: On-demand TTS — server generates MP3 on demand (deduped via AudioTaskManager)
+        if (Connectivity.NetworkAccess == NetworkAccess.Internet)
+        {
+            try
+            {
+                using var tier2Cts = new CancellationTokenSource(TimeSpan.FromSeconds(8));
+                var onDemand = await _apiService.RequestOnDemandTtsAsync(PoiId, Language, tier2Cts.Token);
+                if (!string.IsNullOrWhiteSpace(onDemand?.AudioFileUrl))
+                {
+                    _audioFileUrl = onDemand.AudioFileUrl;
+                    _usingAudioService = true;
+                    StartTimer();
+                    _ = _audioService.PlayAudioAsync(_audioFileUrl, PoiId);
+                    return;
+                }
+            }
+            catch { /* fall through to device TTS */ }
+        }
+
+        // Tier 4: Device TTS (local fallback — works offline)
+        _usingAudioService = false;
+        _ttsCts = new CancellationTokenSource();
+        var token = _ttsCts.Token;
+        var text = AudioText;
+        var lang = Language;
+        StartTimer();
+        _ = _ttsService.SpeakTextAsync(text, lang, token);
     }
 
     // Returns the sub-text starting at the word corresponding to startSeconds

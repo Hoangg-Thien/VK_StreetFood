@@ -351,6 +351,65 @@ public class TouristController : ControllerBase
         return Ok(new { success = true, message = "Cảm ơn đánh giá của bạn!" });
     }
 
+    /// <summary>
+    /// Thống kê hoạt động của tourist: số lượt thăm, audio play, ngôn ngữ yêu thích…
+    /// </summary>
+    [HttpGet("{touristId}/stats")]
+    public async Task<ActionResult> GetStats(int touristId)
+    {
+        var tourist = await _context.Tourists
+            .FirstOrDefaultAsync(t => t.Id == touristId && !t.IsDeleted);
+
+        if (tourist == null)
+            return NotFound(new { message = "Tourist không tồn tại" });
+
+        // Lấy tất cả analytics events của tourist này
+        var events = await _context.Analytics
+            .Where(a => a.TouristId == touristId)
+            .ToListAsync();
+
+        // Audio minutes: tổng DurationSeconds của audio_complete events
+        var totalAudioSeconds = events
+            .Where(a => a.EventType == "audio_complete" && a.DurationSeconds > 0)
+            .Sum(a => a.DurationSeconds ?? 0);
+
+        // POI được thăm nhiều nhất
+        var mostVisitedPoiId = await _context.VisitLogs
+            .Where(v => v.TouristId == touristId)
+            .GroupBy(v => v.PointOfInterestId)
+            .OrderByDescending(g => g.Count())
+            .Select(g => (int?)g.Key)
+            .FirstOrDefaultAsync();
+
+        string? mostVisitedPoiName = null;
+        if (mostVisitedPoiId.HasValue)
+        {
+            mostVisitedPoiName = await _context.PointsOfInterest
+                .Where(p => p.Id == mostVisitedPoiId.Value)
+                .Select(p => p.Name)
+                .FirstOrDefaultAsync();
+        }
+
+        // Ngôn ngữ yêu thích (xuất hiện nhiều nhất trong analytics)
+        var favoriteLanguage = events
+            .Where(a => !string.IsNullOrEmpty(a.LanguageCode))
+            .GroupBy(a => a.LanguageCode)
+            .OrderByDescending(g => g.Count())
+            .Select(g => g.Key)
+            .FirstOrDefault() ?? tourist.PreferredLanguage;
+
+        return Ok(new
+        {
+            totalVisits = tourist.TotalVisits,
+            totalAudioPlays = events.Count(a => a.EventType == "audio_play"),
+            totalQRScans = events.Count(a => a.EventType == "qr_scan"),
+            totalGeofenceEnters = events.Count(a => a.EventType == "geofence_enter"),
+            totalAudioMinutes = Math.Round(totalAudioSeconds / 60.0, 1),
+            mostVisitedPOI = mostVisitedPoiName,
+            favoriteLanguage = favoriteLanguage
+        });
+    }
+
     private async Task<List<PointOfInterest>> CheckNearbyPOIs(double? latitude, double? longitude)
     {
         if (!latitude.HasValue || !longitude.HasValue)

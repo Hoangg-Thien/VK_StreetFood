@@ -18,6 +18,9 @@ builder.Services.AddEndpointsApiExplorer();
 // TTS generation service (Edge TTS — Microsoft Edge Read Aloud, miễn phí, không cần API key)
 builder.Services.AddScoped<ITtsGenerationService, TtsGenerationService>();
 
+// AudioTaskManager: singleton — deduplicates concurrent on-demand TTS requests
+builder.Services.AddSingleton<IAudioTaskManager, AudioTaskManager>();
+
 // Add Swagger
 builder.Services.AddSwaggerGen(c =>
 {

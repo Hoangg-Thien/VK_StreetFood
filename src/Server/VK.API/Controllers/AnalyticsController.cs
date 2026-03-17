@@ -160,6 +160,61 @@ public class AnalyticsController : ControllerBase
 
         return Ok(dashboard);
     }
+
+    /// <summary>
+    /// Top N POIs theo lượt visit + audio play.
+    /// Được gọi bởi MAUI app (AnalyticsPage) để hiển thị bảng xếp hạng.
+    /// </summary>
+    [HttpGet("top-pois")]
+    public async Task<ActionResult> GetTopPOIs([FromQuery] int count = 10)
+    {
+        // Lấy danh sách POI cùng category
+        var pois = await _context.PointsOfInterest
+            .Include(p => p.Category)
+            .Where(p => !p.IsDeleted && p.IsActive)
+            .ToListAsync();
+
+        // Visit counts per POI (từ VisitLogs)
+        var visitCounts = await _context.VisitLogs
+            .GroupBy(v => v.PointOfInterestId)
+            .Select(g => new { PoiId = g.Key, Count = g.Count() })
+            .ToDictionaryAsync(x => x.PoiId, x => x.Count);
+
+        // Audio play counts per POI
+        var audioCounts = await _context.Analytics
+            .Where(a => a.EventType == "audio_play")
+            .GroupBy(a => a.PointOfInterestId)
+            .Select(g => new { PoiId = g.Key, Count = g.Count() })
+            .ToDictionaryAsync(x => x.PoiId, x => x.Count);
+
+        // Average listen duration (phút) per POI
+        var avgListenMinutes = await _context.Analytics
+            .Where(a => a.EventType == "audio_complete" && a.DurationSeconds > 0)
+            .GroupBy(a => a.PointOfInterestId)
+            .Select(g => new
+            {
+                PoiId = g.Key,
+                AvgMin = g.Average(a => (double)a.DurationSeconds!.Value) / 60.0
+            })
+            .ToDictionaryAsync(x => x.PoiId, x => x.AvgMin);
+
+        var result = pois
+            .Select(p => new
+            {
+                id = p.Id,
+                name = p.Name,
+                categoryName = p.Category?.Name,
+                visitCount = visitCounts.GetValueOrDefault(p.Id, 0),
+                audioPlayCount = audioCounts.GetValueOrDefault(p.Id, 0),
+                averageRating = (double)p.AverageRating,
+                averageListenMinutes = Math.Round(avgListenMinutes.GetValueOrDefault(p.Id, 0.0), 2)
+            })
+            .OrderByDescending(p => p.visitCount + p.audioPlayCount)
+            .Take(count)
+            .ToList();
+
+        return Ok(result);
+    }
 }
 
 public class RecordEventRequest
