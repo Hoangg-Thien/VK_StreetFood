@@ -243,6 +243,81 @@
             </Frame>
         </Grid>
 
+        <!-- POI Bottom Card (hiện khi bấm marker trên map) -->
+        <Grid x:Name="POIBottomCard" Grid.Row="0" Grid.RowSpan="3" IsVisible="False">
+            <!-- Backdrop trong suốt: bấm ngoài card để đóng -->
+            <BoxView BackgroundColor="Transparent" VerticalOptions="Fill">
+                <BoxView.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OnCardBackdropTapped"/>
+                </BoxView.GestureRecognizers>
+            </BoxView>
+
+            <!-- Card nổi ở phía dưới -->
+            <Frame Margin="10,0,10,14" Padding="14" CornerRadius="16"
+                   BackgroundColor="White" HasShadow="True" VerticalOptions="End">
+                <Grid RowDefinitions="Auto,Auto" RowSpacing="14">
+
+                    <!-- Hàng 1: Ảnh + thông tin + nút đóng -->
+                    <Grid Grid.Row="0" ColumnDefinitions="84,*,36" ColumnSpacing="12">
+
+                        <!-- Ảnh thumbnail -->
+                        <Border Grid.Column="0" StrokeShape="RoundRectangle 12"
+                                Stroke="Transparent" BackgroundColor="#F0F0F0"
+                                WidthRequest="84" HeightRequest="84">
+                            <Image x:Name="POICardImage" Aspect="AspectFill"
+                                   WidthRequest="84" HeightRequest="84"/>
+                        </Border>
+
+                        <!-- Tên + loại + khoảng cách -->
+                        <VerticalStackLayout Grid.Column="1" VerticalOptions="Center" Spacing="3">
+                            <Label x:Name="POICardName"
+                                   FontSize="15" FontAttributes="Bold"
+                                   TextColor="#1A1A1A"
+                                   LineBreakMode="WordWrap" MaxLines="2"/>
+                            <Label x:Name="POICardCategory"
+                                   FontSize="12" TextColor="#888"/>
+                            <Label x:Name="POICardDistance"
+                                   FontSize="13" TextColor="#FF5722" FontAttributes="Bold"/>
+                        </VerticalStackLayout>
+
+                        <!-- Nút đóng -->
+                        <Button Grid.Column="2" Text="✕" FontSize="14"
+                                TextColor="#999" BackgroundColor="Transparent"
+                                WidthRequest="36" HeightRequest="36"
+                                Padding="0" VerticalOptions="Start"
+                                Clicked="OnCardCloseTapped"/>
+                    </Grid>
+
+                    <!-- Hàng 2: Nút hành động -->
+                    <Grid Grid.Row="1" RowDefinitions="Auto,Auto" RowSpacing="8">
+                        <!-- Nghe thuyết minh: nút chính toàn chiều rộng -->
+                        <Button Grid.Row="0"
+                                Text="🔊 Nghe thuyết minh"
+                                FontSize="14" FontAttributes="Bold"
+                                BackgroundColor="#FF5722" TextColor="White"
+                                CornerRadius="10" HeightRequest="44"
+                                Clicked="OnPOIListenClicked"/>
+                        <!-- Xem chi tiết + Chỉ đường -->
+                        <Grid Grid.Row="1" ColumnDefinitions="*,*" ColumnSpacing="10">
+                            <Button Grid.Column="0"
+                                    Text="Xem chi tiết"
+                                    FontSize="13"
+                                    BackgroundColor="#FFF3E0" TextColor="#FF5722"
+                                    CornerRadius="10" HeightRequest="40"
+                                    Clicked="OnPOIDetailClicked"/>
+                            <Button Grid.Column="1"
+                                    Text="Chỉ đường"
+                                    FontSize="13"
+                                    BackgroundColor="#E3F2FD" TextColor="#1565C0"
+                                    CornerRadius="10" HeightRequest="40"
+                                    Clicked="OnPOIDirectionsClicked"/>
+                        </Grid>
+                    </Grid>
+
+                </Grid>
+            </Frame>
+        </Grid>
+
     </Grid>
 
 </ContentPage>

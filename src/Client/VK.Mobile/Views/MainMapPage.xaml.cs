@@ -23,6 +23,7 @@ public partial class MainMapPage : ContentPage
     private WritableLayer? _poiLayer;
     private WritableLayer? _locationLayer;
     private bool _hasCenteredOnUser = false;
+    private POIModel? _selectedPoi;
     // Viewport save/restore on tab switch
     private double _savedCenterX = double.NaN;
     private double _savedCenterY = double.NaN;
@@ -329,7 +330,7 @@ public partial class MainMapPage : ContentPage
         });
     }
 
-    private async void MapControl_Info(object? sender, MapInfoEventArgs e)
+    private void MapControl_Info(object? sender, MapInfoEventArgs e)
     {
         if (_poiLayer == null || _mapControl == null) return;
 
@@ -360,32 +361,99 @@ public partial class MainMapPage : ContentPage
             {
                 var poi = _viewModel.Pois.FirstOrDefault(p => p.Id == closestId);
                 if (poi != null)
-                {
-                    // Show popup with audio test option
-                    var L = LocalizationResourceManager.Instance;
-                    var listen = L["POIActionListen"];
-                    var detail = L["POIActionDetail"];
-                    var action = await DisplayActionSheet(
-                        poi.Name,
-                        L["POIActionClose"],
-                        null,
-                        listen,
-                        detail);
-
-                    if (action == listen)
-                    {
-                        await _viewModel.TestAudioCommand.ExecuteAsync(poi);
-                    }
-                    else if (action == detail)
-                    {
-                        await _viewModel.POISelectedCommand.ExecuteAsync(poi);
-                    }
-                }
+                    MainThread.BeginInvokeOnMainThread(() => ShowPOIBottomCard(poi));
             }
         }
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"MapControl_Info error: {ex}");
+        }
+    }
+
+    private void ShowPOIBottomCard(POIModel poi)
+    {
+        _selectedPoi = poi;
+
+        POICardName.Text = poi.Name ?? string.Empty;
+        POICardCategory.Text = poi.CategoryName ?? string.Empty;
+
+        // Tính khoảng cách: dùng DistanceKm nếu đã có, không thì tính từ vị trí hiện tại
+        double? distKm = poi.DistanceKm > 0 ? poi.DistanceKm : null;
+        if (distKm == null && _viewModel.CurrentLocation is { } loc
+            && (poi.Latitude != 0 || poi.Longitude != 0))
+        {
+            distKm = ComputeDistanceKm(loc.Latitude, loc.Longitude, poi.Latitude, poi.Longitude);
+        }
+        POICardDistance.Text = FormatCardDistance(distKm);
+
+        // Ảnh POI
+        POICardImage.Source = !string.IsNullOrWhiteSpace(poi.ImageUrl)
+            ? ImageSource.FromUri(new Uri(poi.ImageUrl))
+            : "icon_food.png";
+
+        POIBottomCard.IsVisible = true;
+    }
+
+    private void HidePOIBottomCard()
+    {
+        POIBottomCard.IsVisible = false;
+        _selectedPoi = null;
+    }
+
+    private static string FormatCardDistance(double? distKm) => distKm switch
+    {
+        null or 0 => string.Empty,
+        < 0.1    => $"📍 {distKm.Value * 1000:F0}m",
+        _        => $"📍 {distKm.Value:F1} km"
+    };
+
+    private static double ComputeDistanceKm(double lat1, double lon1, double lat2, double lon2)
+    {
+        const double R = 6371;
+        var dLat = (lat2 - lat1) * Math.PI / 180;
+        var dLon = (lon2 - lon1) * Math.PI / 180;
+        var a = Math.Sin(dLat / 2) * Math.Sin(dLat / 2)
+                + Math.Cos(lat1 * Math.PI / 180) * Math.Cos(lat2 * Math.PI / 180)
+                * Math.Sin(dLon / 2) * Math.Sin(dLon / 2);
+        return R * 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
+    }
+
+    private void OnCardBackdropTapped(object? sender, TappedEventArgs e) => HidePOIBottomCard();
+    private void OnCardCloseTapped(object? sender, EventArgs e)          => HidePOIBottomCard();
+
+    private async void OnPOIListenClicked(object? sender, EventArgs e)
+    {
+        if (_selectedPoi == null) return;
+        var poi = _selectedPoi;
+        HidePOIBottomCard();
+        await _viewModel.TestAudioCommand.ExecuteAsync(poi);
+    }
+
+    private async void OnPOIDetailClicked(object? sender, EventArgs e)
+    {
+        if (_selectedPoi == null) return;
+        var poi = _selectedPoi;
+        HidePOIBottomCard();
+        await _viewModel.POISelectedCommand.ExecuteAsync(poi);
+    }
+
+    private async void OnPOIDirectionsClicked(object? sender, EventArgs e)
+    {
+        if (_selectedPoi == null || (_selectedPoi.Latitude == 0 && _selectedPoi.Longitude == 0)) return;
+        var lat = _selectedPoi.Latitude;
+        var lon = _selectedPoi.Longitude;
+        var name = Uri.EscapeDataString(_selectedPoi.Name ?? string.Empty);
+        HidePOIBottomCard();
+        try
+        {
+            // Mở Google Maps chỉ đường — dùng Launcher tránh xung đột namespace với Mapsui
+            var uri = new Uri($"https://www.google.com/maps/dir/?api=1&destination={lat},{lon}&destination_place_id={name}");
+            await Launcher.OpenAsync(uri);
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Directions error: {ex}");
+            await DisplayAlert("Lỗi", "Không thể mở ứng dụng bản đồ.", "Đóng");
         }
     }
 
