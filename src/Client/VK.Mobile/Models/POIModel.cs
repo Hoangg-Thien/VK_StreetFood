@@ -76,6 +76,10 @@ public class AudioContentResult
 
     [JsonPropertyName("isGenerated")]
     public bool IsGenerated { get; set; }
+
+    /// <summary>True khi server trả về ngôn ngữ fallback thay vì ngôn ngữ yêu cầu.</summary>
+    [JsonPropertyName("isFallback")]
+    public bool IsFallback { get; set; }
 }
 
 public class POIDetailModel : POIModel

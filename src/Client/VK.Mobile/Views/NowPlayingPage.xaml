@@ -108,6 +108,27 @@
                        IsVisible="{Binding HasDistance}"/>
             </HorizontalStackLayout>
 
+            <!-- ── FALLBACK BADGE (hiển thị khi audio là tiếng Việt thay vì ngôn ngữ yêu cầu) ── -->
+            <Border IsVisible="{Binding IsFallback}"
+                    BackgroundColor="#FFF3E0"
+                    StrokeShape="RoundRectangle 8"
+                    Stroke="#FFB74D"
+                    StrokeThickness="1"
+                    Padding="10,5"
+                    Margin="22,8,22,0"
+                    HorizontalOptions="Start">
+                <HorizontalStackLayout Spacing="5">
+                    <Label Text="&#x26A0;"
+                           FontSize="12"
+                           TextColor="#E65100"
+                           VerticalOptions="Center"/>
+                    <Label Text="Đang phát tiếng Việt (chưa có bản dịch)"
+                           FontSize="12"
+                           TextColor="#E65100"
+                           VerticalOptions="Center"/>
+                </HorizontalStackLayout>
+            </Border>
+
             <!-- ── PROGRESS BAR + TIME ── -->
             <Slider x:Name="ProgressSlider"
                     Minimum="0"

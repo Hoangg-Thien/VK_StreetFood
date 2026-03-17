@@ -66,11 +66,12 @@ public class AudioController : ControllerBase
                                 ? $"{Request.Scheme}://{Request.Host}{audio.AudioFileUrl}"
                                 : null,
             isGenerated = audio.IsGenerated,
-            durationSeconds = audio.DurationSeconds
+            durationSeconds = audio.DurationSeconds,
+            isFallback = !audio.LanguageCode.Equals(
+                languageCode.Trim().ToLowerInvariant(), StringComparison.OrdinalIgnoreCase)
         });
     }
 
-    /// <summary>Danh sách ngôn ngữ có sẵn cho POI.</summary>
     [HttpGet("poi/{poiId}/languages")]
     public async Task<ActionResult> GetAvailableLanguages(int poiId)
     {
@@ -139,15 +140,16 @@ public class AudioController : ControllerBase
 
         return Ok(new
         {
-            audioId         = audio.Id,
-            poiId           = audio.PointOfInterestId,
-            languageCode    = audio.LanguageCode,
-            textContent     = audio.TextContent,
-            audioFileUrl    = audio.AudioFileUrl != null
+            audioId = audio.Id,
+            poiId = audio.PointOfInterestId,
+            languageCode = audio.LanguageCode,
+            textContent = audio.TextContent,
+            audioFileUrl = audio.AudioFileUrl != null
                                 ? $"{Request.Scheme}://{Request.Host}{audio.AudioFileUrl}"
                                 : null,
-            isGenerated     = audio.IsGenerated,
-            durationSeconds = audio.DurationSeconds
+            isGenerated = audio.IsGenerated,
+            durationSeconds = audio.DurationSeconds,
+            isFallback = !audio.LanguageCode.Equals(lang, StringComparison.OrdinalIgnoreCase)
         });
     }
 
@@ -222,7 +224,7 @@ public class AudioController : ControllerBase
         {
             summary = all,
             totalGenerated = all.Sum(x => x.generated),
-            totalMissing   = all.Sum(x => x.missing)
+            totalMissing = all.Sum(x => x.missing)
         });
     }
 }
