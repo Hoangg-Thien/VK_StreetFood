@@ -89,7 +89,9 @@ public partial class WelcomeViewModel : ObservableObject
     [RelayCommand]
     async Task GetStarted()
     {
-        await _storageService.SetPreferredLanguageAsync(SelectedLanguage);
+        // Fire-and-forget: storage write không cần block navigation
+        // LocalizationResourceManager đã set ngôn ngữ rồi, lưu storage chỉ để persist restart
+        _ = _storageService.SetPreferredLanguageAsync(SelectedLanguage);
         await Shell.Current.GoToAsync("//MainMap");
     }
 }

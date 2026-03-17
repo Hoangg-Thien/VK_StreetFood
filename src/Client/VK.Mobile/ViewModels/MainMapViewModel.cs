@@ -25,6 +25,7 @@ public partial class MainMapViewModel : ObservableObject
     private DateTime _trackingStartTime = DateTime.MaxValue;
     // Cooldown: theo dõi lần cuối mỗi POI được trigger
     private readonly Dictionary<int, DateTime> _geofenceLastTriggered = new();
+    private DateTime _lastServerLocationUpdate = DateTime.MinValue;
 
     [ObservableProperty]
     private ObservableCollection<POIModel> _pois = new();
@@ -466,10 +467,12 @@ public partial class MainMapViewModel : ObservableObject
         // Lưu vị trí ẩn danh để vẽ heatmap (không gắn với tourist ID)
         _storageService.AppendLocation(e.Location.Latitude, e.Location.Longitude);
 
-        // Update location on server
-        if (CurrentTourist != null)
+        // Update location trên server: rate-limit 30 giây/lần + fire-and-forget
+        // để không block geofence processing
+        if (CurrentTourist != null && (DateTime.UtcNow - _lastServerLocationUpdate).TotalSeconds >= 30)
         {
-            await _apiService.UpdateLocationAsync(
+            _lastServerLocationUpdate = DateTime.UtcNow;
+            _ = _apiService.UpdateLocationAsync(
                 CurrentTourist.Id,
                 e.Location.Latitude,
                 e.Location.Longitude);
