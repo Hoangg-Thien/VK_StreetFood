@@ -27,11 +27,6 @@ public partial class MainMapViewModel : ObservableObject
     private readonly Dictionary<int, DateTime> _geofenceLastTriggered = new();
     private DateTime _lastServerLocationUpdate = DateTime.MinValue;
 
-    // Background prefetch: gate 30s, batch ≤3 POI/lần, set tránh prefetch lại cùng POI
-    private DateTime _lastPrefetchAt = DateTime.MinValue;
-    private static readonly TimeSpan PrefetchGate = TimeSpan.FromSeconds(30);
-    private readonly HashSet<int> _prefetchedIds = new();
-
     [ObservableProperty]
     private ObservableCollection<POIModel> _pois = new();
 
@@ -164,15 +159,6 @@ public partial class MainMapViewModel : ObservableObject
 
             // Nếu đang online, đồng bộ cache offline nền (không block UI)
             _ = _offlineContentService.AutoSyncWhenOnlineAsync(SelectedLanguage);
-
-            // Pre-warm audio cho top POI gần nhất (hotset) — fire-and-forget
-            if (Connectivity.NetworkAccess == NetworkAccess.Internet && Pois.Count > 0)
-            {
-                var hotsetIds = Pois.Take(10).Select(p => p.Id).ToList();
-                _ = _apiService.PrepareHotsetAsync(hotsetIds, SelectedLanguage);
-                _lastPrefetchAt = DateTime.UtcNow;
-                foreach (var id in hotsetIds) _prefetchedIds.Add(id);
-            }
 
             // Start tracking (non-blocking)
             try
@@ -540,23 +526,6 @@ public partial class MainMapViewModel : ObservableObject
         if (bestCandidate != null)
             await OnGeofenceTriggeredAsync(bestCandidate);
 
-        // Background prefetch: mỗi 30s, pre-warm top 3 POI nearby chưa được prefetch
-        if (Connectivity.NetworkAccess == NetworkAccess.Internet &&
-            sortedPOIs.Count > 0 &&
-            (DateTime.UtcNow - _lastPrefetchAt) >= PrefetchGate)
-        {
-            var toPrefetch = sortedPOIs
-                .Where(p => !_prefetchedIds.Contains(p.Id))
-                .Take(3)
-                .Select(p => p.Id)
-                .ToList();
-            if (toPrefetch.Count > 0)
-            {
-                _lastPrefetchAt = DateTime.UtcNow;
-                foreach (var id in toPrefetch) _prefetchedIds.Add(id);
-                _ = _apiService.PrepareHotsetAsync(toPrefetch, SelectedLanguage);
-            }
-        }
     }
 
     private async Task OnGeofenceTriggeredAsync(POIModel poi)

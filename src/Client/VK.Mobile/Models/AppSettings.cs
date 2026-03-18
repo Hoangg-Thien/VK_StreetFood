@@ -5,6 +5,8 @@ public class AppSettings
     public const string ApiBaseUrl = "http://10.0.2.2:5089/api/";
     public const string AudioBaseUrl = "http://10.0.2.2:5089/";
     public const string OsrmBaseUrl = "https://router.project-osrm.org";
+    public const string OfflineRoutePackageRelativeUrl = "offline/route-package";
+    public const string OfflineRoutePackageFileName = "vkstreetfood.routes.json";
 
     // Geofencing
     public const double GeofenceRadiusMeters = 50.0;

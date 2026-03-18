@@ -164,26 +164,7 @@ public partial class NowPlayingViewModel : ObservableObject
             return;
         }
 
-        // Tier 2: On-demand TTS — server generates MP3 on demand (deduped via AudioTaskManager)
-        if (Connectivity.NetworkAccess == NetworkAccess.Internet)
-        {
-            try
-            {
-                using var tier2Cts = new CancellationTokenSource(TimeSpan.FromSeconds(8));
-                var onDemand = await _apiService.RequestOnDemandTtsAsync(PoiId, Language, tier2Cts.Token);
-                if (!string.IsNullOrWhiteSpace(onDemand?.AudioFileUrl))
-                {
-                    _audioFileUrl = onDemand.AudioFileUrl;
-                    _usingAudioService = true;
-                    StartTimer();
-                    _ = _audioService.PlayAudioAsync(_audioFileUrl, PoiId);
-                    return;
-                }
-            }
-            catch { /* fall through to device TTS */ }
-        }
-
-        // Tier 4: Device TTS (local fallback — works offline)
+        // Device TTS fallback (local — works offline)
         _usingAudioService = false;
         _ttsCts = new CancellationTokenSource();
         var token = _ttsCts.Token;

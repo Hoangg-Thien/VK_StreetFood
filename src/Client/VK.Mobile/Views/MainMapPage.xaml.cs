@@ -549,19 +549,19 @@ public partial class MainMapPage : ContentPage
 
             if (route == null || route.Coordinates.Count < 2)
             {
-                await DisplayAlertAsync("Lỗi", "Không lấy được tuyến đường từ OSRM.", "Đóng");
+                await DisplayAlertAsync("Lỗi", "Không lấy được tuyến đường lúc này.", "Đóng");
                 return;
             }
 
             DrawRoutePolyline(route);
 
-            if (route.Provider == "cache")
+            if (route.Provider == "offline-graph")
             {
-                await DisplayAlertAsync("Offline", "Đang offline: dùng tuyến đường đã cache trước đó.", "Đóng");
+                await DisplayAlertAsync("Offline", "Đang offline: dùng route graph cục bộ để chỉ đường.", "Đóng");
             }
             else if (route.Provider == "offline-fallback")
             {
-                await DisplayAlertAsync("Offline", "Đang offline: chưa có route cache, hiển thị đường thẳng ước lượng.", "Đóng");
+                await DisplayAlertAsync("Offline", "Chưa có route graph offline nên đang hiển thị đường ước lượng. Hãy bật mạng và vào Cài đặt > Tải gói offline để tạo route như online.", "Đóng");
             }
         }
         catch (Exception ex)

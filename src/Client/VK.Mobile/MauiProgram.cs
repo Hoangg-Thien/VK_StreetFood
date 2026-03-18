@@ -55,7 +55,6 @@ public static class MauiProgram
 		builder.Services.AddTransient<FavoritesViewModel>();
 		builder.Services.AddTransient<SettingsViewModel>();
 		builder.Services.AddTransient<ProfileViewModel>();
-		builder.Services.AddTransient<AnalyticsViewModel>();
 		builder.Services.AddTransient<MenuViewModel>();
 		builder.Services.AddTransient<NowPlayingViewModel>();
 
@@ -66,7 +65,6 @@ public static class MauiProgram
 		builder.Services.AddTransient<FavoritesPage>();
 		builder.Services.AddTransient<SettingsPage>();
 		builder.Services.AddTransient<ProfilePage>();
-		builder.Services.AddTransient<AnalyticsPage>();
 		builder.Services.AddTransient<MenuPage>();
 		builder.Services.AddTransient<NowPlayingPage>();
 
