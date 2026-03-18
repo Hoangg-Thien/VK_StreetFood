@@ -27,6 +27,7 @@ public partial class MainMapPage : ContentPage
     private WritableLayer? _routeLayer;
     private WritableLayer? _locationLayer;
     private bool _isRouting = false;
+    private bool _hasActiveRoute = false;
     private bool _hasCenteredOnUser = false;
     private POIModel? _selectedPoi;
     // Viewport save/restore on tab switch
@@ -381,12 +382,36 @@ public partial class MainMapPage : ContentPage
                     _mapControl.Map.Navigator.ZoomToBox(feature.Extent, MBoxFit.Fit, 80);
                 }
 
+                _hasActiveRoute = true;
+                ClearRouteBorder.IsVisible = true;
                 _mapControl.Map.Refresh();
                 System.Diagnostics.Debug.WriteLine($"Route drawn: {route.DistanceMeters:F0}m, {route.DurationSeconds:F0}s, points={route.Coordinates.Count}");
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"DrawRoutePolyline error: {ex}");
+            }
+        });
+    }
+
+    private void ClearCurrentRoute()
+    {
+        if (_routeLayer == null || _mapControl?.Map == null || !_hasActiveRoute)
+            return;
+
+        MainThread.BeginInvokeOnMainThread(() =>
+        {
+            try
+            {
+                _routeLayer.Clear();
+                _mapControl.Map.Refresh();
+
+                _hasActiveRoute = false;
+                ClearRouteBorder.IsVisible = false;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"ClearCurrentRoute error: {ex}");
             }
         });
     }
@@ -529,6 +554,15 @@ public partial class MainMapPage : ContentPage
             }
 
             DrawRoutePolyline(route);
+
+            if (route.Provider == "cache")
+            {
+                await DisplayAlertAsync("Offline", "Đang offline: dùng tuyến đường đã cache trước đó.", "Đóng");
+            }
+            else if (route.Provider == "offline-fallback")
+            {
+                await DisplayAlertAsync("Offline", "Đang offline: chưa có route cache, hiển thị đường thẳng ước lượng.", "Đóng");
+            }
         }
         catch (Exception ex)
         {
@@ -539,6 +573,11 @@ public partial class MainMapPage : ContentPage
         {
             _isRouting = false;
         }
+    }
+
+    private void OnClearRouteClicked(object? sender, EventArgs e)
+    {
+        ClearCurrentRoute();
     }
 
     private void OnZoomInClicked(object? sender, EventArgs e)

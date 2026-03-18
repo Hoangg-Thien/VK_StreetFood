@@ -19,6 +19,9 @@ public class OsrmRoutingService : IRoutingService
 {
     private readonly ILogger<OsrmRoutingService> _logger;
     private readonly HttpClient _httpClient;
+    private readonly Dictionary<string, RouteResultModel> _routeCache = new();
+
+    private const double DefaultWalkSpeedMetersPerSecond = 1.2;
 
     public OsrmRoutingService(ILogger<OsrmRoutingService> logger)
     {
@@ -38,10 +41,18 @@ public class OsrmRoutingService : IRoutingService
     {
         try
         {
+            var cacheKey = BuildCacheKey(fromLatitude, fromLongitude, toLatitude, toLongitude);
+
             if (Connectivity.NetworkAccess != NetworkAccess.Internet)
             {
-                _logger.LogInformation("Skip OSRM routing in offline mode");
-                return null;
+                if (_routeCache.TryGetValue(cacheKey, out var cachedRoute))
+                {
+                    _logger.LogInformation("Offline mode: use cached route");
+                    return CloneRoute(cachedRoute, "cache");
+                }
+
+                _logger.LogInformation("Offline mode: no cached route, use straight-line fallback");
+                return BuildOfflineFallbackRoute(fromLatitude, fromLongitude, toLatitude, toLongitude);
             }
 
             var fromLon = fromLongitude.ToString(CultureInfo.InvariantCulture);
@@ -106,13 +117,16 @@ public class OsrmRoutingService : IRoutingService
                 ? durationElement.GetDouble()
                 : 0;
 
-            return new RouteResultModel
+            var result = new RouteResultModel
             {
                 Coordinates = decodedCoordinates,
                 DistanceMeters = distanceMeters,
                 DurationSeconds = durationSeconds,
                 Provider = "osrm"
             };
+
+            _routeCache[cacheKey] = CloneRoute(result, "osrm");
+            return result;
         }
         catch (OperationCanceledException)
         {
@@ -169,4 +183,67 @@ public class OsrmRoutingService : IRoutingService
 
         return (result & 1) != 0 ? ~(result >> 1) : result >> 1;
     }
+
+    private static string BuildCacheKey(double fromLatitude, double fromLongitude, double toLatitude, double toLongitude)
+    {
+        return $"{Math.Round(fromLatitude, 5)},{Math.Round(fromLongitude, 5)}->{Math.Round(toLatitude, 5)},{Math.Round(toLongitude, 5)}";
+    }
+
+    private static RouteResultModel CloneRoute(RouteResultModel source, string provider)
+    {
+        return new RouteResultModel
+        {
+            Coordinates = source.Coordinates
+                .Select(point => new RoutePointModel
+                {
+                    Latitude = point.Latitude,
+                    Longitude = point.Longitude
+                })
+                .ToList(),
+            DistanceMeters = source.DistanceMeters,
+            DurationSeconds = source.DurationSeconds,
+            Provider = provider
+        };
+    }
+
+    private static RouteResultModel BuildOfflineFallbackRoute(
+        double fromLatitude,
+        double fromLongitude,
+        double toLatitude,
+        double toLongitude)
+    {
+        var distanceMeters = CalculateHaversineDistanceMeters(fromLatitude, fromLongitude, toLatitude, toLongitude);
+        var durationSeconds = distanceMeters / DefaultWalkSpeedMetersPerSecond;
+
+        return new RouteResultModel
+        {
+            Coordinates = new List<RoutePointModel>
+            {
+                new() { Latitude = fromLatitude, Longitude = fromLongitude },
+                new() { Latitude = toLatitude, Longitude = toLongitude }
+            },
+            DistanceMeters = distanceMeters,
+            DurationSeconds = durationSeconds,
+            Provider = "offline-fallback"
+        };
+    }
+
+    private static double CalculateHaversineDistanceMeters(double lat1, double lon1, double lat2, double lon2)
+    {
+        const double earthRadiusKm = 6371;
+
+        var deltaLat = ToRadians(lat2 - lat1);
+        var deltaLon = ToRadians(lon2 - lon1);
+
+        var a = Math.Sin(deltaLat / 2) * Math.Sin(deltaLat / 2)
+                + Math.Cos(ToRadians(lat1)) * Math.Cos(ToRadians(lat2))
+                * Math.Sin(deltaLon / 2) * Math.Sin(deltaLon / 2);
+
+        var c = 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
+        var distanceKm = earthRadiusKm * c;
+
+        return distanceKm * 1000;
+    }
+
+    private static double ToRadians(double degrees) => degrees * Math.PI / 180;
 }
