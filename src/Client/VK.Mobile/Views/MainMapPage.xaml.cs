@@ -7,6 +7,8 @@ using Mapsui.Styles;
 using Mapsui.Tiling;
 using Mapsui.Tiling.Layers;
 using Mapsui.UI.Maui;
+using Mapsui.Nts;
+using NetTopologySuite.Geometries;
 using BruTile.Cache;
 using BruTile.Predefined;
 using VK.Mobile.ViewModels;
@@ -19,9 +21,12 @@ public partial class MainMapPage : ContentPage
 {
     private readonly MainMapViewModel _viewModel;
     private readonly IServiceProvider _serviceProvider;
+    private readonly IRoutingService _routingService;
     private MapControl? _mapControl;
     private WritableLayer? _poiLayer;
+    private WritableLayer? _routeLayer;
     private WritableLayer? _locationLayer;
+    private bool _isRouting = false;
     private bool _hasCenteredOnUser = false;
     private POIModel? _selectedPoi;
     // Viewport save/restore on tab switch
@@ -35,11 +40,15 @@ public partial class MainMapPage : ContentPage
 
     private static bool IsOfflineMode => Connectivity.NetworkAccess != NetworkAccess.Internet;
 
-    public MainMapPage(MainMapViewModel viewModel, IServiceProvider serviceProvider)
+    public MainMapPage(
+        MainMapViewModel viewModel,
+        IServiceProvider serviceProvider,
+        IRoutingService routingService)
     {
         InitializeComponent();
         _viewModel = viewModel;
         _serviceProvider = serviceProvider;
+        _routingService = routingService;
         BindingContext = _viewModel;
         Loaded += OnPageLoaded;
     }
@@ -102,6 +111,10 @@ public partial class MainMapPage : ContentPage
             // POI markers layer
             _poiLayer = new WritableLayer { Name = "POIs", Style = null };
             map.Layers.Add(_poiLayer);
+
+            // Direction route polyline layer
+            _routeLayer = new WritableLayer { Name = "Route", Style = null };
+            map.Layers.Add(_routeLayer);
 
             // User location layer
             _locationLayer = new WritableLayer { Name = "Location", Style = null };
@@ -330,6 +343,54 @@ public partial class MainMapPage : ContentPage
         });
     }
 
+    private void DrawRoutePolyline(RouteResultModel route)
+    {
+        if (_routeLayer == null || _mapControl?.Map == null || route.Coordinates.Count < 2)
+            return;
+
+        MainThread.BeginInvokeOnMainThread(() =>
+        {
+            try
+            {
+                _routeLayer.Clear();
+
+                var projectedCoordinates = route.Coordinates
+                    .Select(point => SphericalMercator.FromLonLat(point.Longitude, point.Latitude))
+                    .Select(point => point.ToMPoint())
+                    .Select(point => new Coordinate(point.X, point.Y))
+                    .ToArray();
+
+                if (projectedCoordinates.Length < 2)
+                    return;
+
+                var feature = new GeometryFeature
+                {
+                    Geometry = new LineString(projectedCoordinates)
+                };
+
+                feature.Styles.Add(new VectorStyle
+                {
+                    Line = new Pen(Mapsui.Styles.Color.FromString("#1565C0"), 5),
+                    Outline = new Pen(Mapsui.Styles.Color.White, 2)
+                });
+
+                _routeLayer.Add(feature);
+
+                if (feature.Extent != null)
+                {
+                    _mapControl.Map.Navigator.ZoomToBox(feature.Extent, MBoxFit.Fit, 80);
+                }
+
+                _mapControl.Map.Refresh();
+                System.Diagnostics.Debug.WriteLine($"Route drawn: {route.DistanceMeters:F0}m, {route.DurationSeconds:F0}s, points={route.Coordinates.Count}");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"DrawRoutePolyline error: {ex}");
+            }
+        });
+    }
+
     private void MapControl_Info(object? sender, MapInfoEventArgs e)
     {
         if (_poiLayer == null || _mapControl == null) return;
@@ -403,8 +464,8 @@ public partial class MainMapPage : ContentPage
     private static string FormatCardDistance(double? distKm) => distKm switch
     {
         null or 0 => string.Empty,
-        < 0.1    => $"📍 {distKm.Value * 1000:F0}m",
-        _        => $"📍 {distKm.Value:F1} km"
+        < 0.1 => $"📍 {distKm.Value * 1000:F0}m",
+        _ => $"📍 {distKm.Value:F1} km"
     };
 
     private static double ComputeDistanceKm(double lat1, double lon1, double lat2, double lon2)
@@ -419,7 +480,7 @@ public partial class MainMapPage : ContentPage
     }
 
     private void OnCardBackdropTapped(object? sender, TappedEventArgs e) => HidePOIBottomCard();
-    private void OnCardCloseTapped(object? sender, EventArgs e)          => HidePOIBottomCard();
+    private void OnCardCloseTapped(object? sender, EventArgs e) => HidePOIBottomCard();
 
     private async void OnPOIListenClicked(object? sender, EventArgs e)
     {
@@ -439,21 +500,44 @@ public partial class MainMapPage : ContentPage
 
     private async void OnPOIDirectionsClicked(object? sender, EventArgs e)
     {
+        if (_isRouting) return;
         if (_selectedPoi == null || (_selectedPoi.Latitude == 0 && _selectedPoi.Longitude == 0)) return;
-        var lat = _selectedPoi.Latitude;
-        var lon = _selectedPoi.Longitude;
-        var name = Uri.EscapeDataString(_selectedPoi.Name ?? string.Empty);
+
+        var poi = _selectedPoi;
+        var currentLocation = _viewModel.CurrentLocation;
         HidePOIBottomCard();
+
+        if (currentLocation == null)
+        {
+            await DisplayAlertAsync("Lỗi", "Không lấy được vị trí hiện tại để chỉ đường.", "Đóng");
+            return;
+        }
+
+        _isRouting = true;
         try
         {
-            // Mở Google Maps chỉ đường — dùng Launcher tránh xung đột namespace với Mapsui
-            var uri = new Uri($"https://www.google.com/maps/dir/?api=1&destination={lat},{lon}&destination_place_id={name}");
-            await Launcher.OpenAsync(uri);
+            var route = await _routingService.GetDrivingRouteAsync(
+                currentLocation.Latitude,
+                currentLocation.Longitude,
+                poi.Latitude,
+                poi.Longitude);
+
+            if (route == null || route.Coordinates.Count < 2)
+            {
+                await DisplayAlertAsync("Lỗi", "Không lấy được tuyến đường từ OSRM.", "Đóng");
+                return;
+            }
+
+            DrawRoutePolyline(route);
         }
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"Directions error: {ex}");
-            await DisplayAlert("Lỗi", "Không thể mở ứng dụng bản đồ.", "Đóng");
+            await DisplayAlertAsync("Lỗi", "Không thể chỉ đường lúc này.", "Đóng");
+        }
+        finally
+        {
+            _isRouting = false;
         }
     }
 
