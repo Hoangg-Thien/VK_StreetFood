@@ -33,6 +33,7 @@ public static class MauiProgram
 		// Register Services
 		builder.Services.AddSingleton<IApiService, ApiService>();
 		builder.Services.AddSingleton<ILocationService, LocationService>();
+		builder.Services.AddSingleton<IRoutingService, OsrmRoutingService>();
 		builder.Services.AddSingleton<IAudioService, AudioService>();
 		builder.Services.AddSingleton<IOfflineContentService, OfflineContentService>();
 #if ANDROID

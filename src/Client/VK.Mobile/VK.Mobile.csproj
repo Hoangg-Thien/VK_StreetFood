@@ -62,6 +62,7 @@
 		
 		<!-- OpenStreetMap -->
 		<PackageReference Include="Mapsui.Maui" Version="5.0.0" />
+		<PackageReference Include="Mapsui.Nts" Version="5.0.0" />
 		
 		<!-- MVVM Toolkit -->
 		<PackageReference Include="CommunityToolkit.Mvvm" Version="8.3.2" />
