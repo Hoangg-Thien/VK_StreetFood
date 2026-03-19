@@ -12,6 +12,7 @@ public partial class FavoritesViewModel : ObservableObject
     private readonly IApiService _apiService;
     private readonly StorageService _storageService;
     private readonly ILogger<FavoritesViewModel> _logger;
+    private static LocalizationResourceManager L => LocalizationResourceManager.Instance;
 
     public FavoritesViewModel(IApiService apiService, StorageService storageService, ILogger<FavoritesViewModel> logger)
     {
@@ -49,7 +50,10 @@ public partial class FavoritesViewModel : ObservableObject
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error loading favorites");
-            await Application.Current!.MainPage!.DisplayAlert("Lỗi", "Không thể tải danh sách yêu thích", "OK");
+            await Application.Current!.MainPage!.DisplayAlert(
+                L["Error"],
+                L["FavoritesLoadFailed"],
+                L["OK"]);
         }
         finally
         {
@@ -75,12 +79,18 @@ public partial class FavoritesViewModel : ObservableObject
             Favorites.Remove(poi);
             IsEmpty = !Favorites.Any();
 
-            await Application.Current!.MainPage!.DisplayAlert("Thành công", "Đã xóa khỏi danh sách yêu thích", "OK");
+            await Application.Current!.MainPage!.DisplayAlert(
+                L["Success"],
+                L["FavoritesRemovedSuccess"],
+                L["OK"]);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error removing favorite");
-            await Application.Current!.MainPage!.DisplayAlert("Lỗi", "Không thể xóa", "OK");
+            await Application.Current!.MainPage!.DisplayAlert(
+                L["Error"],
+                L["FavoritesRemoveFailed"],
+                L["OK"]);
         }
     }
 }

@@ -6,14 +6,15 @@
              xmlns:models="clr-namespace:VK.Mobile.Models"
              x:Class="VK.Mobile.Views.MainMapPage"
              x:DataType="vm:MainMapViewModel"
-             Title="VK Street Food">
+             Title="{Binding Source={x:Static loc:LocalizationResourceManager.Instance}, Path=[MapTitle]}"
+             Shell.NavBarIsVisible="False">
 
     <Grid RowDefinitions="Auto,*,Auto">
 
         <!-- Top Bar -->
         <Grid Grid.Row="0"
               Padding="10"
-              BackgroundColor="#FF5722">
+              BackgroundColor="White">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>
@@ -23,14 +24,14 @@
                    Text="{Binding Source={x:Static loc:LocalizationResourceManager.Instance}, Path=[MapTitle]}"
                    FontSize="20"
                    FontAttributes="Bold"
-                   TextColor="White"
+                   TextColor="Black"
                    VerticalOptions="Center"/>
 
             <Picker Grid.Column="1"
                     Title="{Binding Source={x:Static loc:LocalizationResourceManager.Instance}, Path=[Language]}"
                     SelectedIndex="{Binding SelectedLanguageIndex}"
-                    TextColor="White"
-                    TitleColor="White"
+                    TextColor="Black"
+                    TitleColor="Black"
                     WidthRequest="130"
                     Margin="10,0">
                 <Picker.ItemsSource>
@@ -137,7 +138,7 @@
                            LineBreakMode="WordWrap"
                            VerticalOptions="Center"/>
                     <Button Grid.Column="1"
-                            Text="Thử lại"
+                            Text="{Binding Source={x:Static loc:LocalizationResourceManager.Instance}, Path=[MenuRetry]}"
                             FontSize="11"
                             BackgroundColor="#FF5722"
                             TextColor="White"
@@ -262,12 +263,12 @@
 
         <!-- POI Bottom Card (hiện khi bấm marker trên map) -->
         <Grid x:Name="POIBottomCard"
-                Grid.Row="0"
-                Grid.RowSpan="3"
-                IsVisible="False">
+              Grid.Row="0"
+              Grid.RowSpan="3"
+              IsVisible="False">
             <!-- Backdrop trong suốt: bấm ngoài card để đóng -->
             <BoxView BackgroundColor="Transparent"
-                    VerticalOptions="Fill">
+                     VerticalOptions="Fill">
                 <BoxView.GestureRecognizers>
                     <TapGestureRecognizer Tapped="OnCardBackdropTapped"/>
                 </BoxView.GestureRecognizers>
@@ -275,18 +276,18 @@
 
             <!-- Card nổi ở phía dưới -->
             <Frame Margin="10,0,10,14"
-                    Padding="14"
-                    CornerRadius="16"
+                   Padding="14"
+                   CornerRadius="16"
                    BackgroundColor="White"
-                    HasShadow="True"
-                    VerticalOptions="End">
+                   HasShadow="True"
+                   VerticalOptions="End">
                 <Grid RowDefinitions="Auto,Auto"
-                        RowSpacing="14">
+                      RowSpacing="14">
 
                     <!-- Hàng 1: Ảnh + thông tin + nút đóng -->
                     <Grid Grid.Row="0"
-                            ColumnDefinitions="84,*,36"
-                            ColumnSpacing="12">
+                          ColumnDefinitions="84,*,36"
+                          ColumnSpacing="12">
 
                         <!-- Ảnh thumbnail -->
                         <Border Grid.Column="0"
@@ -296,28 +297,28 @@
                                 WidthRequest="84"
                                 HeightRequest="84">
                             <Image x:Name="POICardImage"
-                                    Aspect="AspectFill"
+                                   Aspect="AspectFill"
                                    WidthRequest="84"
-                                    HeightRequest="84"/>
+                                   HeightRequest="84"/>
                         </Border>
 
                         <!-- Tên + loại + khoảng cách -->
                         <VerticalStackLayout Grid.Column="1"
-                                VerticalOptions="Center"
-                                Spacing="3">
+                                             VerticalOptions="Center"
+                                             Spacing="3">
                             <Label x:Name="POICardName"
                                    FontSize="15"
-                                    FontAttributes="Bold"
+                                   FontAttributes="Bold"
                                    TextColor="#1A1A1A"
                                    LineBreakMode="WordWrap"
-                                    MaxLines="2"/>
+                                   MaxLines="2"/>
                             <Label x:Name="POICardCategory"
                                    FontSize="12"
-                                    TextColor="#888"/>
+                                   TextColor="#888"/>
                             <Label x:Name="POICardDistance"
                                    FontSize="13"
-                                    TextColor="#FF5722"
-                                    FontAttributes="Bold"/>
+                                   TextColor="#FF5722"
+                                   FontAttributes="Bold"/>
                         </VerticalStackLayout>
 
                         <!-- Nút đóng -->
@@ -335,11 +336,11 @@
 
                     <!-- Hàng 2: Nút hành động -->
                     <Grid Grid.Row="1"
-                            RowDefinitions="Auto,Auto"
-                            RowSpacing="8">
+                          RowDefinitions="Auto,Auto"
+                          RowSpacing="8">
                         <!-- Nghe thuyết minh: nút chính toàn chiều rộng -->
                         <Button Grid.Row="0"
-                                Text="🔊 Nghe thuyết minh"
+                            Text="{Binding Source={x:Static loc:LocalizationResourceManager.Instance}, Path=[MainMapButtonListen]}"
                                 FontSize="14"
                                 FontAttributes="Bold"
                                 BackgroundColor="#FF5722"
@@ -349,10 +350,10 @@
                                 Clicked="OnPOIListenClicked"/>
                         <!-- Xem chi tiết + Chỉ đường -->
                         <Grid Grid.Row="1"
-                                ColumnDefinitions="*,*"
-                                ColumnSpacing="10">
+                              ColumnDefinitions="*,*"
+                              ColumnSpacing="10">
                             <Button Grid.Column="0"
-                                    Text="Xem chi tiết"
+                                    Text="{Binding Source={x:Static loc:LocalizationResourceManager.Instance}, Path=[MainMapButtonDetail]}"
                                     FontSize="13"
                                     BackgroundColor="#FFF3E0"
                                     TextColor="#FF5722"
@@ -360,7 +361,7 @@
                                     HeightRequest="40"
                                     Clicked="OnPOIDetailClicked"/>
                             <Button Grid.Column="1"
-                                    Text="Chỉ đường"
+                                    Text="{Binding Source={x:Static loc:LocalizationResourceManager.Instance}, Path=[MainMapButtonDirections]}"
                                     FontSize="13"
                                     BackgroundColor="#E3F2FD"
                                     TextColor="#1565C0"

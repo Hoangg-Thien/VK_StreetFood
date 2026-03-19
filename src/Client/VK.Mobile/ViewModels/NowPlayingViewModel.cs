@@ -1,5 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using System.Globalization;
 using VK.Mobile.Models;
 using VK.Mobile.Services;
 
@@ -14,6 +15,7 @@ public partial class NowPlayingViewModel : ObservableObject
 {
     public static event EventHandler? AutoCloseRequested;
     public static void RequestAutoClose() => AutoCloseRequested?.Invoke(null, EventArgs.Empty);
+    private static LocalizationResourceManager L => LocalizationResourceManager.Instance;
 
     private readonly ITTSService _ttsService;
     private readonly IAudioService _audioService;
@@ -32,7 +34,7 @@ public partial class NowPlayingViewModel : ObservableObject
     [ObservableProperty] private string _poiName = string.Empty;
     [ObservableProperty] private string _poiCategory = string.Empty;
     [ObservableProperty] private string _poiImage = string.Empty;
-    [ObservableProperty] private string _poiAddress = "District 4, HCMC";
+    [ObservableProperty] private string _poiAddress = string.Empty;
     [ObservableProperty] private string _poiDistance = string.Empty;
     [ObservableProperty] private bool _hasDistance;
     [ObservableProperty] private string _audioText = string.Empty;
@@ -68,6 +70,9 @@ public partial class NowPlayingViewModel : ObservableObject
         _apiService = apiService;
         _offlineContentService = offlineContentService;
         _audioService.PlaybackCompleted += OnAudioServicePlaybackCompleted;
+
+        if (string.IsNullOrWhiteSpace(PoiAddress))
+            PoiAddress = L["NowPlayingDefaultAddress"];
     }
 
     public void Initialize(int poiId, string poiName, string poiCategory, string poiImage,
@@ -80,7 +85,7 @@ public partial class NowPlayingViewModel : ObservableObject
         PoiName = poiName;
         PoiCategory = poiCategory;
         PoiImage = poiImage;
-        PoiAddress = string.IsNullOrEmpty(poiAddress) ? "District 4, HCMC" : poiAddress;
+        PoiAddress = string.IsNullOrEmpty(poiAddress) ? L["NowPlayingDefaultAddress"] : poiAddress;
         PoiDistance = poiDistance;
         HasDistance = !string.IsNullOrEmpty(poiDistance);
         Language = language;
@@ -124,7 +129,10 @@ public partial class NowPlayingViewModel : ObservableObject
     private static string FormatWalk(double? km) => km switch
     {
         null or 0 => "",
-        _ => $"{(int)Math.Ceiling(km.Value * 12)} min walk"
+        _ => string.Format(
+            CultureInfo.CurrentCulture,
+            LocalizationResourceManager.Instance["NowPlayingWalkMinutesFormat"],
+            (int)Math.Ceiling(km.Value * 12))
     };
 
     private static double HaversineKm(double lat1, double lon1, double lat2, double lon2)
@@ -314,7 +322,15 @@ public partial class NowPlayingViewModel : ObservableObject
                    next.ImageUrl ?? string.Empty, audioText, Language,
                    next.Address ?? string.Empty,
                    next.DistanceKm.HasValue
-                       ? (next.DistanceKm < 0.1 ? $"{next.DistanceKm.Value * 1000:F0}m away" : $"{next.DistanceKm.Value:F1} km away")
+                       ? (next.DistanceKm < 0.1
+                           ? string.Format(
+                               CultureInfo.CurrentCulture,
+                               L["NowPlayingDistanceMetersAwayFormat"],
+                               next.DistanceKm.Value * 1000)
+                           : string.Format(
+                               CultureInfo.CurrentCulture,
+                               L["NowPlayingDistanceKmAwayFormat"],
+                               next.DistanceKm.Value))
                        : string.Empty,
                    audioFileUrl: nextAudioFileUrl,
                    isFallback: nextIsFallback);

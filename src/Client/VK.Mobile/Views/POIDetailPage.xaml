@@ -298,7 +298,7 @@
                                                          TextColor="White"
                                                          CornerRadius="8"/>
                                           </FlexLayout>
-                                          <Label Text="{Binding Poi.AverageRating, StringFormat='Trung b&#236;nh: {0:F1} &#x2B50;'}"
+                                          <Label Text="{Binding AverageRatingText}"
                                                  FontSize="14"
                                                  HorizontalOptions="Center"/>
                                    </StackLayout>

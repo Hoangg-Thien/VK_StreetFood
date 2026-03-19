@@ -1,4 +1,5 @@
 using System.Globalization;
+using VK.Mobile.Services;
 
 namespace VK.Mobile.Converters;
 
@@ -25,9 +26,11 @@ public class BoolToTrackingTextConverter : IValueConverter
     {
         if (value is bool isTracking)
         {
-            return isTracking ? "Tracking" : "Not Tracking";
+            return isTracking
+                ? LocalizationResourceManager.Instance["Tracking"]
+                : LocalizationResourceManager.Instance["NotTracking"];
         }
-        return "Unknown";
+        return LocalizationResourceManager.Instance["TrackingUnknown"];
     }
 
     public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
@@ -59,9 +62,9 @@ public class BoolToPlayButtonTextConverter : IValueConverter
     {
         if (value is bool isPlaying)
         {
-            return isPlaying ? "⏸ Pause" : "▶ Play";
+            return isPlaying ? "⏸" : "▶";
         }
-        return "▶ Play";
+        return "▶";
     }
 
     public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)

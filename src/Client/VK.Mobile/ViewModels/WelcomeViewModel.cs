@@ -44,9 +44,9 @@ public partial class WelcomeViewModel : ObservableObject
 
     public string FeatureQR => _selectedLanguage switch
     {
-        "en" => "Scan QR for special offers",
-        "ko" => "QR 스캔으로 혜택 받기",
-        _ => "Quét QR để nhận ưu đãi"
+        "en" => "Scan the QR code to listen to the narration.",
+        "ko" => "QR 코드를 스캔하여 내레이션을 들어보세요.",
+        _ => "Quét QR để nghe thuyết minh"
     };
 
     public string GetStartedText => _selectedLanguage switch

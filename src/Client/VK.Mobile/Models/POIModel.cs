@@ -33,7 +33,14 @@ public class POIModel
     /// Mức ưu tiên thuyết minh khi nhiều POI cùng vào geofence.
     /// Cao hơn = ưu tiên hơn. Mặc định 0.
     /// </summary>
+    [JsonPropertyName("priority")]
     public int Priority { get; set; } = 0;
+
+    /// <summary>
+    /// Bán kính kích hoạt riêng cho POI (mét). Nếu null thì dùng geofence radius mặc định trong Settings.
+    /// </summary>
+    [JsonPropertyName("triggerRadiusMeters")]
+    public double? TriggerRadiusMeters { get; set; }
 
     // Audio info
     public AudioInfo? Audio { get; set; }

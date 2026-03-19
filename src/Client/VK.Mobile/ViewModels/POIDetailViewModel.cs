@@ -1,5 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using System.Globalization;
 using VK.Mobile.Models;
 using VK.Mobile.Services;
 using Microsoft.Extensions.Logging;
@@ -14,6 +15,7 @@ public partial class POIDetailViewModel : ObservableObject, IQueryAttributable
     private readonly StorageService _storageService;
     private readonly LocalPOIDatabase _localDb;
     private readonly ILogger<POIDetailViewModel> _logger;
+    private static LocalizationResourceManager L => LocalizationResourceManager.Instance;
     private CancellationTokenSource? _ttsCts;
     private IDispatcherTimer? _progressTimer;
     private int _elapsedSeconds;
@@ -58,8 +60,13 @@ public partial class POIDetailViewModel : ObservableObject, IQueryAttributable
     public bool IsDragging { get; set; }
 
     public string AudioStatusText => IsPlayingAudio
-        ? "⏸ Đang phát..."
-        : (AudioPositionRatio > 0 ? "Đã tạm dừng" : "Nhấn ▶ để nghe");
+        ? L["POIDetailAudioStatusPlaying"]
+        : (AudioPositionRatio > 0 ? L["POIDetailAudioStatusPaused"] : L["POIDetailAudioStatusReady"]);
+
+    public string AverageRatingText
+        => Poi == null
+            ? string.Empty
+            : string.Format(CultureInfo.CurrentCulture, L["POIDetailAverageRatingFormat"], Poi.AverageRating);
 
     partial void OnIsPlayingAudioChanged(bool value)
     {
@@ -96,6 +103,11 @@ public partial class POIDetailViewModel : ObservableObject, IQueryAttributable
         _storageService = storageService;
         _localDb = localDb;
         _logger = logger;
+        LocalizationResourceManager.Instance.PropertyChanged += (_, _) =>
+        {
+            OnPropertyChanged(nameof(AudioStatusText));
+            OnPropertyChanged(nameof(AverageRatingText));
+        };
         _audioService.PlaybackCompleted += (_, _) =>
             MainThread.BeginInvokeOnMainThread(() => { IsPlayingAudio = false; StopProgressTimer(); });
     }
@@ -191,7 +203,10 @@ public partial class POIDetailViewModel : ObservableObject, IQueryAttributable
         }
     }
 
-    partial void OnPoiChanged(POIDetailModel? value) { }
+    partial void OnPoiChanged(POIDetailModel? value)
+    {
+        OnPropertyChanged(nameof(AverageRatingText));
+    }
 
     private async Task LoadPOIDetailAsync(int poiId)
     {
@@ -277,7 +292,7 @@ public partial class POIDetailViewModel : ObservableObject, IQueryAttributable
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error loading POI detail");
-            await Shell.Current.DisplayAlert("Error", "Failed to load POI details", "OK");
+            await Shell.Current.DisplayAlert(L["Error"], L["POIDetailLoadFailed"], L["OK"]);
         }
         finally
         {
@@ -331,7 +346,7 @@ public partial class POIDetailViewModel : ObservableObject, IQueryAttributable
                 System.Diagnostics.Debug.WriteLine($"[POIDetail] Final text for TTS ({text?.Length ?? 0} chars): {text?[..Math.Min(60, text?.Length ?? 0)]}");
                 if (string.IsNullOrWhiteSpace(text))
                 {
-                    await Shell.Current.DisplayAlert("Thông báo", "Không có nội dung âm thanh cho điểm này", "OK");
+                    await Shell.Current.DisplayAlert(L["Error"], L["POIDetailNoAudioContent"], L["OK"]);
                     return;
                 }
 
@@ -441,7 +456,7 @@ public partial class POIDetailViewModel : ObservableObject, IQueryAttributable
             var touristId = await _storageService.GetTouristIdAsync();
             if (touristId == null || Poi == null)
             {
-                await Shell.Current.DisplayAlert("Thông báo", "Vui lòng đăng ký tài khoản để sử dụng tính năng yêu thích.", "OK");
+                await Shell.Current.DisplayAlert(L["Error"], L["POIDetailFavoriteLoginRequired"], L["OK"]);
                 return;
             }
 
@@ -450,19 +465,22 @@ public partial class POIDetailViewModel : ObservableObject, IQueryAttributable
             {
                 success = await _apiService.RemoveFavoriteAsync(touristId.Value, Poi.Id);
                 if (success) IsFavorite = false;
-                else await Shell.Current.DisplayAlert("Lỗi", "Không thể xóa khỏi yêu thích.", "OK");
+                else await Shell.Current.DisplayAlert(L["Error"], L["POIDetailRemoveFavoriteFailed"], L["OK"]);
             }
             else
             {
                 success = await _apiService.AddFavoriteAsync(touristId.Value, Poi.Id);
                 if (success) IsFavorite = true;
-                else await Shell.Current.DisplayAlert("Lỗi", "Không thể thêm vào yêu thích.", "OK");
+                else await Shell.Current.DisplayAlert(L["Error"], L["POIDetailAddFavoriteFailed"], L["OK"]);
             }
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error toggling favorite");
-            await Shell.Current.DisplayAlert("Lỗi", $"Lỗi kết nối: {ex.Message}", "OK");
+            await Shell.Current.DisplayAlert(
+                L["Error"],
+                string.Format(CultureInfo.CurrentCulture, L["POIDetailConnectionErrorFormat"], ex.Message),
+                L["OK"]);
         }
     }
 
@@ -477,10 +495,10 @@ public partial class POIDetailViewModel : ObservableObject, IQueryAttributable
                 return;
 
             var comment = await Shell.Current.DisplayPromptAsync(
-                "Rating",
-                "Optional comment:",
-                "Submit",
-                "Cancel");
+                L["POIDetailRatingPromptTitle"],
+                L["POIDetailRatingPromptMessage"],
+                L["POIDetailRatingSubmit"],
+                L["Cancel"]);
 
             var success = await _apiService.SubmitRatingAsync(
                 touristId.Value,
@@ -490,7 +508,7 @@ public partial class POIDetailViewModel : ObservableObject, IQueryAttributable
 
             if (success)
             {
-                await Shell.Current.DisplayAlert("Success", "Rating submitted", "OK");
+                await Shell.Current.DisplayAlert(L["Success"], L["POIDetailRatingSuccess"], L["OK"]);
                 await LoadPOIDetailAsync(Poi.Id);
             }
         }

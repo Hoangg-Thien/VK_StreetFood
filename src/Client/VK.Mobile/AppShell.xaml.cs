@@ -16,6 +16,7 @@ public partial class AppShell : Shell
 
 		// Lắng nghe thay đổi ngôn ngữ để cập nhật tab titles
 		LocalizationResourceManager.Instance.PropertyChanged += (_, _) => UpdateTabTitles();
+		UpdateTabTitles();
 	}
 
 	private void UpdateTabTitles()

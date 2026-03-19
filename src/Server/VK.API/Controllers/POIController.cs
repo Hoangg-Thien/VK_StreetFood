@@ -12,6 +12,25 @@ public class POIController : ControllerBase
     private readonly VKStreetFoodDbContext _context;
     private readonly ILogger<POIController> _logger;
 
+    // Geofence profile tạm thời theo POI seed hiện có.
+    // Có thể chuyển xuống DB columns trong migration tiếp theo nếu cần CMS chỉnh runtime.
+    private static readonly IReadOnlyDictionary<int, (int Priority, double? TriggerRadiusMeters)> PoiTriggerProfiles
+        = new Dictionary<int, (int Priority, double? TriggerRadiusMeters)>
+        {
+            [1] = (100, 80),
+            [2] = (70, 55),
+            [3] = (68, 55),
+            [4] = (66, 55),
+            [5] = (85, 60),
+            [6] = (62, 60),
+            [7] = (60, 60),
+            [8] = (58, 55),
+            [9] = (64, 55),
+            [10] = (56, 60),
+            [11] = (57, 55),
+            [12] = (54, 50)
+        };
+
     public POIController(VKStreetFoodDbContext context, ILogger<POIController> logger)
     {
         _context = context;
@@ -65,7 +84,12 @@ public class POIController : ControllerBase
 
         var baseUrl = $"{Request.Scheme}://{Request.Host}";
         foreach (var poi in pois)
+        {
             poi.ImageUrl = PrependBase(baseUrl, poi.ImageUrl);
+            var profile = GetTriggerProfile(poi.PoiId);
+            poi.Priority = profile.Priority;
+            poi.TriggerRadiusMeters = profile.TriggerRadiusMeters;
+        }
 
         return Ok(pois);
     }
@@ -107,7 +131,9 @@ public class POIController : ControllerBase
                 TotalRatings = x.Poi.TotalRatings,
                 Category = x.Poi.Category?.Name ?? "",
                 Tags = x.Poi.Tags.Select(t => t.Name).ToList(),
-                DistanceKm = x.Distance
+                DistanceKm = x.Distance,
+                Priority = GetTriggerProfile(x.Poi.Id).Priority,
+                TriggerRadiusMeters = GetTriggerProfile(x.Poi.Id).TriggerRadiusMeters
             })
             .ToList();
 
@@ -155,6 +181,8 @@ public class POIController : ControllerBase
             TotalRatings = poi.TotalRatings,
             Category = poi.Category?.Name ?? string.Empty,
             Tags = poi.Tags.Select(t => t.Name).ToList(),
+            Priority = GetTriggerProfile(poi.Id).Priority,
+            TriggerRadiusMeters = GetTriggerProfile(poi.Id).TriggerRadiusMeters,
             Audio = audio != null ? new AudioContentDto
             {
                 AudioId = audio.Id,
@@ -255,4 +283,9 @@ public class POIController : ControllerBase
         if (path.StartsWith("http", StringComparison.OrdinalIgnoreCase)) return path;
         return baseUrl + path;
     }
+
+    private static (int Priority, double? TriggerRadiusMeters) GetTriggerProfile(int poiId)
+        => PoiTriggerProfiles.TryGetValue(poiId, out var profile)
+            ? profile
+            : (0, null);
 }

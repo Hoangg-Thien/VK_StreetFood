@@ -2,6 +2,7 @@ using Android.App;
 using Android.Content;
 using Android.OS;
 using AndroidX.Core.App;
+using VK.Mobile.Services;
 
 namespace VK.Mobile.Platforms.Android;
 
@@ -13,8 +14,8 @@ namespace VK.Mobile.Platforms.Android;
 public class LocationForegroundService : Service
 {
     private const string ChannelId = "vk_location_channel";
-    private const string ChannelName = "VK Street Food Location";
     private const int NotificationId = 1001;
+    private static LocalizationResourceManager L => LocalizationResourceManager.Instance;
 
     public static bool IsRunning { get; private set; }
 
@@ -52,10 +53,10 @@ public class LocationForegroundService : Service
 
         var channel = new NotificationChannel(
             ChannelId,
-            ChannelName,
+            L["AndroidLocationChannelName"],
             NotificationImportance.Low)
         {
-            Description = "Theo dõi vị trí để gợi ý điểm ẩm thực gần bạn"
+            Description = L["AndroidLocationChannelDescription"]
         };
 
         var manager = (NotificationManager?)GetSystemService(NotificationService);
@@ -71,8 +72,8 @@ public class LocationForegroundService : Service
             PendingIntentFlags.UpdateCurrent | PendingIntentFlags.Immutable);
 
         return new NotificationCompat.Builder(this, ChannelId)
-            .SetContentTitle("VK Street Food")
-            .SetContentText("Đang theo dõi vị trí để gợi ý điểm tham quan...")
+            .SetContentTitle(L["AppName"])
+            .SetContentText(L["AndroidLocationNotificationText"])
             .SetSmallIcon(global::Android.Resource.Drawable.IcDialogMap)
             .SetContentIntent(pendingIntent)
             .SetOngoing(true)
