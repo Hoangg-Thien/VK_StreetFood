@@ -1,6 +1,8 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using System.Globalization;
 using VK.Mobile.Models;
+using VK.Mobile.Resources.Strings;
 using VK.Mobile.ViewModels;
 using VK.Mobile.Views;
 
@@ -77,7 +79,7 @@ public class NarrationCoordinator : INarrationCoordinator
                 narration.Text,
                 normalizedLanguage,
                 poi.Address ?? string.Empty,
-                FormatDistance(poi.DistanceKm),
+                FormatDistance(poi.DistanceKm, normalizedLanguage),
                 audioFileUrl: narration.AudioFileUrl,
                 isFallback: narration.IsFallback);
 
@@ -159,10 +161,27 @@ public class NarrationCoordinator : INarrationCoordinator
             ? "vi"
             : languageCode.Trim().ToLowerInvariant();
 
-    private static string FormatDistance(double? km) => km switch
+    private static string FormatDistance(double? km, string languageCode)
     {
-        null or 0 => string.Empty,
-        < 0.1 => $"{(km.Value * 1000):F0}m away",
-        _ => $"{km.Value:F1} km away"
-    };
+        if (km is null or 0)
+            return string.Empty;
+
+        var culture = NormalizeLanguage(languageCode) switch
+        {
+            "en" => new CultureInfo("en-US"),
+            "ko" => new CultureInfo("ko-KR"),
+            _ => new CultureInfo("vi-VN")
+        };
+
+        if (km < 0.1)
+        {
+            var format = AppResources.ResourceManager.GetString("NowPlayingDistanceMetersAwayFormat", culture)
+                         ?? "{0:F0}m away";
+            return string.Format(culture, format, km.Value * 1000);
+        }
+
+        var kmFormat = AppResources.ResourceManager.GetString("NowPlayingDistanceKmAwayFormat", culture)
+                       ?? "{0:F1} km away";
+        return string.Format(culture, kmFormat, km.Value);
+    }
 }

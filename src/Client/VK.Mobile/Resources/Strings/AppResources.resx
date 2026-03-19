@@ -297,4 +297,224 @@
   <data name="POIActionClose" xml:space="preserve">
     <value>Đóng</value>
   </data>
+
+  <!-- Settings / Offline -->
+  <data name="SettingsTtsOfflineButton" xml:space="preserve">
+    <value>TTS Voice / Dữ liệu offline</value>
+  </data>
+  <data name="SettingsDownloadOfflinePackage" xml:space="preserve">
+    <value>Tải gói offline</value>
+  </data>
+  <data name="SettingsRefreshOfflineStatus" xml:space="preserve">
+    <value>Cập nhật trạng thái offline</value>
+  </data>
+  <data name="SettingsOfflineNotDownloaded" xml:space="preserve">
+    <value>Chưa tải gói offline.</value>
+  </data>
+  <data name="SettingsOfflineDownloading" xml:space="preserve">
+    <value>Đang tải gói offline...</value>
+  </data>
+  <data name="SettingsOfflineStatusSummaryFormat" xml:space="preserve">
+    <value>POI: {0}, Script: {1}, Lần cuối: {2}</value>
+  </data>
+  <data name="SettingsOfflineNeverSynced" xml:space="preserve">
+    <value>chưa sync</value>
+  </data>
+  <data name="SettingsOfflineStatusReadError" xml:space="preserve">
+    <value>Không đọc được trạng thái offline.</value>
+  </data>
+  <data name="SettingsOfflineTitle" xml:space="preserve">
+    <value>Offline</value>
+  </data>
+  <data name="SettingsTtsTitle" xml:space="preserve">
+    <value>TTS</value>
+  </data>
+  <data name="SettingsTtsOpenErrorMessage" xml:space="preserve">
+    <value>Không mở được cài đặt TTS hệ thống.</value>
+  </data>
+  <data name="SettingsTtsAndroidOnlyMessage" xml:space="preserve">
+    <value>Tính năng này hiện hỗ trợ trên Android.</value>
+  </data>
+  <data name="SettingsClearCacheConfirm" xml:space="preserve">
+    <value>Bạn có chắc muốn xóa toàn bộ bộ nhớ đệm?</value>
+  </data>
+  <data name="SettingsClearCacheDone" xml:space="preserve">
+    <value>Đã xóa bộ nhớ đệm.</value>
+  </data>
+  <data name="SettingsLogoutConfirm" xml:space="preserve">
+    <value>Bạn có chắc muốn thoát?</value>
+  </data>
+
+  <!-- Offline package result messages -->
+  <data name="OfflineNoInternet" xml:space="preserve">
+    <value>Không có mạng Internet để tải gói offline.</value>
+  </data>
+  <data name="OfflinePoiFetchFailed" xml:space="preserve">
+    <value>Không tải được dữ liệu POI từ server.</value>
+  </data>
+  <data name="OfflineDownloadSummaryFormat" xml:space="preserve">
+    <value>Đã tải offline: {0} POI, {1} script{2}{3}.</value>
+  </data>
+  <data name="OfflineDownloadAudioSuffixFormat" xml:space="preserve">
+    <value>, {0} file audio</value>
+  </data>
+  <data name="OfflineDownloadRouteSuffix" xml:space="preserve">
+    <value>, route graph</value>
+  </data>
+  <data name="OfflineDownloadCancelled" xml:space="preserve">
+    <value>Đã hủy tải gói offline.</value>
+  </data>
+  <data name="OfflineDownloadFailed" xml:space="preserve">
+    <value>Tải gói offline thất bại.</value>
+  </data>
+
+  <!-- Main map messages -->
+  <data name="MainMapNoOfflineData" xml:space="preserve">
+    <value>Không có dữ liệu POI offline. Hãy vào online để đồng bộ dữ liệu.</value>
+  </data>
+  <data name="MainMapNoOfflineDataFallback" xml:space="preserve">
+    <value>Không thể tải POI và không có dữ liệu offline.</value>
+  </data>
+  <data name="MainMapLoadErrorFormat" xml:space="preserve">
+    <value>Lỗi load POIs: {0}</value>
+  </data>
+  <data name="MainMapOpenPlayerFailedFormat" xml:space="preserve">
+    <value>Không mở được trình phát: {0}</value>
+  </data>
+  <data name="MainMapOpenDetailFailedFormat" xml:space="preserve">
+    <value>Không mở được chi tiết: {0}</value>
+  </data>
+  <data name="MainMapClose" xml:space="preserve">
+    <value>Đóng</value>
+  </data>
+  <data name="MainMapButtonListen" xml:space="preserve">
+    <value>🔊 Nghe thuyết minh</value>
+  </data>
+  <data name="MainMapButtonDetail" xml:space="preserve">
+    <value>Xem chi tiết</value>
+  </data>
+  <data name="MainMapButtonDirections" xml:space="preserve">
+    <value>Chỉ đường</value>
+  </data>
+  <data name="MainMapCurrentLocationUnavailable" xml:space="preserve">
+    <value>Không lấy được vị trí hiện tại để chỉ đường.</value>
+  </data>
+  <data name="MainMapRouteUnavailable" xml:space="preserve">
+    <value>Không lấy được tuyến đường lúc này.</value>
+  </data>
+  <data name="MainMapOfflineRouteGraphMessage" xml:space="preserve">
+    <value>Đang offline: dùng route graph cục bộ để chỉ đường.</value>
+  </data>
+  <data name="MainMapOfflineRouteApproxMessage" xml:space="preserve">
+    <value>Chưa có route graph offline nên đang hiển thị đường ước lượng. Hãy bật mạng và vào Cài đặt &gt; Tải gói offline để tạo route như online.</value>
+  </data>
+  <data name="MainMapDirectionsError" xml:space="preserve">
+    <value>Không thể chỉ đường lúc này.</value>
+  </data>
+  <data name="MainMapMapLoadFailedFormat" xml:space="preserve">
+    <value>Map load failed: {0}</value>
+  </data>
+
+  <!-- POI detail / rating messages -->
+  <data name="POIDetailAudioStatusPlaying" xml:space="preserve">
+    <value>⏸ Đang phát...</value>
+  </data>
+  <data name="POIDetailAudioStatusPaused" xml:space="preserve">
+    <value>Đã tạm dừng</value>
+  </data>
+  <data name="POIDetailAudioStatusReady" xml:space="preserve">
+    <value>Nhấn ▶ để nghe</value>
+  </data>
+  <data name="POIDetailLoadFailed" xml:space="preserve">
+    <value>Không thể tải chi tiết địa điểm</value>
+  </data>
+  <data name="POIDetailNoAudioContent" xml:space="preserve">
+    <value>Không có nội dung âm thanh cho điểm này</value>
+  </data>
+  <data name="POIDetailFavoriteLoginRequired" xml:space="preserve">
+    <value>Vui lòng đăng ký tài khoản để sử dụng tính năng yêu thích.</value>
+  </data>
+  <data name="POIDetailRemoveFavoriteFailed" xml:space="preserve">
+    <value>Không thể xóa khỏi yêu thích.</value>
+  </data>
+  <data name="POIDetailAddFavoriteFailed" xml:space="preserve">
+    <value>Không thể thêm vào yêu thích.</value>
+  </data>
+  <data name="POIDetailConnectionErrorFormat" xml:space="preserve">
+    <value>Lỗi kết nối: {0}</value>
+  </data>
+  <data name="POIDetailRatingPromptTitle" xml:space="preserve">
+    <value>Đánh giá</value>
+  </data>
+  <data name="POIDetailRatingPromptMessage" xml:space="preserve">
+    <value>Nhập bình luận (không bắt buộc):</value>
+  </data>
+  <data name="POIDetailRatingSubmit" xml:space="preserve">
+    <value>Gửi</value>
+  </data>
+  <data name="POIDetailRatingSuccess" xml:space="preserve">
+    <value>Đã gửi đánh giá</value>
+  </data>
+  <data name="POIDetailAverageRatingFormat" xml:space="preserve">
+    <value>Trung bình: {0:F1} ⭐</value>
+  </data>
+
+  <!-- Favorites / menu errors -->
+  <data name="FavoritesLoadFailed" xml:space="preserve">
+    <value>Không thể tải danh sách yêu thích</value>
+  </data>
+  <data name="FavoritesRemovedSuccess" xml:space="preserve">
+    <value>Đã xóa khỏi danh sách yêu thích</value>
+  </data>
+  <data name="FavoritesRemoveFailed" xml:space="preserve">
+    <value>Không thể xóa</value>
+  </data>
+  <data name="Success" xml:space="preserve">
+    <value>Thành công</value>
+  </data>
+  <data name="MenuNoOfflineData" xml:space="preserve">
+    <value>Không có dữ liệu POI offline. Hãy bật mạng để đồng bộ.</value>
+  </data>
+  <data name="MenuLoadFailed" xml:space="preserve">
+    <value>Không tải được danh sách. Kiểm tra kết nối mạng.</value>
+  </data>
+
+  <!-- Now playing -->
+  <data name="NowPlayingTourTitle" xml:space="preserve">
+    <value>Vinh Khanh Street Tour</value>
+  </data>
+  <data name="NowPlayingFallbackVietnamese" xml:space="preserve">
+    <value>Đang phát tiếng Việt (chưa có bản dịch)</value>
+  </data>
+  <data name="NowPlayingUpNextTitle" xml:space="preserve">
+    <value>POI GẦN TIẾP THEO (UP NEXT)</value>
+  </data>
+  <data name="NowPlayingDefaultAddress" xml:space="preserve">
+    <value>Quận 4, TP.HCM</value>
+  </data>
+  <data name="NowPlayingWalkMinutesFormat" xml:space="preserve">
+    <value>{0} phút đi bộ</value>
+  </data>
+  <data name="NowPlayingDistanceMetersAwayFormat" xml:space="preserve">
+    <value>cách {0:F0}m</value>
+  </data>
+  <data name="NowPlayingDistanceKmAwayFormat" xml:space="preserve">
+    <value>cách {0:F1} km</value>
+  </data>
+
+  <!-- Common -->
+  <data name="TrackingUnknown" xml:space="preserve">
+    <value>Không rõ</value>
+  </data>
+
+  <!-- Android location notification -->
+  <data name="AndroidLocationChannelName" xml:space="preserve">
+    <value>VK Street Food Location</value>
+  </data>
+  <data name="AndroidLocationChannelDescription" xml:space="preserve">
+    <value>Theo dõi vị trí để gợi ý điểm ẩm thực gần bạn</value>
+  </data>
+  <data name="AndroidLocationNotificationText" xml:space="preserve">
+    <value>Đang theo dõi vị trí để gợi ý điểm tham quan...</value>
+  </data>
 </root>

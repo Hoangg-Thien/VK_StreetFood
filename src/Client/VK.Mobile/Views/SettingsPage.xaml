@@ -79,7 +79,7 @@
                                                         OnColor="{StaticResource Primary}"/>
                                         </Grid>
 
-                                        <Button Text="TTS Voice / Offline Data"
+                                        <Button Text="{Binding Source={x:Static loc:LocalizationResourceManager.Instance}, Path=[SettingsTtsOfflineButton]}"
                                                 Command="{Binding OpenTtsSettingsCommand}"
                                                 BackgroundColor="{StaticResource Primary}"
                                                 TextColor="White"
@@ -155,7 +155,7 @@
                                                FontSize="13"
                                                TextColor="{StaticResource TextSecondary}"/>
 
-                                        <Button Text="Tải gói offline"
+                                        <Button Text="{Binding Source={x:Static loc:LocalizationResourceManager.Instance}, Path=[SettingsDownloadOfflinePackage]}"
                                                 Command="{Binding DownloadOfflinePackageCommand}"
                                                 BackgroundColor="{StaticResource Primary}"
                                                 TextColor="White"
@@ -166,7 +166,7 @@
                                                            IsVisible="{Binding IsDownloadingOfflinePackage}"
                                                            Color="{StaticResource Primary}"/>
 
-                                        <Button Text="Cập nhật trạng thái offline"
+                                        <Button Text="{Binding Source={x:Static loc:LocalizationResourceManager.Instance}, Path=[SettingsRefreshOfflineStatus]}"
                                                 Command="{Binding RefreshOfflineStatusCommand}"
                                                 BackgroundColor="{StaticResource PageBackground}"
                                                 TextColor="{StaticResource TextPrimary}"

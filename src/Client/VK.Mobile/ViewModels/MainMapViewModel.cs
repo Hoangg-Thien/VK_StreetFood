@@ -1,5 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using System.Globalization;
 using VK.Mobile.Models;
 using VK.Mobile.Services;
 using System.Collections.ObjectModel;
@@ -17,6 +18,7 @@ public partial class MainMapViewModel : ObservableObject
     private readonly StorageService _storageService;
     private readonly LocalPOIDatabase _localDb;
     private readonly ILogger<MainMapViewModel> _logger;
+    private static LocalizationResourceManager L => LocalizationResourceManager.Instance;
 
     private DateTime _lastServerLocationUpdate = DateTime.MinValue;
 
@@ -202,7 +204,7 @@ public partial class MainMapViewModel : ObservableObject
 
             if (poiList.Count == 0)
             {
-                PoiLoadError = "Không có dữ liệu POI offline. Hãy vào online để đồng bộ dữ liệu.";
+                PoiLoadError = L["MainMapNoOfflineData"];
             }
 
             Pois.Clear();
@@ -230,12 +232,15 @@ public partial class MainMapViewModel : ObservableObject
 
                 PoiLoadError = Pois.Count > 0
                     ? null
-                    : "Không thể tải POI và không có dữ liệu offline.";
+                    : L["MainMapNoOfflineDataFallback"];
             }
             catch (Exception cacheEx)
             {
                 _logger.LogError(cacheEx, "Error loading POIs from SQLite cache");
-                PoiLoadError = $"Lỗi load POIs: {ex.Message}";
+                PoiLoadError = string.Format(
+                    CultureInfo.CurrentCulture,
+                    L["MainMapLoadErrorFormat"],
+                    ex.Message);
             }
         }
     }
@@ -261,7 +266,10 @@ public partial class MainMapViewModel : ObservableObject
         {
             _logger.LogError(ex, "Error opening NowPlaying for POI {Name}", poi.Name);
             await MainThread.InvokeOnMainThreadAsync(async () =>
-                await Shell.Current.DisplayAlert("⚠️ Lỗi", $"Không mở được trình phát: {ex.Message}", "Đóng")
+                await Shell.Current.DisplayAlert(
+                    L["Error"],
+                    string.Format(CultureInfo.CurrentCulture, L["MainMapOpenPlayerFailedFormat"], ex.Message),
+                    L["MainMapClose"])
             );
         }
     }
@@ -299,7 +307,10 @@ public partial class MainMapViewModel : ObservableObject
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error navigating to POI detail for {Name}", poi.Name);
-            await Shell.Current.DisplayAlert("Lỗi", $"Không mở được chi tiết: {ex.Message}", "OK");
+            await Shell.Current.DisplayAlert(
+                L["Error"],
+                string.Format(CultureInfo.CurrentCulture, L["MainMapOpenDetailFailedFormat"], ex.Message),
+                L["OK"]);
         }
     }
 

@@ -180,7 +180,7 @@
 
   <!-- Menu / Explore Page -->
   <data name="TabExplore" xml:space="preserve">
-    <value>탐헙</value>
+    <value>탐색</value>
   </data>
   <data name="MenuTitle" xml:space="preserve">
     <value>🍜 음식 메뉴</value>
@@ -195,7 +195,7 @@
     <value>식당을 찾을 수 없어요</value>
   </data>
   <data name="MenuPointsUnit" xml:space="preserve">
-    <value> 곣</value>
+    <value> 개</value>
   </data>
   <data name="MenuRetry" xml:space="preserve">
     <value>다시 시도</value>
@@ -250,5 +250,225 @@
   </data>
   <data name="POIActionClose" xml:space="preserve">
     <value>닫기</value>
+  </data>
+
+  <!-- Settings / Offline -->
+  <data name="SettingsTtsOfflineButton" xml:space="preserve">
+    <value>TTS 음성 / 오프라인 데이터</value>
+  </data>
+  <data name="SettingsDownloadOfflinePackage" xml:space="preserve">
+    <value>오프라인 패키지 다운로드</value>
+  </data>
+  <data name="SettingsRefreshOfflineStatus" xml:space="preserve">
+    <value>오프라인 상태 새로고침</value>
+  </data>
+  <data name="SettingsOfflineNotDownloaded" xml:space="preserve">
+    <value>오프라인 패키지를 아직 다운로드하지 않았습니다.</value>
+  </data>
+  <data name="SettingsOfflineDownloading" xml:space="preserve">
+    <value>오프라인 패키지 다운로드 중...</value>
+  </data>
+  <data name="SettingsOfflineStatusSummaryFormat" xml:space="preserve">
+    <value>POI: {0}, 스크립트: {1}, 마지막 동기화: {2}</value>
+  </data>
+  <data name="SettingsOfflineNeverSynced" xml:space="preserve">
+    <value>동기화 안 됨</value>
+  </data>
+  <data name="SettingsOfflineStatusReadError" xml:space="preserve">
+    <value>오프라인 상태를 읽을 수 없습니다.</value>
+  </data>
+  <data name="SettingsOfflineTitle" xml:space="preserve">
+    <value>오프라인</value>
+  </data>
+  <data name="SettingsTtsTitle" xml:space="preserve">
+    <value>TTS</value>
+  </data>
+  <data name="SettingsTtsOpenErrorMessage" xml:space="preserve">
+    <value>시스템 TTS 설정을 열 수 없습니다.</value>
+  </data>
+  <data name="SettingsTtsAndroidOnlyMessage" xml:space="preserve">
+    <value>이 기능은 현재 Android에서만 지원됩니다.</value>
+  </data>
+  <data name="SettingsClearCacheConfirm" xml:space="preserve">
+    <value>모든 캐시를 삭제하시겠습니까?</value>
+  </data>
+  <data name="SettingsClearCacheDone" xml:space="preserve">
+    <value>캐시를 삭제했습니다.</value>
+  </data>
+  <data name="SettingsLogoutConfirm" xml:space="preserve">
+    <value>정말 종료하시겠습니까?</value>
+  </data>
+
+  <!-- Offline package result messages -->
+  <data name="OfflineNoInternet" xml:space="preserve">
+    <value>오프라인 패키지를 다운로드하려면 인터넷 연결이 필요합니다.</value>
+  </data>
+  <data name="OfflinePoiFetchFailed" xml:space="preserve">
+    <value>서버에서 POI 데이터를 가져오지 못했습니다.</value>
+  </data>
+  <data name="OfflineDownloadSummaryFormat" xml:space="preserve">
+    <value>오프라인 다운로드 완료: POI {0}개, 스크립트 {1}개{2}{3}.</value>
+  </data>
+  <data name="OfflineDownloadAudioSuffixFormat" xml:space="preserve">
+    <value>, 오디오 파일 {0}개</value>
+  </data>
+  <data name="OfflineDownloadRouteSuffix" xml:space="preserve">
+    <value>, 경로 그래프</value>
+  </data>
+  <data name="OfflineDownloadCancelled" xml:space="preserve">
+    <value>오프라인 패키지 다운로드가 취소되었습니다.</value>
+  </data>
+  <data name="OfflineDownloadFailed" xml:space="preserve">
+    <value>오프라인 패키지 다운로드에 실패했습니다.</value>
+  </data>
+
+  <!-- Main map messages -->
+  <data name="MainMapNoOfflineData" xml:space="preserve">
+    <value>오프라인 POI 데이터가 없습니다. 온라인에서 동기화해 주세요.</value>
+  </data>
+  <data name="MainMapNoOfflineDataFallback" xml:space="preserve">
+    <value>POI를 불러올 수 없고 오프라인 데이터도 없습니다.</value>
+  </data>
+  <data name="MainMapLoadErrorFormat" xml:space="preserve">
+    <value>POI 로드 오류: {0}</value>
+  </data>
+  <data name="MainMapOpenPlayerFailedFormat" xml:space="preserve">
+    <value>플레이어를 열 수 없습니다: {0}</value>
+  </data>
+  <data name="MainMapOpenDetailFailedFormat" xml:space="preserve">
+    <value>상세 정보를 열 수 없습니다: {0}</value>
+  </data>
+  <data name="MainMapClose" xml:space="preserve">
+    <value>닫기</value>
+  </data>
+  <data name="MainMapButtonListen" xml:space="preserve">
+    <value>🔊 음성 안내 듣기</value>
+  </data>
+  <data name="MainMapButtonDetail" xml:space="preserve">
+    <value>상세 보기</value>
+  </data>
+  <data name="MainMapButtonDirections" xml:space="preserve">
+    <value>길찾기</value>
+  </data>
+  <data name="MainMapCurrentLocationUnavailable" xml:space="preserve">
+    <value>길찾기를 위해 현재 위치를 가져올 수 없습니다.</value>
+  </data>
+  <data name="MainMapRouteUnavailable" xml:space="preserve">
+    <value>지금은 경로를 가져올 수 없습니다.</value>
+  </data>
+  <data name="MainMapOfflineRouteGraphMessage" xml:space="preserve">
+    <value>오프라인 상태입니다. 로컬 경로 그래프로 길찾기를 제공합니다.</value>
+  </data>
+  <data name="MainMapOfflineRouteApproxMessage" xml:space="preserve">
+    <value>오프라인 경로 그래프가 없어 추정 경로를 표시합니다. 온라인에서 설정 &gt; 오프라인 패키지 다운로드를 실행해 전체 경로를 생성하세요.</value>
+  </data>
+  <data name="MainMapDirectionsError" xml:space="preserve">
+    <value>지금은 길찾기를 제공할 수 없습니다.</value>
+  </data>
+  <data name="MainMapMapLoadFailedFormat" xml:space="preserve">
+    <value>지도 로드 실패: {0}</value>
+  </data>
+
+  <!-- POI detail / rating messages -->
+  <data name="POIDetailAudioStatusPlaying" xml:space="preserve">
+    <value>⏸ 재생 중...</value>
+  </data>
+  <data name="POIDetailAudioStatusPaused" xml:space="preserve">
+    <value>일시정지됨</value>
+  </data>
+  <data name="POIDetailAudioStatusReady" xml:space="preserve">
+    <value>▶ 를 눌러 재생</value>
+  </data>
+  <data name="POIDetailLoadFailed" xml:space="preserve">
+    <value>장소 상세 정보를 불러오지 못했습니다</value>
+  </data>
+  <data name="POIDetailNoAudioContent" xml:space="preserve">
+    <value>이 장소에 대한 오디오 콘텐츠가 없습니다</value>
+  </data>
+  <data name="POIDetailFavoriteLoginRequired" xml:space="preserve">
+    <value>즐겨찾기 기능을 사용하려면 계정을 등록해 주세요.</value>
+  </data>
+  <data name="POIDetailRemoveFavoriteFailed" xml:space="preserve">
+    <value>즐겨찾기에서 삭제할 수 없습니다.</value>
+  </data>
+  <data name="POIDetailAddFavoriteFailed" xml:space="preserve">
+    <value>즐겨찾기에 추가할 수 없습니다.</value>
+  </data>
+  <data name="POIDetailConnectionErrorFormat" xml:space="preserve">
+    <value>연결 오류: {0}</value>
+  </data>
+  <data name="POIDetailRatingPromptTitle" xml:space="preserve">
+    <value>평점</value>
+  </data>
+  <data name="POIDetailRatingPromptMessage" xml:space="preserve">
+    <value>선택 댓글:</value>
+  </data>
+  <data name="POIDetailRatingSubmit" xml:space="preserve">
+    <value>제출</value>
+  </data>
+  <data name="POIDetailRatingSuccess" xml:space="preserve">
+    <value>평점이 제출되었습니다</value>
+  </data>
+  <data name="POIDetailAverageRatingFormat" xml:space="preserve">
+    <value>평균: {0:F1} ⭐</value>
+  </data>
+
+  <!-- Favorites / menu errors -->
+  <data name="FavoritesLoadFailed" xml:space="preserve">
+    <value>즐겨찾기 목록을 불러올 수 없습니다</value>
+  </data>
+  <data name="FavoritesRemovedSuccess" xml:space="preserve">
+    <value>즐겨찾기에서 삭제했습니다</value>
+  </data>
+  <data name="FavoritesRemoveFailed" xml:space="preserve">
+    <value>삭제할 수 없습니다</value>
+  </data>
+  <data name="Success" xml:space="preserve">
+    <value>성공</value>
+  </data>
+  <data name="MenuNoOfflineData" xml:space="preserve">
+    <value>오프라인 POI 데이터가 없습니다. 온라인에서 동기화해 주세요.</value>
+  </data>
+  <data name="MenuLoadFailed" xml:space="preserve">
+    <value>목록을 불러올 수 없습니다. 네트워크를 확인해 주세요.</value>
+  </data>
+
+  <!-- Now playing -->
+  <data name="NowPlayingTourTitle" xml:space="preserve">
+    <value>빈칸 거리 투어</value>
+  </data>
+  <data name="NowPlayingFallbackVietnamese" xml:space="preserve">
+    <value>베트남어 오디오를 재생 중입니다 (번역 미제공)</value>
+  </data>
+  <data name="NowPlayingUpNextTitle" xml:space="preserve">
+    <value>다음 POI (UP NEXT)</value>
+  </data>
+  <data name="NowPlayingDefaultAddress" xml:space="preserve">
+    <value>4군, 호찌민</value>
+  </data>
+  <data name="NowPlayingWalkMinutesFormat" xml:space="preserve">
+    <value>도보 {0}분</value>
+  </data>
+  <data name="NowPlayingDistanceMetersAwayFormat" xml:space="preserve">
+    <value>{0:F0}m 거리</value>
+  </data>
+  <data name="NowPlayingDistanceKmAwayFormat" xml:space="preserve">
+    <value>{0:F1} km 거리</value>
+  </data>
+
+  <!-- Common -->
+  <data name="TrackingUnknown" xml:space="preserve">
+    <value>알 수 없음</value>
+  </data>
+
+  <!-- Android location notification -->
+  <data name="AndroidLocationChannelName" xml:space="preserve">
+    <value>VK 스트리트 푸드 위치</value>
+  </data>
+  <data name="AndroidLocationChannelDescription" xml:space="preserve">
+    <value>주변 맛집 추천을 위해 위치를 추적합니다</value>
+  </data>
+  <data name="AndroidLocationNotificationText" xml:space="preserve">
+    <value>주변 장소 추천을 위해 위치를 추적 중...</value>
   </data>
 </root>

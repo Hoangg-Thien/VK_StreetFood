@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using VK.Mobile.Models;
+using VK.Mobile.Resources.Strings;
 
 namespace VK.Mobile.Services;
 
@@ -79,7 +80,7 @@ public class OfflineContentService : IOfflineContentService
         {
             return new OfflinePackageResult(
                 false,
-                "Không có mạng Internet để tải gói offline.",
+                GetLocalizedString("OfflineNoInternet", languageCode),
                 0,
                 0,
                 0);
@@ -94,7 +95,7 @@ public class OfflineContentService : IOfflineContentService
             {
                 return new OfflinePackageResult(
                     false,
-                    "Không tải được dữ liệu POI từ server.",
+                    GetLocalizedString("OfflinePoiFetchFailed", lang),
                     0,
                     0,
                     0);
@@ -178,20 +179,36 @@ public class OfflineContentService : IOfflineContentService
                 }
             }
 
-            var message = $"Đã tải offline: {pois.Count} POI, {scriptCount} script"
-                        + (audioFileCount > 0 ? $", {audioFileCount} file audio" : "")
-                        + (routePackageDownloaded ? ", route graph" : "") + ".";
+            var culture = ResolveCulture(lang);
+            var audioSuffix = audioFileCount > 0
+                ? string.Format(
+                    culture,
+                    GetLocalizedString("OfflineDownloadAudioSuffixFormat", lang),
+                    audioFileCount)
+                : string.Empty;
+
+            var routeSuffix = routePackageDownloaded
+                ? GetLocalizedString("OfflineDownloadRouteSuffix", lang)
+                : string.Empty;
+
+            var message = string.Format(
+                culture,
+                GetLocalizedString("OfflineDownloadSummaryFormat", lang),
+                pois.Count,
+                scriptCount,
+                audioSuffix,
+                routeSuffix);
 
             return new OfflinePackageResult(true, message, pois.Count, scriptCount, audioFileCount);
         }
         catch (OperationCanceledException)
         {
-            return new OfflinePackageResult(false, "Đã hủy tải gói offline.", 0, 0, 0);
+            return new OfflinePackageResult(false, GetLocalizedString("OfflineDownloadCancelled", languageCode), 0, 0, 0);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "DownloadOfflinePackageAsync failed");
-            return new OfflinePackageResult(false, "Tải gói offline thất bại.", 0, 0, 0);
+            return new OfflinePackageResult(false, GetLocalizedString("OfflineDownloadFailed", languageCode), 0, 0, 0);
         }
     }
 
@@ -361,6 +378,20 @@ public class OfflineContentService : IOfflineContentService
         => string.IsNullOrWhiteSpace(languageCode)
             ? "vi"
             : languageCode.Trim().ToLowerInvariant();
+
+    private static CultureInfo ResolveCulture(string languageCode)
+    {
+        var normalized = NormalizeLanguage(languageCode);
+        return normalized switch
+        {
+            "en" => new CultureInfo("en-US"),
+            "ko" => new CultureInfo("ko-KR"),
+            _ => new CultureInfo("vi-VN")
+        };
+    }
+
+    private static string GetLocalizedString(string key, string languageCode)
+        => AppResources.ResourceManager.GetString(key, ResolveCulture(languageCode)) ?? key;
 
     private static string ToAbsoluteUrl(string url)
     {

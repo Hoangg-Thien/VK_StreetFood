@@ -6,7 +6,7 @@
              xmlns:models="clr-namespace:VK.Mobile.Models"
              x:Class="VK.Mobile.Views.MainMapPage"
              x:DataType="vm:MainMapViewModel"
-             Title="VK Street Food"
+             Title="{Binding Source={x:Static loc:LocalizationResourceManager.Instance}, Path=[MapTitle]}"
              Shell.NavBarIsVisible="False">
 
     <Grid RowDefinitions="Auto,*,Auto">
@@ -138,7 +138,7 @@
                            LineBreakMode="WordWrap"
                            VerticalOptions="Center"/>
                     <Button Grid.Column="1"
-                            Text="Thử lại"
+                            Text="{Binding Source={x:Static loc:LocalizationResourceManager.Instance}, Path=[MenuRetry]}"
                             FontSize="11"
                             BackgroundColor="#FF5722"
                             TextColor="White"
@@ -340,7 +340,7 @@
                           RowSpacing="8">
                         <!-- Nghe thuyết minh: nút chính toàn chiều rộng -->
                         <Button Grid.Row="0"
-                                Text="🔊 Nghe thuyết minh"
+                            Text="{Binding Source={x:Static loc:LocalizationResourceManager.Instance}, Path=[MainMapButtonListen]}"
                                 FontSize="14"
                                 FontAttributes="Bold"
                                 BackgroundColor="#FF5722"
@@ -353,7 +353,7 @@
                               ColumnDefinitions="*,*"
                               ColumnSpacing="10">
                             <Button Grid.Column="0"
-                                    Text="Xem chi tiết"
+                                    Text="{Binding Source={x:Static loc:LocalizationResourceManager.Instance}, Path=[MainMapButtonDetail]}"
                                     FontSize="13"
                                     BackgroundColor="#FFF3E0"
                                     TextColor="#FF5722"
@@ -361,7 +361,7 @@
                                     HeightRequest="40"
                                     Clicked="OnPOIDetailClicked"/>
                             <Button Grid.Column="1"
-                                    Text="Chỉ đường"
+                                    Text="{Binding Source={x:Static loc:LocalizationResourceManager.Instance}, Path=[MainMapButtonDirections]}"
                                     FontSize="13"
                                     BackgroundColor="#E3F2FD"
                                     TextColor="#1565C0"

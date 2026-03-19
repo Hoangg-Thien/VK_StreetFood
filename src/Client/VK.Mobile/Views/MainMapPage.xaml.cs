@@ -10,6 +10,7 @@ using Mapsui.Nts;
 using NetTopologySuite.Geometries;
 using BruTile.Cache;
 using BruTile.Predefined;
+using System.Globalization;
 using VK.Mobile.ViewModels;
 using VK.Mobile.Models;
 using VK.Mobile.Services;
@@ -28,6 +29,7 @@ public partial class MainMapPage : ContentPage
     private bool _hasActiveRoute = false;
     private bool _hasCenteredOnUser = false;
     private POIModel? _selectedPoi;
+    private static LocalizationResourceManager L => LocalizationResourceManager.Instance;
     // Viewport save/restore on tab switch
     private double _savedCenterX = double.NaN;
     private double _savedCenterY = double.NaN;
@@ -126,7 +128,7 @@ public partial class MainMapPage : ContentPage
             System.Diagnostics.Debug.WriteLine($"InitializeMap error: {ex}");
             MapContainer.Content = new Label
             {
-                Text = $"Map load failed: {ex.Message}",
+                Text = string.Format(CultureInfo.CurrentCulture, L["MainMapMapLoadFailedFormat"], ex.Message),
                 HorizontalOptions = LayoutOptions.Center,
                 VerticalOptions = LayoutOptions.Center,
                 TextColor = Colors.Red
@@ -479,12 +481,26 @@ public partial class MainMapPage : ContentPage
         _selectedPoi = null;
     }
 
-    private static string FormatCardDistance(double? distKm) => distKm switch
+    private static string FormatCardDistance(double? distKm)
     {
-        null or 0 => string.Empty,
-        < 0.1 => $"📍 {distKm.Value * 1000:F0}m",
-        _ => $"📍 {distKm.Value:F1} km"
-    };
+        if (distKm is null or 0)
+            return string.Empty;
+
+        if (distKm < 0.1)
+        {
+            var text = string.Format(
+                CultureInfo.CurrentCulture,
+                LocalizationResourceManager.Instance["NowPlayingDistanceMetersAwayFormat"],
+                distKm.Value * 1000);
+            return $"📍 {text}";
+        }
+
+        var kmText = string.Format(
+            CultureInfo.CurrentCulture,
+            LocalizationResourceManager.Instance["NowPlayingDistanceKmAwayFormat"],
+            distKm.Value);
+        return $"📍 {kmText}";
+    }
 
     private static double ComputeDistanceKm(double lat1, double lon1, double lat2, double lon2)
     {
@@ -527,7 +543,7 @@ public partial class MainMapPage : ContentPage
 
         if (currentLocation == null)
         {
-            await DisplayAlertAsync("Lỗi", "Không lấy được vị trí hiện tại để chỉ đường.", "Đóng");
+            await DisplayAlertAsync(L["Error"], L["MainMapCurrentLocationUnavailable"], L["MainMapClose"]);
             return;
         }
 
@@ -542,7 +558,7 @@ public partial class MainMapPage : ContentPage
 
             if (route == null || route.Coordinates.Count < 2)
             {
-                await DisplayAlertAsync("Lỗi", "Không lấy được tuyến đường lúc này.", "Đóng");
+                await DisplayAlertAsync(L["Error"], L["MainMapRouteUnavailable"], L["MainMapClose"]);
                 return;
             }
 
@@ -550,17 +566,17 @@ public partial class MainMapPage : ContentPage
 
             if (route.Provider == "offline-graph")
             {
-                await DisplayAlertAsync("Offline", "Đang offline: dùng route graph cục bộ để chỉ đường.", "Đóng");
+                await DisplayAlertAsync(L["SettingsOfflineTitle"], L["MainMapOfflineRouteGraphMessage"], L["MainMapClose"]);
             }
             else if (route.Provider == "offline-fallback")
             {
-                await DisplayAlertAsync("Offline", "Chưa có route graph offline nên đang hiển thị đường ước lượng. Hãy bật mạng và vào Cài đặt > Tải gói offline để tạo route như online.", "Đóng");
+                await DisplayAlertAsync(L["SettingsOfflineTitle"], L["MainMapOfflineRouteApproxMessage"], L["MainMapClose"]);
             }
         }
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"Directions error: {ex}");
-            await DisplayAlertAsync("Lỗi", "Không thể chỉ đường lúc này.", "Đóng");
+            await DisplayAlertAsync(L["Error"], L["MainMapDirectionsError"], L["MainMapClose"]);
         }
         finally
         {

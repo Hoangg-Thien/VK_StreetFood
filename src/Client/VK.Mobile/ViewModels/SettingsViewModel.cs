@@ -1,5 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using System.Globalization;
 using VK.Mobile.Models;
 using VK.Mobile.Services;
 
@@ -12,6 +13,7 @@ public partial class SettingsViewModel : ObservableObject
     private readonly ILocationService _locationService;
     private readonly IOfflineContentService _offlineContentService;
     private static readonly string[] LanguageCodes = { "vi", "en", "ko" };
+    private static LocalizationResourceManager L => LocalizationResourceManager.Instance;
 
     public string[] LanguageDisplayNames { get; } = { "Tiếng Việt", "English", "한국어" };
 
@@ -32,6 +34,7 @@ public partial class SettingsViewModel : ObservableObject
         {
             _selectedLanguage = LocalizationResourceManager.Instance.CurrentLanguage;
             OnPropertyChanged(nameof(SelectedLanguageDisplayIndex));
+            _ = RefreshOfflineStatusAsync();
         };
 
         _ = RefreshOfflineStatusAsync();
@@ -59,7 +62,7 @@ public partial class SettingsViewModel : ObservableObject
     private bool _includeAudioFilesInOfflinePackage;
 
     [ObservableProperty]
-    private string _offlinePackageStatus = "Chưa tải gói offline.";
+    private string _offlinePackageStatus = "";
 
     partial void OnNotificationsEnabledChanged(bool value)
         => Preferences.Set("NotificationsEnabled", value);
@@ -85,6 +88,9 @@ public partial class SettingsViewModel : ObservableObject
         AutoPlayAudio = Preferences.Get("AutoPlayAudio", true);
         GeofenceRadius = Preferences.Get("GeofenceRadius", AppSettings.GeofenceRadiusMeters);
         LocationUpdateInterval = Preferences.Get("LocationUpdateInterval", AppSettings.LocationUpdateIntervalSeconds);
+
+        if (string.IsNullOrWhiteSpace(OfflinePackageStatus))
+            OfflinePackageStatus = L["SettingsOfflineNotDownloaded"];
     }
 
     [RelayCommand]
@@ -135,7 +141,7 @@ public partial class SettingsViewModel : ObservableObject
         try
         {
             IsDownloadingOfflinePackage = true;
-            OfflinePackageStatus = "Đang tải gói offline...";
+            OfflinePackageStatus = L["SettingsOfflineDownloading"];
 
             var result = await _offlineContentService.DownloadOfflinePackageAsync(
                 SelectedLanguage,
@@ -143,9 +149,9 @@ public partial class SettingsViewModel : ObservableObject
 
             OfflinePackageStatus = result.Message;
             await Application.Current!.MainPage!.DisplayAlert(
-                result.Success ? "Offline" : "Lỗi",
+                result.Success ? L["SettingsOfflineTitle"] : L["Error"],
                 result.Message,
-                "OK");
+                L["OK"]);
         }
         finally
         {
@@ -160,14 +166,18 @@ public partial class SettingsViewModel : ObservableObject
         try
         {
             var status = await _offlineContentService.GetStatusAsync();
-            var last = status.LastSyncUtc?.ToLocalTime().ToString("dd/MM HH:mm") ?? "chưa sync";
+            var last = status.LastSyncUtc?.ToLocalTime().ToString("dd/MM HH:mm") ?? L["SettingsOfflineNeverSynced"];
 
-            OfflinePackageStatus =
-                $"POI: {status.PoiCount}, Script: {status.ScriptCount}, Lần cuối: {last}";
+            OfflinePackageStatus = string.Format(
+                CultureInfo.CurrentCulture,
+                L["SettingsOfflineStatusSummaryFormat"],
+                status.PoiCount,
+                status.ScriptCount,
+                last);
         }
         catch
         {
-            OfflinePackageStatus = "Không đọc được trạng thái offline.";
+            OfflinePackageStatus = L["SettingsOfflineStatusReadError"];
         }
     }
 
@@ -185,15 +195,15 @@ public partial class SettingsViewModel : ObservableObject
         catch
         {
             await Application.Current!.MainPage!.DisplayAlert(
-                "TTS",
-                "Không mở được cài đặt TTS hệ thống.",
-                "OK");
+                L["SettingsTtsTitle"],
+                L["SettingsTtsOpenErrorMessage"],
+                L["OK"]);
         }
 #else
         await Application.Current!.MainPage!.DisplayAlert(
-            "TTS",
-            "Tính năng này hiện hỗ trợ trên Android.",
-            "OK");
+            L["SettingsTtsTitle"],
+            L["SettingsTtsAndroidOnlyMessage"],
+            L["OK"]);
 #endif
     }
 
@@ -201,10 +211,10 @@ public partial class SettingsViewModel : ObservableObject
     async Task ClearCache()
     {
         bool confirm = await Application.Current!.MainPage!.DisplayAlert(
-            LocalizationResourceManager.Instance["SettingsClearCache"],
-            "Bạn có chắc muốn xóa toàn bộ bộ nhớ đệm?",
-            LocalizationResourceManager.Instance["OK"],
-            LocalizationResourceManager.Instance["Cancel"]);
+            L["SettingsClearCache"],
+            L["SettingsClearCacheConfirm"],
+            L["OK"],
+            L["Cancel"]);
 
         if (confirm)
         {
@@ -216,9 +226,9 @@ public partial class SettingsViewModel : ObservableObject
             await RefreshOfflineStatusAsync();
 
             await Application.Current.MainPage.DisplayAlert(
-                LocalizationResourceManager.Instance["OK"],
-                "Đã xóa bộ nhớ đệm.",
-                LocalizationResourceManager.Instance["OK"]);
+                L["Success"],
+                L["SettingsClearCacheDone"],
+                L["OK"]);
         }
     }
 
@@ -226,10 +236,10 @@ public partial class SettingsViewModel : ObservableObject
     async Task Logout()
     {
         bool confirm = await Application.Current!.MainPage!.DisplayAlert(
-            LocalizationResourceManager.Instance["SettingsLogout"],
-            "Bạn có chắc muốn thoát?",
-            LocalizationResourceManager.Instance["SettingsLogout"],
-            LocalizationResourceManager.Instance["Cancel"]);
+            L["SettingsLogout"],
+            L["SettingsLogoutConfirm"],
+            L["SettingsLogout"],
+            L["Cancel"]);
 
         if (confirm)
         {
