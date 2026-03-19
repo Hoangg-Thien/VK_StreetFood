@@ -12,7 +12,6 @@ public partial class AppShell : Shell
 		// Register routes for navigation
 		Routing.RegisterRoute("POIDetail", typeof(POIDetailPage));
 		Routing.RegisterRoute("poidetail", typeof(POIDetailPage));
-		Routing.RegisterRoute("analytics", typeof(AnalyticsPage));
 		Routing.RegisterRoute("NowPlaying", typeof(NowPlayingPage));
 
 		// Lắng nghe thay đổi ngôn ngữ để cập nhật tab titles

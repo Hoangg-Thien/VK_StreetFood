@@ -102,7 +102,7 @@
 
                 <!-- Clear current route -->
                 <Border x:Name="ClearRouteBorder"
-                        BackgroundColor="#CC1565C0"
+                        BackgroundColor="#D9DE0000"
                         StrokeShape="RoundRectangle 8"
                         Stroke="Transparent"
                         WidthRequest="36"

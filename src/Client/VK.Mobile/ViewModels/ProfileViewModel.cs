@@ -81,12 +81,6 @@ public partial class ProfileViewModel : ObservableObject
         await Shell.Current.GoToAsync("///Favorites");
     }
 
-    [RelayCommand]
-    async Task NavigateToAnalytics()
-    {
-        await Shell.Current.GoToAsync("analytics");
-    }
-
     public string GetLanguageDisplayName(string code)
     {
         return code switch
