@@ -97,8 +97,10 @@ public class LocalPOIDatabase
         return fallback;
     }
 
-    private static List<POIModel> BuildBuiltInFallbackPois() => new()
+    private static List<POIModel> BuildBuiltInFallbackPois()
     {
+        var fallbackPois = new List<POIModel>
+        {
         new POIModel
         {
             Id = 1,
@@ -231,7 +233,43 @@ public class LocalPOIDatabase
             CategoryName = "Noodle",
             ImageUrl = "/images/poi/bun-ca.jpg"
         }
-    };
+        };
+
+        foreach (var poi in fallbackPois)
+        {
+            if (TryGetBuiltInTriggerProfile(poi.Id, out var profile))
+            {
+                poi.Priority = profile.Priority;
+                poi.TriggerRadiusMeters = profile.TriggerRadiusMeters;
+            }
+        }
+
+        return fallbackPois;
+    }
+
+    private static bool TryGetBuiltInTriggerProfile(
+        int poiId,
+        out (int Priority, double? TriggerRadiusMeters) profile)
+    {
+        profile = poiId switch
+        {
+            1 => (100, 80),
+            2 => (70, 55),
+            3 => (68, 55),
+            4 => (66, 55),
+            5 => (85, 60),
+            6 => (62, 60),
+            7 => (60, 60),
+            8 => (58, 55),
+            9 => (64, 55),
+            10 => (56, 60),
+            11 => (57, 55),
+            12 => (54, 50),
+            _ => default
+        };
+
+        return profile != default;
+    }
 
     /// <summary>Số lượng POI hiện có trong cache.</summary>
     public async Task<int> GetCachedPoiCountAsync()

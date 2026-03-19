@@ -45,6 +45,13 @@ public class AudioService : IAudioService
     private bool _isProcessingQueue;
     private TaskCompletionSource<bool>? _currentPlayTcs;
 
+#if ANDROID
+    private global::Android.Media.AudioManager? _androidAudioManager;
+    private AndroidAudioFocusListener? _androidAudioFocusListener;
+    private global::Android.Media.AudioFocusRequestClass? _androidAudioFocusRequest;
+    private bool _hasAndroidAudioFocus;
+#endif
+
     public event EventHandler? PlaybackCompleted;
     public event EventHandler<string>? PlaybackError;
 
@@ -60,6 +67,13 @@ public class AudioService : IAudioService
         _logger = logger;
         _httpClient = new HttpClient();
         _httpClient.BaseAddress = new Uri(AppSettings.AudioBaseUrl);
+
+#if ANDROID
+        _androidAudioManager = (global::Android.Media.AudioManager?)
+            global::Android.App.Application.Context.GetSystemService(
+                global::Android.Content.Context.AudioService);
+        _androidAudioFocusListener = new AndroidAudioFocusListener(OnAndroidAudioFocusChanged);
+#endif
     }
 
     public async Task<bool> PlayAudioAsync(string audioUrl, int? poiId = null, int priority = 0)
@@ -258,31 +272,43 @@ public class AudioService : IAudioService
 
     // ─── Audio Focus ──────────────────────────────────────────────────────────
 
-    private static void RequestAudioFocus()
+    private void RequestAudioFocus()
     {
 #if ANDROID
         try
         {
-            var am = (global::Android.Media.AudioManager?)
-                global::Android.App.Application.Context.GetSystemService(
-                    global::Android.Content.Context.AudioService);
+            if (_androidAudioManager == null)
+                return;
 
             if (global::Android.OS.Build.VERSION.SdkInt >= global::Android.OS.BuildVersionCodes.O)
             {
-                var req = new global::Android.Media.AudioFocusRequestClass
-                    .Builder(global::Android.Media.AudioFocus.GainTransient).Build();
-                am?.RequestAudioFocus(req);
+                _androidAudioFocusRequest ??= new global::Android.Media.AudioFocusRequestClass
+                    .Builder(global::Android.Media.AudioFocus.GainTransientMayDuck)
+                    .SetOnAudioFocusChangeListener(_androidAudioFocusListener)
+                    .Build();
+
+                var result = _androidAudioManager.RequestAudioFocus(_androidAudioFocusRequest);
+                _hasAndroidAudioFocus = result == global::Android.Media.AudioFocusRequest.Granted;
             }
             else
             {
 #pragma warning disable CA1422
-                am?.RequestAudioFocus(null,
+                var result = _androidAudioManager.RequestAudioFocus(
+                    _androidAudioFocusListener,
                     global::Android.Media.Stream.Music,
-                    global::Android.Media.AudioFocus.GainTransient);
+                    global::Android.Media.AudioFocus.GainTransientMayDuck);
 #pragma warning restore CA1422
+
+                _hasAndroidAudioFocus = result == global::Android.Media.AudioFocusRequest.Granted;
             }
+
+            if (!_hasAndroidAudioFocus)
+                _logger.LogDebug("Audio focus not granted for MP3 playback");
         }
-        catch { /* best effort */ }
+        catch (Exception ex)
+        {
+            _logger.LogDebug(ex, "RequestAudioFocus failed");
+        }
 #endif
 #if IOS
         try { AVFoundation.AVAudioSession.SharedInstance().SetActive(true, out _); }
@@ -290,33 +316,73 @@ public class AudioService : IAudioService
 #endif
     }
 
-    private static void AbandonAudioFocus()
+    private void AbandonAudioFocus()
     {
 #if ANDROID
         try
         {
-            var am = (global::Android.Media.AudioManager?)
-                global::Android.App.Application.Context.GetSystemService(
-                    global::Android.Content.Context.AudioService);
+            if (!_hasAndroidAudioFocus || _androidAudioManager == null)
+                return;
 
             if (global::Android.OS.Build.VERSION.SdkInt >= global::Android.OS.BuildVersionCodes.O)
             {
-                var req = new global::Android.Media.AudioFocusRequestClass
-                    .Builder(global::Android.Media.AudioFocus.GainTransient).Build();
-                am?.AbandonAudioFocusRequest(req);
+                if (_androidAudioFocusRequest != null)
+                    _androidAudioManager.AbandonAudioFocusRequest(_androidAudioFocusRequest);
             }
             else
             {
 #pragma warning disable CA1422
-                am?.AbandonAudioFocus(null);
+                _androidAudioManager.AbandonAudioFocus(_androidAudioFocusListener);
 #pragma warning restore CA1422
             }
         }
-        catch { /* best effort */ }
+        catch (Exception ex)
+        {
+            _logger.LogDebug(ex, "AbandonAudioFocus failed");
+        }
+        finally
+        {
+            _hasAndroidAudioFocus = false;
+        }
 #endif
 #if IOS
         try { AVFoundation.AVAudioSession.SharedInstance().SetActive(false, out _); }
         catch { /* best effort */ }
 #endif
     }
+
+#if ANDROID
+    private void OnAndroidAudioFocusChanged(global::Android.Media.AudioFocus focusChange)
+    {
+        if (focusChange is not (
+            global::Android.Media.AudioFocus.Loss or
+            global::Android.Media.AudioFocus.LossTransient or
+            global::Android.Media.AudioFocus.LossTransientCanDuck))
+        {
+            return;
+        }
+
+        MainThread.BeginInvokeOnMainThread(() =>
+        {
+            try
+            {
+                _logger.LogInformation("Audio focus lost ({Focus}), stopping current MP3 playback", focusChange);
+                _currentPlayer?.Stop();
+                _currentPlayTcs?.TrySetResult(false);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogDebug(ex, "Error handling audio focus loss");
+            }
+        });
+    }
+
+    private sealed class AndroidAudioFocusListener(Action<global::Android.Media.AudioFocus> onFocusChanged)
+        : Java.Lang.Object, global::Android.Media.AudioManager.IOnAudioFocusChangeListener
+    {
+        private readonly Action<global::Android.Media.AudioFocus> _onFocusChanged = onFocusChanged;
+        public void OnAudioFocusChange(global::Android.Media.AudioFocus focusChange)
+            => _onFocusChanged(focusChange);
+    }
+#endif
 }

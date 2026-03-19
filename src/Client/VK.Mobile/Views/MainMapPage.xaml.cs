@@ -1,5 +1,4 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-using Mapsui;
+﻿using Mapsui;
 using Mapsui.Extensions;
 using Mapsui.Layers;
 using Mapsui.Projections;
@@ -20,7 +19,6 @@ namespace VK.Mobile.Views;
 public partial class MainMapPage : ContentPage
 {
     private readonly MainMapViewModel _viewModel;
-    private readonly IServiceProvider _serviceProvider;
     private readonly IRoutingService _routingService;
     private MapControl? _mapControl;
     private WritableLayer? _poiLayer;
@@ -43,12 +41,10 @@ public partial class MainMapPage : ContentPage
 
     public MainMapPage(
         MainMapViewModel viewModel,
-        IServiceProvider serviceProvider,
         IRoutingService routingService)
     {
         InitializeComponent();
         _viewModel = viewModel;
-        _serviceProvider = serviceProvider;
         _routingService = routingService;
         BindingContext = _viewModel;
         Loaded += OnPageLoaded;
@@ -70,9 +66,6 @@ public partial class MainMapPage : ContentPage
                 if (args.PropertyName == nameof(_viewModel.NearestPoi))
                     UpdatePOIMarkers(); // re-draw để highlight POI gần nhất
             };
-
-            // Geofence tự động mở NowPlayingPage
-            _viewModel.GeofencePOITriggered += OnGeofencePOITriggered;
 
             try { await _viewModel.InitializeCommand.ExecuteAsync(null); }
             catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"VM init error: {ex}"); }
@@ -675,77 +668,5 @@ public partial class MainMapPage : ContentPage
             }
         }
 
-        _viewModel.StopTrackingCommand.Execute(null);
-        _viewModel.GeofencePOITriggered -= OnGeofencePOITriggered;
-    }
-
-    private async void OnGeofencePOITriggered(object? sender, VK.Mobile.Models.POIModel poi)
-    {
-        try
-        {
-            // Đóng NowPlayingPage đang mở (nếu có)
-            NowPlayingViewModel.RequestAutoClose();
-            await Task.Delay(350); // chờ dismiss animation
-
-            // Lấy content player theo thứ tự ưu tiên: API -> cache offline -> description fallback
-            var apiService = _serviceProvider.GetRequiredService<IApiService>();
-            var offlineService = _serviceProvider.GetRequiredService<IOfflineContentService>();
-            string audioText;
-
-            try
-            {
-                var audio = await apiService.GetAudioForPOIAsync(poi.Id, _viewModel.SelectedLanguage);
-                if (audio != null && !string.IsNullOrWhiteSpace(audio.TextContent))
-                {
-                    audioText = audio.TextContent;
-                    await offlineService.CacheNarrationScriptAsync(
-                        poi.Id,
-                        audio.LanguageCode,
-                        audio.TextContent,
-                        audio.AudioFileUrl,
-                        audio.DurationInSeconds);
-                }
-                else
-                {
-                    audioText = await offlineService.GetCachedNarrationTextAsync(poi.Id, _viewModel.SelectedLanguage)
-                                ?? (string.IsNullOrWhiteSpace(poi.Description)
-                                    ? poi.Name
-                                    : $"{poi.Name}. {poi.Description}");
-                }
-            }
-            catch
-            {
-                audioText = await offlineService.GetCachedNarrationTextAsync(poi.Id, _viewModel.SelectedLanguage)
-                            ?? (string.IsNullOrWhiteSpace(poi.Description)
-                                ? poi.Name
-                                : $"{poi.Name}. {poi.Description}");
-            }
-
-            static string FormatDist(double? km) => km switch
-            {
-                null or 0 => "",
-                < 0.1 => $"{(km.Value * 1000):F0}m away",
-                _ => $"{km.Value:F1} km away"
-            };
-
-            var page = _serviceProvider.GetRequiredService<NowPlayingPage>();
-            var vm = (NowPlayingViewModel)page.BindingContext;
-            vm.SetAllPois(_viewModel.NearbyPOIs.Count > 0 ? _viewModel.NearbyPOIs : _viewModel.Pois);
-            vm.Initialize(
-                poi.Id,
-                poi.Name,
-                poi.CategoryName ?? string.Empty,
-                poi.ImageUrl ?? string.Empty,
-                audioText,
-                _viewModel.SelectedLanguage,
-                poi.Address ?? string.Empty,
-                FormatDist(poi.DistanceKm));
-
-            await Shell.Current.Navigation.PushModalAsync(page, animated: true);
-        }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"OnGeofencePOITriggered error: {ex}");
-        }
     }
 }
