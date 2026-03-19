@@ -87,9 +87,7 @@ public partial class ProfileViewModel : ObservableObject
         {
             "vi" => "Tiếng Việt",
             "en" => "English",
-            "ja" => "日本語",
             "ko" => "한국어",
-            "zh" => "中文",
             _ => code
         };
     }
