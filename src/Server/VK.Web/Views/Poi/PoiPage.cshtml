@@ -7,6 +7,7 @@
     int total = ViewBag.Total ?? 0;
     int page = ViewBag.Page ?? 1;
     int pageSize = ViewBag.PageSize ?? 10;
+    bool isOwner = ViewBag.IsOwner ?? false;
 }
 
 @if (TempData["Success"] != null)
@@ -25,12 +26,15 @@
 <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:24px;">
     <div>
         <div class="page-title">Địa điểm (POI)</div>
-        <div class="page-subtitle">Quản lý tất cả các điểm tham quan tại Vinh Khánh</div>
+        <div class="page-subtitle">@(isOwner ? "Quản lý quán của bạn" : "Quản lý tất cả các điểm tham quan tại Vinh Khánh")</div>
     </div>
-    <button class="btn-primary-admin" onclick="openModal('addPoiModal')">
-        <i class="fa-solid fa-plus"></i>
-        Thêm địa điểm
-    </button>
+    @if (!isOwner)
+    {
+        <button class="btn-primary-admin" onclick="openModal('addPoiModal')">
+            <i class="fa-solid fa-plus"></i>
+            Thêm địa điểm
+        </button>
+    }
 </div>
 
 <!-- TABLE CARD -->
@@ -147,18 +151,21 @@
                     <button class="action-btn edit" onclick='openEditModal(@poi.Id, @Html.Raw(System.Text.Json.JsonSerializer.Serialize(poi.Name)), @Html.Raw(System.Text.Json.JsonSerializer.Serialize(poi.Description)), @Html.Raw(System.Text.Json.JsonSerializer.Serialize(poi.Address)), @poi.Latitude, @poi.Longitude, "@poi.IsActive.ToString().ToLower()", @(poi.CategoryId.HasValue ? poi.CategoryId.ToString() : "null"), @Html.Raw(System.Text.Json.JsonSerializer.Serialize(poi.ImageUrl ?? "")))' title="Chỉnh sửa">
                                         <i class="fa-solid fa-pen"></i>
                                     </button>
-                                    <form method="post" action="/Poi/ToggleActive" style="display:inline;">
-                                        <input type="hidden" name="id" value="@poi.Id" />
-                                        <button type="submit" class="action-btn" title="@(poi.IsActive ? "Tạm dừng" : "Kích hoạt")">
-                                            <i class="fa-solid @(poi.IsActive ? "fa-pause" : "fa-play")"></i>
-                                        </button>
-                                    </form>
-                                    <form method="post" action="/Poi/Delete" style="display:inline;" onsubmit="return confirm('Xóa địa điểm này?')">
-                                        <input type="hidden" name="id" value="@poi.Id" />
-                                        <button type="submit" class="action-btn delete" title="Xóa">
-                                            <i class="fa-solid fa-trash"></i>
-                                        </button>
-                                    </form>
+                                    @if (!isOwner)
+                                    {
+                                        <form method="post" action="/Poi/ToggleActive" style="display:inline;">
+                                            <input type="hidden" name="id" value="@poi.Id" />
+                                            <button type="submit" class="action-btn" title="@(poi.IsActive ? "Tạm dừng" : "Kích hoạt")">
+                                                <i class="fa-solid @(poi.IsActive ? "fa-pause" : "fa-play")"></i>
+                                            </button>
+                                        </form>
+                                        <form method="post" action="/Poi/Delete" style="display:inline;" onsubmit="return confirm('Xóa địa điểm này?')">
+                                            <input type="hidden" name="id" value="@poi.Id" />
+                                            <button type="submit" class="action-btn delete" title="Xóa">
+                                                <i class="fa-solid fa-trash"></i>
+                                            </button>
+                                        </form>
+                                    }
                                 </div>
                             </td>
                         </tr>
@@ -191,6 +198,8 @@
     </div>
 </div>
 
+@if (!isOwner)
+{
 <!-- ADD POI MODAL -->
 <div class="modal-overlay" id="addPoiModal">
     <div class="modal-box">
@@ -248,6 +257,7 @@
         </form>
     </div>
 </div>
+}
 
 <!-- EDIT POI MODAL -->
 <div class="modal-overlay" id="editPoiModal">

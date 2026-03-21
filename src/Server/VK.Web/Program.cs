@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using VK.Infrastructure.Data;
+using VK.Web.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -27,6 +28,8 @@ builder.Services.AddHttpClient("VKAPI", client =>
 });
 
 var app = builder.Build();
+
+await SchemaBootstrapper.EnsureOwnerAuthSchemaAsync(app.Services, app.Logger);
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())

@@ -1,11 +1,12 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.EntityFrameworkCore;
 using VK.Infrastructure.Data;
 using VK.Core.Entities;
 
 namespace VK.Web.Controllers;
 
-public class PoiController : AdminBaseController
+public class PoiController : Controller
 {
     private readonly VKStreetFoodDbContext _context;
     private readonly ILogger<PoiController> _logger;
@@ -16,14 +17,60 @@ public class PoiController : AdminBaseController
         _logger = logger;
     }
 
+    public override void OnActionExecuting(ActionExecutingContext context)
+    {
+        Response.Headers["Cache-Control"] = "no-store, no-cache, must-revalidate, private, max-age=0";
+        Response.Headers["Pragma"] = "no-cache";
+        Response.Headers["Expires"] = "0";
+
+        var isLoggedIn = HttpContext.Session.GetString("UserLoggedIn") == "true";
+        var role = HttpContext.Session.GetString("UserRole") ?? string.Empty;
+        var isAllowedRole = string.Equals(role, "admin", StringComparison.OrdinalIgnoreCase)
+                            || string.Equals(role, "poi_owner", StringComparison.OrdinalIgnoreCase);
+
+        if (!isLoggedIn || !isAllowedRole)
+        {
+            context.Result = new RedirectToActionResult("Index", "Home", null);
+            return;
+        }
+
+        base.OnActionExecuting(context);
+    }
+
     public async Task<IActionResult> Index(string? search, int? categoryId, bool? isActive, int page = 1)
     {
         try
         {
+            var role = HttpContext.Session.GetString("UserRole") ?? "admin";
+            var isOwner = string.Equals(role, "poi_owner", StringComparison.OrdinalIgnoreCase);
+            var ownerVendorId = HttpContext.Session.GetInt32("VendorId");
+
             var query = _context.PointsOfInterest
                 .Include(p => p.Category)
                 .Include(p => p.AudioContents)
                 .AsQueryable();
+
+            if (isOwner)
+            {
+                if (!ownerVendorId.HasValue)
+                {
+                    return RedirectToAction("Index", "Home");
+                }
+
+                var ownerPoiId = await _context.Vendors
+                    .Where(v => v.Id == ownerVendorId.Value && !v.IsDeleted)
+                    .Select(v => (int?)v.PointOfInterestId)
+                    .FirstOrDefaultAsync();
+
+                if (!ownerPoiId.HasValue)
+                {
+                    query = query.Where(_ => false);
+                }
+                else
+                {
+                    query = query.Where(p => p.Id == ownerPoiId.Value);
+                }
+            }
 
             if (!string.IsNullOrWhiteSpace(search))
                 query = query.Where(p => p.Name.Contains(search) || p.Address.Contains(search));
@@ -52,6 +99,7 @@ public class PoiController : AdminBaseController
             ViewBag.Search = search;
             ViewBag.CategoryId = categoryId;
             ViewBag.IsActive = isActive;
+            ViewBag.IsOwner = isOwner;
         }
         catch (Exception ex)
         {
@@ -61,6 +109,7 @@ public class PoiController : AdminBaseController
             ViewBag.Total = 0;
             ViewBag.Page = 1;
             ViewBag.PageSize = 10;
+            ViewBag.IsOwner = string.Equals(HttpContext.Session.GetString("UserRole"), "poi_owner", StringComparison.OrdinalIgnoreCase);
         }
 
         return View("PoiPage");
@@ -69,6 +118,12 @@ public class PoiController : AdminBaseController
     [HttpPost]
     public async Task<IActionResult> Create(PointOfInterest model)
     {
+        if (string.Equals(HttpContext.Session.GetString("UserRole"), "poi_owner", StringComparison.OrdinalIgnoreCase))
+        {
+            TempData["Error"] = "Chủ quán không có quyền tạo quán mới.";
+            return RedirectToAction(nameof(Index));
+        }
+
         try
         {
             if (!ModelState.IsValid)
@@ -93,6 +148,28 @@ public class PoiController : AdminBaseController
     [HttpPost]
     public async Task<IActionResult> Edit(PointOfInterest model)
     {
+        var isOwner = string.Equals(HttpContext.Session.GetString("UserRole"), "poi_owner", StringComparison.OrdinalIgnoreCase);
+        if (isOwner)
+        {
+            var ownerVendorId = HttpContext.Session.GetInt32("VendorId");
+            if (!ownerVendorId.HasValue)
+            {
+                TempData["Error"] = "Không xác định được quán quản lý.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            var ownerPoiId = await _context.Vendors
+                .Where(v => v.Id == ownerVendorId.Value && !v.IsDeleted)
+                .Select(v => (int?)v.PointOfInterestId)
+                .FirstOrDefaultAsync();
+
+            if (!ownerPoiId.HasValue || ownerPoiId.Value != model.Id)
+            {
+                TempData["Error"] = "Bạn chỉ có thể cập nhật quán của mình.";
+                return RedirectToAction(nameof(Index));
+            }
+        }
+
         try
         {
             var existing = await _context.PointsOfInterest.FindAsync(model.Id);
@@ -126,6 +203,12 @@ public class PoiController : AdminBaseController
     [HttpPost]
     public async Task<IActionResult> Delete(int id)
     {
+        if (string.Equals(HttpContext.Session.GetString("UserRole"), "poi_owner", StringComparison.OrdinalIgnoreCase))
+        {
+            TempData["Error"] = "Chủ quán không có quyền xóa quán.";
+            return RedirectToAction(nameof(Index));
+        }
+
         try
         {
             var poi = await _context.PointsOfInterest.FindAsync(id);
@@ -148,6 +231,12 @@ public class PoiController : AdminBaseController
     [HttpPost]
     public async Task<IActionResult> ToggleActive(int id)
     {
+        if (string.Equals(HttpContext.Session.GetString("UserRole"), "poi_owner", StringComparison.OrdinalIgnoreCase))
+        {
+            TempData["Error"] = "Chủ quán không có quyền đổi trạng thái quán.";
+            return RedirectToAction(nameof(Index));
+        }
+
         var poi = await _context.PointsOfInterest.FindAsync(id);
         if (poi != null)
         {
