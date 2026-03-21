@@ -256,6 +256,30 @@
   <data name="SettingsTtsOfflineButton" xml:space="preserve">
     <value>TTS Voice / Offline Data</value>
   </data>
+  <data name="SettingsTtsVoiceLabel" xml:space="preserve">
+    <value>TTS voice in app</value>
+  </data>
+  <data name="SettingsTtsVoiceSaveButton" xml:space="preserve">
+    <value>Save Voice</value>
+  </data>
+  <data name="SettingsTtsVoiceRefreshButton" xml:space="preserve">
+    <value>Refresh List</value>
+  </data>
+  <data name="SettingsTtsVoiceNoVoices" xml:space="preserve">
+    <value>No available TTS voice found for this language.</value>
+  </data>
+  <data name="SettingsTtsVoiceLoadFailed" xml:space="preserve">
+    <value>Failed to load TTS voices.</value>
+  </data>
+  <data name="SettingsTtsVoiceSaveFailed" xml:space="preserve">
+    <value>Failed to save selected TTS voice.</value>
+  </data>
+  <data name="SettingsTtsVoiceReadyFormat" xml:space="preserve">
+    <value>{0} voices found. Selected: {1}</value>
+  </data>
+  <data name="SettingsTtsVoiceSelectedFormat" xml:space="preserve">
+    <value>Saved voice: {0}</value>
+  </data>
   <data name="SettingsDownloadOfflinePackage" xml:space="preserve">
     <value>Download Offline Package</value>
   </data>

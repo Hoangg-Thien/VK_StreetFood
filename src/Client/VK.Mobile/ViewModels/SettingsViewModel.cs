@@ -1,6 +1,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System.Globalization;
+using System.Collections.ObjectModel;
 using VK.Mobile.Models;
 using VK.Mobile.Services;
 
@@ -12,6 +13,7 @@ public partial class SettingsViewModel : ObservableObject
     private readonly LocalPOIDatabase _localDb;
     private readonly ILocationService _locationService;
     private readonly IOfflineContentService _offlineContentService;
+    private readonly ITTSService _ttsService;
     private static readonly string[] LanguageCodes = { "vi", "en", "ko" };
     private static LocalizationResourceManager L => LocalizationResourceManager.Instance;
 
@@ -21,12 +23,14 @@ public partial class SettingsViewModel : ObservableObject
         StorageService storageService,
         LocalPOIDatabase localDb,
         ILocationService locationService,
-        IOfflineContentService offlineContentService)
+        IOfflineContentService offlineContentService,
+        ITTSService ttsService)
     {
         _storageService = storageService;
         _localDb = localDb;
         _locationService = locationService;
         _offlineContentService = offlineContentService;
+        _ttsService = ttsService;
         LoadSettings();
 
         // Sync khi ngôn ngữ được đổi từ trang khác (ví dụ MainMapPage)
@@ -35,9 +39,11 @@ public partial class SettingsViewModel : ObservableObject
             _selectedLanguage = LocalizationResourceManager.Instance.CurrentLanguage;
             OnPropertyChanged(nameof(SelectedLanguageDisplayIndex));
             _ = RefreshOfflineStatusAsync();
+            _ = LoadTtsVoicesAsync();
         };
 
         _ = RefreshOfflineStatusAsync();
+        _ = LoadTtsVoicesAsync();
     }
 
     [ObservableProperty]
@@ -63,6 +69,26 @@ public partial class SettingsViewModel : ObservableObject
 
     [ObservableProperty]
     private string _offlinePackageStatus = "";
+
+    [ObservableProperty]
+    private ObservableCollection<TtsVoiceOption> _availableTtsVoices = new();
+
+    [ObservableProperty]
+    private TtsVoiceOption? _selectedTtsVoice;
+
+    [ObservableProperty]
+    private string _ttsVoiceStatus = "";
+
+    [ObservableProperty]
+    private bool _isLoadingTtsVoices;
+
+    public bool HasAvailableTtsVoices => AvailableTtsVoices.Count > 0;
+
+    partial void OnSelectedLanguageChanged(string value)
+    {
+        OnPropertyChanged(nameof(SelectedLanguageDisplayIndex));
+        _ = LoadTtsVoicesAsync();
+    }
 
     partial void OnNotificationsEnabledChanged(bool value)
         => Preferences.Set("NotificationsEnabled", value);
@@ -208,6 +234,27 @@ public partial class SettingsViewModel : ObservableObject
     }
 
     [RelayCommand]
+    async Task SaveSelectedTtsVoiceAsync()
+    {
+        if (SelectedTtsVoice == null)
+            return;
+
+        var ok = await _ttsService.SetPreferredVoiceAsync(SelectedTtsVoice.Id, SelectedLanguage);
+        TtsVoiceStatus = ok
+            ? string.Format(
+                CultureInfo.CurrentCulture,
+                L["SettingsTtsVoiceSelectedFormat"],
+                SelectedTtsVoice.DisplayName)
+            : L["SettingsTtsVoiceSaveFailed"];
+    }
+
+    [RelayCommand]
+    async Task RefreshTtsVoicesAsync()
+    {
+        await LoadTtsVoicesAsync();
+    }
+
+    [RelayCommand]
     async Task ClearCache()
     {
         bool confirm = await Application.Current!.MainPage!.DisplayAlert(
@@ -245,6 +292,53 @@ public partial class SettingsViewModel : ObservableObject
         {
             await _storageService.ClearAsync();
             await Shell.Current.GoToAsync("///Welcome");
+        }
+    }
+
+    private async Task LoadTtsVoicesAsync()
+    {
+        if (IsLoadingTtsVoices)
+            return;
+
+        try
+        {
+            IsLoadingTtsVoices = true;
+            var voices = await _ttsService.GetAvailableVoicesAsync(SelectedLanguage);
+
+            AvailableTtsVoices.Clear();
+            foreach (var voice in voices)
+                AvailableTtsVoices.Add(voice);
+
+            OnPropertyChanged(nameof(HasAvailableTtsVoices));
+
+            if (voices.Count == 0)
+            {
+                SelectedTtsVoice = null;
+                TtsVoiceStatus = L["SettingsTtsVoiceNoVoices"];
+                return;
+            }
+
+            var preferredVoiceId = _ttsService.GetPreferredVoiceId(SelectedLanguage);
+            SelectedTtsVoice = AvailableTtsVoices
+                .FirstOrDefault(v => string.Equals(v.Id, preferredVoiceId, StringComparison.Ordinal))
+                ?? AvailableTtsVoices.First();
+
+            TtsVoiceStatus = string.Format(
+                CultureInfo.CurrentCulture,
+                L["SettingsTtsVoiceReadyFormat"],
+                AvailableTtsVoices.Count,
+                SelectedTtsVoice.DisplayName);
+        }
+        catch
+        {
+            AvailableTtsVoices.Clear();
+            SelectedTtsVoice = null;
+            OnPropertyChanged(nameof(HasAvailableTtsVoices));
+            TtsVoiceStatus = L["SettingsTtsVoiceLoadFailed"];
+        }
+        finally
+        {
+            IsLoadingTtsVoices = false;
         }
     }
 }

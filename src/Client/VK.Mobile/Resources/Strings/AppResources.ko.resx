@@ -50,7 +50,7 @@
     <value>근처</value>
   </data>
   <data name="Tracking" xml:space="preserve">
-    <value>추적 중</value>
+    <value>Tracking</value>
   </data>
   <data name="NotTracking" xml:space="preserve">
     <value>추적 안 함</value>
@@ -255,6 +255,30 @@
   <!-- Settings / Offline -->
   <data name="SettingsTtsOfflineButton" xml:space="preserve">
     <value>TTS 음성 / 오프라인 데이터</value>
+  </data>
+  <data name="SettingsTtsVoiceLabel" xml:space="preserve">
+    <value>앱 내 TTS 음성</value>
+  </data>
+  <data name="SettingsTtsVoiceSaveButton" xml:space="preserve">
+    <value>음성 저장</value>
+  </data>
+  <data name="SettingsTtsVoiceRefreshButton" xml:space="preserve">
+    <value>목록 새로고침</value>
+  </data>
+  <data name="SettingsTtsVoiceNoVoices" xml:space="preserve">
+    <value>이 언어에서 사용할 수 있는 TTS 음성이 없습니다.</value>
+  </data>
+  <data name="SettingsTtsVoiceLoadFailed" xml:space="preserve">
+    <value>TTS 음성 목록을 불러오지 못했습니다.</value>
+  </data>
+  <data name="SettingsTtsVoiceSaveFailed" xml:space="preserve">
+    <value>선택한 TTS 음성 저장에 실패했습니다.</value>
+  </data>
+  <data name="SettingsTtsVoiceReadyFormat" xml:space="preserve">
+    <value>{0}개의 음성을 찾았습니다. 선택됨: {1}</value>
+  </data>
+  <data name="SettingsTtsVoiceSelectedFormat" xml:space="preserve">
+    <value>저장된 음성: {0}</value>
   </data>
   <data name="SettingsDownloadOfflinePackage" xml:space="preserve">
     <value>오프라인 패키지 다운로드</value>
