@@ -8,7 +8,12 @@ public interface ITTSService
     Task SpeakPOIAsync(POIModel poi, string languageCode, CancellationToken ct = default);
     Task SpeakTextAsync(string text, string languageCode, CancellationToken ct = default);
     Task StopAsync();
+    Task<IReadOnlyList<TtsVoiceOption>> GetAvailableVoicesAsync(string languageCode, CancellationToken ct = default);
+    Task<bool> SetPreferredVoiceAsync(string voiceId, string languageCode, CancellationToken ct = default);
+    string? GetPreferredVoiceId(string languageCode);
 }
+
+public sealed record TtsVoiceOption(string Id, string DisplayName);
 
 public class TTSService : ITTSService
 {
@@ -72,4 +77,13 @@ public class TTSService : ITTSService
         _cts = new CancellationTokenSource();
         return Task.CompletedTask;
     }
+
+    public Task<IReadOnlyList<TtsVoiceOption>> GetAvailableVoicesAsync(string languageCode, CancellationToken ct = default)
+        => Task.FromResult<IReadOnlyList<TtsVoiceOption>>(Array.Empty<TtsVoiceOption>());
+
+    public Task<bool> SetPreferredVoiceAsync(string voiceId, string languageCode, CancellationToken ct = default)
+        => Task.FromResult(false);
+
+    public string? GetPreferredVoiceId(string languageCode)
+        => null;
 }

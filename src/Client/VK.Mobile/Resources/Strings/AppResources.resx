@@ -93,7 +93,7 @@
     <value>Gần bạn</value>
   </data>
   <data name="Tracking" xml:space="preserve">
-    <value>Đang theo dõi</value>
+    <value>Tracking</value>
   </data>
   <data name="NotTracking" xml:space="preserve">
     <value>Không theo dõi</value>
@@ -302,6 +302,30 @@
   <data name="SettingsTtsOfflineButton" xml:space="preserve">
     <value>TTS Voice / Dữ liệu offline</value>
   </data>
+    <data name="SettingsTtsVoiceLabel" xml:space="preserve">
+      <value>Giọng TTS trong ứng dụng</value>
+    </data>
+    <data name="SettingsTtsVoiceSaveButton" xml:space="preserve">
+      <value>Lưu giọng</value>
+    </data>
+    <data name="SettingsTtsVoiceRefreshButton" xml:space="preserve">
+      <value>Làm mới danh sách</value>
+    </data>
+    <data name="SettingsTtsVoiceNoVoices" xml:space="preserve">
+      <value>Không tìm thấy giọng TTS khả dụng cho ngôn ngữ này.</value>
+    </data>
+    <data name="SettingsTtsVoiceLoadFailed" xml:space="preserve">
+      <value>Không thể tải danh sách giọng TTS.</value>
+    </data>
+    <data name="SettingsTtsVoiceSaveFailed" xml:space="preserve">
+      <value>Lưu giọng TTS thất bại. Vui lòng thử lại.</value>
+    </data>
+    <data name="SettingsTtsVoiceReadyFormat" xml:space="preserve">
+      <value>Tìm thấy {0} giọng. Đang chọn: {1}</value>
+    </data>
+    <data name="SettingsTtsVoiceSelectedFormat" xml:space="preserve">
+      <value>Đã lưu giọng: {0}</value>
+    </data>
   <data name="SettingsDownloadOfflinePackage" xml:space="preserve">
     <value>Tải gói offline</value>
   </data>
