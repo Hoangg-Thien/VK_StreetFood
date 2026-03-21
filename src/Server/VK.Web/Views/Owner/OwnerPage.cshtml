@@ -1,0 +1,33 @@
+@{
+    ViewData["Title"] = "Chủ quán";
+    Layout = "_OwnerLayout";
+
+    var vendor = ViewBag.Vendor as VK.Core.Entities.Vendor;
+    var poi = ViewBag.Poi as VK.Core.Entities.PointOfInterest;
+}
+
+<div class="admin-card" style="margin-bottom:20px;">
+    <div class="admin-card-header">
+        <div>
+            <div class="admin-card-title">Trang chủ chủ quán</div>
+            <div class="admin-card-subtitle">Bạn chỉ quản lý quán của mình</div>
+        </div>
+    </div>
+    <div class="admin-card-body">
+        <div style="display:grid;grid-template-columns:repeat(2,minmax(220px,1fr));gap:16px;">
+            <div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;padding:14px;">
+                <div style="font-size:12px;color:#9a3412;text-transform:uppercase;font-weight:600;">Tên quán</div>
+                <div style="font-size:18px;font-weight:700;color:#7c2d12;margin-top:6px;">@(vendor?.Name ?? "-")</div>
+            </div>
+            <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:14px;">
+                <div style="font-size:12px;color:#1e3a8a;text-transform:uppercase;font-weight:600;">POI</div>
+                <div style="font-size:18px;font-weight:700;color:#1e3a8a;margin-top:6px;">@(poi?.Name ?? "-")</div>
+            </div>
+        </div>
+
+        <div style="margin-top:18px;display:flex;gap:10px;">
+            <a class="btn-primary-admin" href="/Poi">Quản lý quán của tôi</a>
+            <a class="btn-secondary-admin" href="/Home/Logout">Đăng xuất</a>
+        </div>
+    </div>
+</div>

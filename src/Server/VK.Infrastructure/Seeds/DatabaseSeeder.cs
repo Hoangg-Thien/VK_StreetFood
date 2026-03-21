@@ -1,4 +1,6 @@
 ﻿﻿using Microsoft.EntityFrameworkCore;
+using System.Security.Cryptography;
+using System.Text;
 using VK.Core.Entities;
 using VK.Infrastructure.Data;
 using VK.Shared.Constants;
@@ -14,6 +16,8 @@ public static class DatabaseSeeder
 
         if (context.PointsOfInterest.Any())
         {
+            await EnsureBaselineVendorsAsync(context);
+            await EnsureBaselineOwnerUsersAsync(context);
             return; // Database has been seeded
         }
 
@@ -409,6 +413,9 @@ public static class DatabaseSeeder
             }
         }
         await context.SaveChangesAsync();
+
+        await EnsureBaselineVendorsAsync(context);
+        await EnsureBaselineOwnerUsersAsync(context);
     }
 
     /// <summary>
@@ -426,5 +433,152 @@ public static class DatabaseSeeder
 
         if (poisToFix.Count > 0)
             await context.SaveChangesAsync();
+    }
+
+    /// <summary>
+    /// Ensure 11 food stalls (POI id 2..12) always have vendor records.
+    /// Existing vendors are preserved; missing ones are created with default placeholders.
+    /// </summary>
+    private static async Task EnsureBaselineVendorsAsync(VKStreetFoodDbContext context)
+    {
+        var baselinePois = await context.PointsOfInterest
+            .Where(p => !p.IsDeleted && p.IsActive && p.Id >= 2 && p.Id <= 12)
+            .OrderBy(p => p.Id)
+            .ToListAsync();
+
+        if (baselinePois.Count == 0)
+            return;
+
+        var existingVendorPoiIds = await context.Vendors
+            .Where(v => !v.IsDeleted)
+            .Select(v => v.PointOfInterestId)
+            .ToListAsync();
+
+        var missing = baselinePois
+            .Where(p => !existingVendorPoiIds.Contains(p.Id))
+            .ToList();
+
+        if (missing.Count == 0)
+            return;
+
+        foreach (var poi in missing)
+        {
+            context.Vendors.Add(new Vendor
+            {
+                Name = poi.Name,
+                Description = poi.Description,
+                ContactPerson = "Chủ quán",
+                PhoneNumber = "0900000000",
+                Email = $"owner-poi-{poi.Id}@vkstreetfood.vn",
+                PointOfInterestId = poi.Id,
+                ImageUrl = poi.ImageUrl,
+                IsActive = true,
+                AverageRating = poi.AverageRating,
+                TotalReviews = poi.TotalRatings
+            });
+        }
+
+        await context.SaveChangesAsync();
+    }
+
+    /// <summary>
+    /// Ensure baseline owner accounts exist for existing 11 vendors (POI id 2..12).
+    /// These accounts are pre-verified so current shops can login immediately.
+    /// </summary>
+    private static async Task EnsureBaselineOwnerUsersAsync(VKStreetFoodDbContext context)
+    {
+        var baselineVendors = await context.Vendors
+            .Where(v => !v.IsDeleted && v.PointOfInterestId >= 2 && v.PointOfInterestId <= 12)
+            .OrderBy(v => v.PointOfInterestId)
+            .ToListAsync();
+
+        if (baselineVendors.Count == 0)
+            return;
+
+        var existingUsers = await context.Users
+            .Where(u => !u.IsDeleted)
+            .ToListAsync();
+
+        var defaultPasswordHash = HashPassword("Owner@2026");
+
+        foreach (var vendor in baselineVendors)
+        {
+            var defaultEmail = $"owner-poi-{vendor.PointOfInterestId}@vkstreetfood.vn";
+
+            var owner = existingUsers.FirstOrDefault(u =>
+                u.VendorId == vendor.Id ||
+                string.Equals(u.Email, defaultEmail, StringComparison.OrdinalIgnoreCase));
+
+            if (owner == null)
+            {
+                owner = new User
+                {
+                    Email = defaultEmail,
+                    FullName = string.IsNullOrWhiteSpace(vendor.ContactPerson) ? $"Owner {vendor.Name}" : vendor.ContactPerson,
+                    Role = "poi_owner",
+                    VendorId = vendor.Id,
+                    IsVerified = true,
+                    PasswordHash = defaultPasswordHash,
+                    LastLoginAt = null
+                };
+
+                context.Users.Add(owner);
+                existingUsers.Add(owner);
+            }
+            else
+            {
+                owner.Role = "poi_owner";
+                owner.VendorId = vendor.Id;
+                owner.IsVerified = true;
+
+                if (string.IsNullOrWhiteSpace(owner.PasswordHash))
+                    owner.PasswordHash = defaultPasswordHash;
+            }
+        }
+
+        await context.SaveChangesAsync();
+
+        var existingRegs = await context.PoiOwnerRegistrations
+            .Where(r => !r.IsDeleted)
+            .ToListAsync();
+
+        foreach (var vendor in baselineVendors)
+        {
+            var owner = await context.Users
+                .FirstOrDefaultAsync(u => !u.IsDeleted && u.VendorId == vendor.Id && u.Role == "poi_owner");
+
+            if (owner == null)
+                continue;
+
+            var hasApprovedReg = existingRegs.Any(r =>
+                r.UserId == owner.Id &&
+                r.VendorId == vendor.Id &&
+                r.Status == "approved");
+
+            if (hasApprovedReg)
+                continue;
+
+            context.PoiOwnerRegistrations.Add(new PoiOwnerRegistration
+            {
+                UserId = owner.Id,
+                VendorId = vendor.Id,
+                PointOfInterestId = vendor.PointOfInterestId,
+                ShopName = vendor.Name,
+                ShopAddress = null,
+                ContactPhone = vendor.PhoneNumber,
+                Notes = "Baseline auto-approved for existing shop",
+                Status = "approved",
+                ReviewedAt = DateTime.UtcNow,
+                ReviewNote = "Auto-approved baseline owner"
+            });
+        }
+
+        await context.SaveChangesAsync();
+    }
+
+    private static string HashPassword(string plainText)
+    {
+        var bytes = SHA256.HashData(Encoding.UTF8.GetBytes(plainText));
+        return Convert.ToHexString(bytes);
     }
 }

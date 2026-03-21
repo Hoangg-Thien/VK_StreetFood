@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - VK StreetFood Owner</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+    <link rel="stylesheet" href="~/css/admin.css" asp-append-version="true" />
+</head>
+<body>
+    <aside class="admin-sidebar">
+        <div class="sidebar-brand">
+            <div class="brand-icon">🍜</div>
+            <div class="brand-text">
+                <div class="brand-name">Owner Portal</div>
+                <div class="brand-sub">VK Street Food</div>
+            </div>
+        </div>
+
+        <nav class="sidebar-nav">
+            <div class="sidebar-section-label">Chủ quán</div>
+            <a href="/Owner"
+                   class='@(ViewContext.RouteData.Values["controller"]?.ToString() == "Owner" ? "active" : "")'>
+                <i class="fa-solid fa-house"></i>
+                Trang chủ
+            </a>
+            <a href="/Poi" class='@(ViewContext.RouteData.Values["controller"]?.ToString() == "Poi" ? "active" : "")'>
+                <i class="fa-solid fa-store"></i>
+                Quán của tôi
+            </a>
+        </nav>
+    </aside>
+
+    <div class="admin-main">
+        <header class="admin-header">
+            <div class="header-search" style="visibility:hidden;"></div>
+            <div class="header-right">
+                <div class="header-user">
+                    <div class="user-avatar"><i class="fa-solid fa-user" style="font-size:12px;"></i></div>
+                    <div>
+                        <div class="user-name">@(Context.Session.GetString("UserDisplayName") ?? "Owner")</div>
+                        <div class="user-role">POI Owner</div>
+                    </div>
+                </div>
+                <a href="/Home/Logout" class="header-icon-btn" title="Đăng xuất"
+                       style="color:#EF4444;border-color:rgba(239,68,68,0.3);">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                </a>
+            </div>
+        </header>
+
+        <div class="admin-content">
+            @RenderBody()
+        </div>
+    </div>
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+
+</html>
