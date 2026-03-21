@@ -21,6 +21,7 @@ public class VKStreetFoodDbContext : DbContext
     public DbSet<Analytics> Analytics { get; set; }
     public DbSet<Rating> Ratings { get; set; }
     public DbSet<User> Users { get; set; }
+    public DbSet<PoiOwnerRegistration> PoiOwnerRegistrations { get; set; }
     public DbSet<Favorite> Favorites { get; set; }
     public DbSet<OpeningHours> OpeningHours { get; set; }
 
@@ -43,8 +44,21 @@ public class VKStreetFoodDbContext : DbContext
         modelBuilder.Entity<Analytics>().HasQueryFilter(a => !a.IsDeleted);
         modelBuilder.Entity<Rating>().HasQueryFilter(r => !r.IsDeleted);
         modelBuilder.Entity<User>().HasQueryFilter(u => !u.IsDeleted);
+        modelBuilder.Entity<PoiOwnerRegistration>().HasQueryFilter(r => !r.IsDeleted);
         modelBuilder.Entity<Favorite>().HasQueryFilter(f => !f.IsDeleted);
         modelBuilder.Entity<OpeningHours>().HasQueryFilter(o => !o.IsDeleted);
+
+        modelBuilder.Entity<PoiOwnerRegistration>()
+            .HasOne(r => r.User)
+            .WithMany(u => u.OwnerRegistrations)
+            .HasForeignKey(r => r.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<PoiOwnerRegistration>()
+            .HasOne(r => r.ReviewedByUser)
+            .WithMany()
+            .HasForeignKey(r => r.ReviewedByUserId)
+            .OnDelete(DeleteBehavior.SetNull);
     }
 
     public override int SaveChanges()
