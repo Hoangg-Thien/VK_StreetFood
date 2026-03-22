@@ -1,5 +1,5 @@
 @{
-    ViewData["Title"] = "Duyệt nội dung owner";
+    ViewData["Title"] = "Duyệt nội dung của quán";
     Layout = "_AdminLayout";
 
     var requests = ViewBag.Requests as IEnumerable<VK.Core.Entities.PoiContentChangeRequest>
@@ -22,8 +22,7 @@
 
 <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:24px;">
     <div>
-        <div class="page-title">Duyệt nội dung từ owner</div>
-        <div class="page-subtitle">Owner gửi chỉnh sửa audio/bản dịch, admin duyệt rồi mới áp dụng</div>
+        <div class="page-title">Duyệt nội dung của quán</div>
     </div>
 </div>
 
@@ -41,7 +40,7 @@
         <table class="admin-table">
             <thead>
                 <tr>
-                    <th>Owner</th>
+                    <th>Chủ quán</th>
                     <th>POI / Quán</th>
                     <th>Loại</th>
                     <th>Ngôn ngữ</th>
