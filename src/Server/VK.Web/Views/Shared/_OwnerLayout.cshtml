@@ -10,6 +10,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
     <link rel="stylesheet" href="~/css/admin.css" asp-append-version="true" />
 </head>
+
 <body>
     <aside class="admin-sidebar">
         <div class="sidebar-brand">
@@ -30,6 +31,16 @@
             <a href="/Poi" class='@(ViewContext.RouteData.Values["controller"]?.ToString() == "Poi" ? "active" : "")'>
                 <i class="fa-solid fa-store"></i>
                 Quán của tôi
+            </a>
+            <a href="/Audio"
+                   class='@(ViewContext.RouteData.Values["controller"]?.ToString() == "Audio" ? "active" : "")'>
+                <i class="fa-solid fa-headphones"></i>
+                Audio
+            </a>
+            <a href="/Translation"
+                   class='@(ViewContext.RouteData.Values["controller"]?.ToString() == "Translation" ? "active" : "")'>
+                <i class="fa-solid fa-language"></i>
+                Bản dịch
             </a>
         </nav>
     </aside>
@@ -56,6 +67,16 @@
             @RenderBody()
         </div>
     </div>
+
+    <script>
+            function openModal(id) {
+                document.getElementById(id)?.classList.add('show');
+            }
+
+            function closeModal(id) {
+                document.getElementById(id)?.classList.remove('show');
+            }
+    </script>
 
     @await RenderSectionAsync("Scripts", required: false)
 </body>
