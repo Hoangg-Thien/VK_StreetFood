@@ -154,7 +154,7 @@
     <value>Xóa bộ nhớ đệm</value>
   </data>
   <data name="SettingsAccount" xml:space="preserve">
-    <value> Tài khoản</value>
+    <value>Ứng dụng</value>
   </data>
   <data name="SettingsLogout" xml:space="preserve">
     <value>Thoát ứng dụng</value>

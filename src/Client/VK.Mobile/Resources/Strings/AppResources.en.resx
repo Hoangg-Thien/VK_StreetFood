@@ -110,7 +110,7 @@
     <value>Clear Cache</value>
   </data>
   <data name="SettingsAccount" xml:space="preserve">
-    <value> Account</value>
+    <value>Application</value>
   </data>
   <data name="SettingsLogout" xml:space="preserve">
     <value>Exit</value>
