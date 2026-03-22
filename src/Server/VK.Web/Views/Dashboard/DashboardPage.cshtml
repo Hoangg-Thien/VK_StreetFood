@@ -152,9 +152,7 @@
                     <tr>
                         <th>Địa điểm</th>
                         <th>Danh mục</th>
-                        <th>Ngày thêm</th>
                         <th>Trạng thái</th>
-                        <th>Hành động</th>
                     </tr>
                 </thead>
                 <tbody id="dashboardPoiTable">
@@ -175,20 +173,7 @@
                                     </div>
                                 </td>
                                 <td><span class="lang-badge lang-vi">Ẩm thực</span></td>
-                                <td style="color:var(--text-muted);font-size:12px;">Vừa thêm</td>
                                 <td><span class="badge-status badge-active">Hoạt động</span></td>
-                                <td>
-                                    <div class="action-menu">
-                                        <button class="action-menu-btn" onclick="toggleMenu(this)">
-                                            <i class="fa-solid fa-ellipsis-vertical"></i>
-                                        </button>
-                                        <div class="action-dropdown">
-                                            <a href="/Poi/Edit/@poi.Id"><i class="fa-solid fa-pen"></i> Chỉnh sửa</a>
-                                            <a href="/Poi/Details/@poi.Id"><i class="fa-solid fa-eye"></i> Xem chi tiết</a>
-                                            <a href="#" class="danger"><i class="fa-solid fa-trash"></i> Xóa</a>
-                                        </div>
-                                    </div>
-                                </td>
                             </tr>
                         }
                     }

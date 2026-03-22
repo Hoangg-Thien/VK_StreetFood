@@ -110,7 +110,7 @@
     <value>캐시 지우기</value>
   </data>
   <data name="SettingsAccount" xml:space="preserve">
-    <value> 계정</value>
+    <value> 애플리케이션</value>
   </data>
   <data name="SettingsLogout" xml:space="preserve">
     <value>로그아웃</value>
@@ -183,7 +183,7 @@
     <value>탐색</value>
   </data>
   <data name="MenuTitle" xml:space="preserve">
-    <value>🍜 음식 메뉴</value>
+    <value>🍜 탐색</value>
   </data>
   <data name="MenuSubtitle" xml:space="preserve">
     <value>빈 칸</value>

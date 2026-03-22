@@ -154,7 +154,7 @@
     <value>Xóa bộ nhớ đệm</value>
   </data>
   <data name="SettingsAccount" xml:space="preserve">
-    <value> Tài khoản</value>
+    <value>Ứng dụng</value>
   </data>
   <data name="SettingsLogout" xml:space="preserve">
     <value>Thoát ứng dụng</value>
@@ -229,7 +229,7 @@
     <value>Khám phá</value>
   </data>
   <data name="MenuTitle" xml:space="preserve">
-    <value>🍜 Thực Đơn Ẩm Thực</value>
+    <value>🍜 Khám phá</value>
   </data>
   <data name="MenuSubtitle" xml:space="preserve">
     <value>Vĩnh Khánh</value>
