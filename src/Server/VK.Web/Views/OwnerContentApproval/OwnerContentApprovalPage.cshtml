@@ -1,0 +1,131 @@
+@{
+    ViewData["Title"] = "Duyệt nội dung owner";
+    Layout = "_AdminLayout";
+
+    var requests = ViewBag.Requests as IEnumerable<VK.Core.Entities.PoiContentChangeRequest>
+                   ?? new List<VK.Core.Entities.PoiContentChangeRequest>();
+    string status = (ViewBag.Status as string) ?? "pending";
+}
+
+@if (TempData["Success"] != null)
+{
+    <div style="background:rgba(34,197,94,0.12);border:1px solid rgba(34,197,94,0.2);border-radius:8px;padding:12px 16px;margin-bottom:16px;color:#22C55E;font-size:13px;">
+        <i class="fa-solid fa-circle-check"></i> @TempData["Success"]
+    </div>
+}
+@if (TempData["Error"] != null)
+{
+    <div style="background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.2);border-radius:8px;padding:12px 16px;margin-bottom:16px;color:#EF4444;font-size:13px;">
+        <i class="fa-solid fa-circle-xmark"></i> @TempData["Error"]
+    </div>
+}
+
+<div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:24px;">
+    <div>
+        <div class="page-title">Duyệt nội dung từ owner</div>
+        <div class="page-subtitle">Owner gửi chỉnh sửa audio/bản dịch, admin duyệt rồi mới áp dụng</div>
+    </div>
+</div>
+
+<div class="admin-card">
+    <form method="get" action="/OwnerContentApproval" class="filter-bar" style="padding:16px 20px 0;">
+        <select name="status" style="max-width:220px;">
+            <option value="pending" selected="@(status == "pending" ? "selected" : null)">Đang chờ duyệt</option>
+            <option value="approved" selected="@(status == "approved" ? "selected" : null)">Đã duyệt</option>
+            <option value="rejected" selected="@(status == "rejected" ? "selected" : null)">Đã từ chối</option>
+        </select>
+        <button type="submit" class="btn-primary-admin" style="padding:8px 14px;">Lọc</button>
+    </form>
+
+    <div class="admin-table-wrap">
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>Owner</th>
+                    <th>POI / Quán</th>
+                    <th>Loại</th>
+                    <th>Ngôn ngữ</th>
+                    <th>Nội dung đề xuất</th>
+                    <th>Trạng thái</th>
+                    <th>Ngày gửi</th>
+                    <th>Hành động</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (requests.Any())
+                {
+                    foreach (var req in requests)
+                    {
+                        <tr>
+                            <td>
+                                <div class="item-name">@(req.OwnerUser?.FullName ?? "-")</div>
+                                <div class="item-sub">@(req.OwnerUser?.Email ?? "-")</div>
+                            </td>
+                            <td>
+                                <div class="item-name">@(req.PointOfInterest?.Name ?? "-")</div>
+                                <div class="item-sub">@(req.Vendor?.Name ?? "-")</div>
+                            </td>
+                            <td>
+                                <div style="font-size:12px;">@req.RequestType / @req.ActionType</div>
+                                <div class="item-sub">Audio ID: @(req.AudioContentId?.ToString() ?? "new")</div>
+                            </td>
+                            <td>@req.LanguageCode.ToUpper()</td>
+                            <td style="max-width:320px;">
+                                <div style="font-size:12px;line-height:1.45;max-height:70px;overflow:auto;">@req.TextContent</div>
+                            </td>
+                            <td>
+                                @if (req.Status == "approved")
+                                {
+                                    <span class="badge-status badge-active">Approved</span>
+                                }
+                                else if (req.Status == "rejected")
+                                {
+                                    <span class="badge-status badge-inactive">Rejected</span>
+                                }
+                                else
+                                {
+                                    <span class="lang-badge lang-en">Pending</span>
+                                }
+                            </td>
+                            <td style="font-size:12px;color:var(--text-muted);">
+                                @req.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")
+                            </td>
+                            <td>
+                                @if (req.Status == "pending")
+                                {
+                                    <div style="display:flex;gap:8px;">
+                                        <form method="post" action="/OwnerContentApproval/Approve" style="display:inline;">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@req.Id" />
+                                            <button type="submit" class="btn-primary-admin" style="padding:6px 10px;font-size:12px;">Duyệt</button>
+                                        </form>
+                                        <form method="post" action="/OwnerContentApproval/Reject" style="display:inline;">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@req.Id" />
+                                            <button type="submit" class="btn-secondary-admin" style="padding:6px 10px;font-size:12px;">Từ chối</button>
+                                        </form>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div style="font-size:12px;color:var(--text-muted);">@(string.IsNullOrWhiteSpace(req.ReviewNote) ? "—" : req.ReviewNote)</div>
+                                }
+                            </td>
+                        </tr>
+                    }
+                }
+                else
+                {
+                    <tr>
+                        <td colspan="8">
+                            <div class="empty-state">
+                                <i class="fa-solid fa-inbox"></i>
+                                <p>Không có yêu cầu nào.</p>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

@@ -22,6 +22,7 @@ public class VKStreetFoodDbContext : DbContext
     public DbSet<Rating> Ratings { get; set; }
     public DbSet<User> Users { get; set; }
     public DbSet<PoiOwnerRegistration> PoiOwnerRegistrations { get; set; }
+    public DbSet<PoiContentChangeRequest> PoiContentChangeRequests { get; set; }
     public DbSet<Favorite> Favorites { get; set; }
     public DbSet<OpeningHours> OpeningHours { get; set; }
 
@@ -45,6 +46,7 @@ public class VKStreetFoodDbContext : DbContext
         modelBuilder.Entity<Rating>().HasQueryFilter(r => !r.IsDeleted);
         modelBuilder.Entity<User>().HasQueryFilter(u => !u.IsDeleted);
         modelBuilder.Entity<PoiOwnerRegistration>().HasQueryFilter(r => !r.IsDeleted);
+        modelBuilder.Entity<PoiContentChangeRequest>().HasQueryFilter(r => !r.IsDeleted);
         modelBuilder.Entity<Favorite>().HasQueryFilter(f => !f.IsDeleted);
         modelBuilder.Entity<OpeningHours>().HasQueryFilter(o => !o.IsDeleted);
 

@@ -173,3 +173,64 @@ public class PoiOwnerRegistrationConfiguration : IEntityTypeConfiguration<PoiOwn
         builder.HasIndex(r => r.VendorId);
     }
 }
+
+public class PoiContentChangeRequestConfiguration : IEntityTypeConfiguration<PoiContentChangeRequest>
+{
+    public void Configure(EntityTypeBuilder<PoiContentChangeRequest> builder)
+    {
+        builder.ToTable("PoiContentChangeRequests");
+        builder.HasKey(r => r.Id);
+
+        builder.Property(r => r.RequestType)
+            .IsRequired()
+            .HasMaxLength(20);
+
+        builder.Property(r => r.ActionType)
+            .IsRequired()
+            .HasMaxLength(20);
+
+        builder.Property(r => r.LanguageCode)
+            .IsRequired()
+            .HasMaxLength(10);
+
+        builder.Property(r => r.TextContent)
+            .IsRequired()
+            .HasMaxLength(2000);
+
+        builder.Property(r => r.Status)
+            .IsRequired()
+            .HasMaxLength(20);
+
+        builder.Property(r => r.ReviewNote)
+            .HasMaxLength(500);
+
+        builder.HasOne(r => r.OwnerUser)
+            .WithMany()
+            .HasForeignKey(r => r.OwnerUserId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasOne(r => r.ReviewedByUser)
+            .WithMany()
+            .HasForeignKey(r => r.ReviewedByUserId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        builder.HasOne(r => r.Vendor)
+            .WithMany()
+            .HasForeignKey(r => r.VendorId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasOne(r => r.PointOfInterest)
+            .WithMany()
+            .HasForeignKey(r => r.PointOfInterestId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasOne(r => r.AudioContent)
+            .WithMany()
+            .HasForeignKey(r => r.AudioContentId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        builder.HasIndex(r => r.Status);
+        builder.HasIndex(r => r.OwnerUserId);
+        builder.HasIndex(r => r.PointOfInterestId);
+    }
+}

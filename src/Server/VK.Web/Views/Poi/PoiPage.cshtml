@@ -1,13 +1,13 @@
 @{
-    ViewData["Title"] = "Quản lý địa điểm (POI)";
-    Layout = "_AdminLayout";
+    bool isOwner = ViewBag.IsOwner ?? false;
+    ViewData["Title"] = isOwner ? "Quán của tôi" : "Quản lý địa điểm (POI)";
+    Layout = isOwner ? "_OwnerLayout" : "_AdminLayout";
 
     var pois = ViewBag.POIs as IEnumerable<VK.Core.Entities.PointOfInterest> ?? new List<VK.Core.Entities.PointOfInterest>();
     var categories = ViewBag.Categories as IEnumerable<VK.Core.Entities.Category> ?? new List<VK.Core.Entities.Category>();
     int total = ViewBag.Total ?? 0;
     int page = ViewBag.Page ?? 1;
     int pageSize = ViewBag.PageSize ?? 10;
-    bool isOwner = ViewBag.IsOwner ?? false;
 }
 
 @if (TempData["Success"] != null)
@@ -25,7 +25,7 @@
 
 <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:24px;">
     <div>
-        <div class="page-title">Địa điểm (POI)</div>
+        <div class="page-title">@(isOwner ? "Quán của tôi" : "Địa điểm (POI)")</div>
         <div class="page-subtitle">@(isOwner ? "Quản lý quán của bạn" : "Quản lý tất cả các điểm tham quan tại Vinh Khánh")</div>
     </div>
     @if (!isOwner)
@@ -330,7 +330,9 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn-secondary-admin" onclick="closeModal('editPoiModal')">Hủy</button>
-                <button type="button" class="btn-primary-admin" onclick="submitEditForm(this)"><i class="fa-solid fa-floppy-disk"></i> Cập nhật</button>
+                <button type="button" class="btn-primary-admin" onclick="submitEditForm(this)">
+                    <i class="fa-solid fa-floppy-disk"></i> @(isOwner ? "Gửi duyệt chỉnh sửa" : "Cập nhật")
+                </button>
             </div>
         </form>
     </div>
@@ -407,7 +409,10 @@ function handleEditImgFile(input) {
 
 function submitEditForm(btn) {
     btn.disabled = true;
-    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang lưu...';
+    btn.innerHTML = @(isOwner
+        ? Html.Raw("'<i class=\"fa-solid fa-spinner fa-spin\"></i> Đang gửi duyệt...'")
+        : Html.Raw("'<i class=\"fa-solid fa-spinner fa-spin\"></i> Đang lưu...'")
+    );
 
     if (_pendingImgFile) {
         // Upload file trước, sau đó submit form
@@ -423,7 +428,10 @@ function submitEditForm(btn) {
             })
             .catch(function() {
                 btn.disabled = false;
-                btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Cập nhật';
+                btn.innerHTML = @(isOwner
+                    ? Html.Raw("'<i class=\"fa-solid fa-floppy-disk\"></i> Gửi duyệt chỉnh sửa'")
+                    : Html.Raw("'<i class=\"fa-solid fa-floppy-disk\"></i> Cập nhật'")
+                );
                 alert('Upload ảnh thất bại. Vui lòng thử lại hoặc dán URL thủ công.');
             });
     } else {

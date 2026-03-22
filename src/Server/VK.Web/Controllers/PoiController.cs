@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
 using VK.Infrastructure.Data;
 using VK.Core.Entities;
 
@@ -149,9 +150,10 @@ public class PoiController : Controller
     public async Task<IActionResult> Edit(PointOfInterest model)
     {
         var isOwner = string.Equals(HttpContext.Session.GetString("UserRole"), "poi_owner", StringComparison.OrdinalIgnoreCase);
+        int? ownerVendorId = null;
         if (isOwner)
         {
-            var ownerVendorId = HttpContext.Session.GetInt32("VendorId");
+            ownerVendorId = HttpContext.Session.GetInt32("VendorId");
             if (!ownerVendorId.HasValue)
             {
                 TempData["Error"] = "Không xác định được quán quản lý.";
@@ -168,6 +170,60 @@ public class PoiController : Controller
                 TempData["Error"] = "Bạn chỉ có thể cập nhật quán của mình.";
                 return RedirectToAction(nameof(Index));
             }
+
+            try
+            {
+                var ownerEmail = HttpContext.Session.GetString("UserEmail");
+                if (string.IsNullOrWhiteSpace(ownerEmail))
+                {
+                    TempData["Error"] = "Không xác định được tài khoản chủ quán.";
+                    return RedirectToAction(nameof(Index));
+                }
+
+                var ownerUser = await _context.Users
+                    .FirstOrDefaultAsync(u => !u.IsDeleted && u.Email == ownerEmail && u.Role == "poi_owner");
+
+                if (ownerUser == null)
+                {
+                    TempData["Error"] = "Không tìm thấy thông tin chủ quán.";
+                    return RedirectToAction(nameof(Index));
+                }
+
+                var payload = new PoiEditPayload
+                {
+                    Name = model.Name,
+                    Description = model.Description,
+                    Address = model.Address,
+                    Latitude = model.Latitude,
+                    Longitude = model.Longitude,
+                    IsActive = model.IsActive,
+                    CategoryId = model.CategoryId,
+                    ImageUrl = model.ImageUrl
+                };
+
+                _context.PoiContentChangeRequests.Add(new PoiContentChangeRequest
+                {
+                    OwnerUserId = ownerUser.Id,
+                    VendorId = ownerVendorId.Value,
+                    PointOfInterestId = model.Id,
+                    RequestType = "poi",
+                    ActionType = "update",
+                    AudioContentId = null,
+                    LanguageCode = "vi",
+                    TextContent = JsonSerializer.Serialize(payload),
+                    Status = "pending"
+                });
+
+                await _context.SaveChangesAsync();
+                TempData["Success"] = "Đã gửi yêu cầu chỉnh sửa POI. Admin duyệt xong mới áp dụng.";
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Owner submit POI edit request failed");
+                TempData["Error"] = "Không thể gửi yêu cầu chỉnh sửa lúc này.";
+            }
+
+            return RedirectToAction(nameof(Index));
         }
 
         try
@@ -198,6 +254,18 @@ public class PoiController : Controller
         }
 
         return RedirectToAction(nameof(Index));
+    }
+
+    private sealed class PoiEditPayload
+    {
+        public string Name { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
+        public string Address { get; set; } = string.Empty;
+        public double Latitude { get; set; }
+        public double Longitude { get; set; }
+        public bool IsActive { get; set; }
+        public int? CategoryId { get; set; }
+        public string? ImageUrl { get; set; }
     }
 
     [HttpPost]

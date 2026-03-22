@@ -6,6 +6,21 @@
     var poi = ViewBag.Poi as VK.Core.Entities.PointOfInterest;
 }
 
+@if (TempData["Success"] != null)
+{
+    <div
+        style="background:rgba(34,197,94,0.12);border:1px solid rgba(34,197,94,0.2);border-radius:8px;padding:12px 16px;margin-bottom:16px;color:#22C55E;font-size:13px;">
+        <i class="fa-solid fa-circle-check"></i> @TempData["Success"]
+    </div>
+}
+@if (TempData["Error"] != null)
+{
+    <div
+        style="background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.2);border-radius:8px;padding:12px 16px;margin-bottom:16px;color:#EF4444;font-size:13px;">
+        <i class="fa-solid fa-circle-xmark"></i> @TempData["Error"]
+    </div>
+}
+
 <div class="admin-card" style="margin-bottom:20px;">
     <div class="admin-card-header">
         <div>
@@ -27,6 +42,8 @@
 
         <div style="margin-top:18px;display:flex;gap:10px;">
             <a class="btn-primary-admin" href="/Poi">Quản lý quán của tôi</a>
+            <a class="btn-secondary-admin" href="/Audio">Audio</a>
+            <a class="btn-secondary-admin" href="/Translation">Bản dịch</a>
             <a class="btn-secondary-admin" href="/Home/Logout">Đăng xuất</a>
         </div>
     </div>

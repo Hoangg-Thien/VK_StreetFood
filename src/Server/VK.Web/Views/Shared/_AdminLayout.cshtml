@@ -70,6 +70,12 @@
                 <i class="fa-solid fa-user-check"></i>
                 Duyệt chủ quán
             </a>
+
+            <a href="/OwnerContentApproval"
+                   class='@(ViewContext.RouteData.Values["controller"]?.ToString() == "OwnerContentApproval" ? "active" : "")'>
+                <i class="fa-solid fa-file-circle-check"></i>
+                Duyệt nội dung owner
+            </a>
         </nav>
     </aside>
 
