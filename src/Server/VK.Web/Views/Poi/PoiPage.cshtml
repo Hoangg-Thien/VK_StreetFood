@@ -26,7 +26,7 @@
 <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:24px;">
     <div>
         <div class="page-title">@(isOwner ? "Quán của tôi" : "Địa điểm (POI)")</div>
-        <div class="page-subtitle">@(isOwner ? "Quản lý quán của bạn" : "Quản lý tất cả các điểm tham quan tại Vinh Khánh")</div>
+        <div class="page-subtitle">@(isOwner ? "Quản lý quán của bạn" : "Quản lý tất cả các điểm tham quan tại Vĩnh Khánh")</div>
     </div>
     @if (!isOwner)
     {
@@ -74,9 +74,7 @@
                     <th>Danh mục</th>
                     <th>Tọa độ</th>
                     <th>Audio</th>
-                    <th>Đánh giá</th>
                     <th>Trạng thái</th>
-                    <th>Ngày tạo</th>
                     <th>Hành động</th>
                 </tr>
             </thead>
@@ -128,12 +126,6 @@
                                 </span>
                             </td>
                             <td>
-                                <span style="font-size:12px;color:var(--yellow);">
-                                    <i class="fa-solid fa-star"></i>
-                                    @poi.AverageRating.ToString("F1") (@poi.TotalRatings)
-                                </span>
-                            </td>
-                            <td>
                                 @if (poi.IsActive)
                                 {
                                     <span class="badge-status badge-active">Hoạt động</span>
@@ -142,9 +134,6 @@
                                 {
                                     <span class="badge-status badge-inactive">Tạm dừng</span>
                                 }
-                            </td>
-                            <td style="color:var(--text-muted);font-size:12px;">
-                                @poi.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy")
                             </td>
                             <td>
                                 <div style="display:flex;gap:6px;">
@@ -263,7 +252,7 @@
 <div class="modal-overlay" id="editPoiModal">
     <div class="modal-box">
         <div class="modal-header">
-            <span class="modal-title"><i class="fa-solid fa-pen" style="color:var(--blue);margin-right:8px;"></i>Chỉnh sửa địa điểm</span>
+            <span class="modal-title">Chỉnh sửa địa điểm</span>
             <button class="modal-close" onclick="closeModal('editPoiModal')"><i class="fa-solid fa-xmark"></i></button>
         </div>
         <form method="post" action="/Poi/Edit" id="editPoiForm" onsubmit="return false;">
