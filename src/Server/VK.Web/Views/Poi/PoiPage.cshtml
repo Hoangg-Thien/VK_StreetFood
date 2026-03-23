@@ -74,9 +74,7 @@
                     <th>Danh mục</th>
                     <th>Tọa độ</th>
                     <th>Audio</th>
-                    <th>Đánh giá</th>
                     <th>Trạng thái</th>
-                    <th>Ngày tạo</th>
                     <th>Hành động</th>
                 </tr>
             </thead>
@@ -128,12 +126,6 @@
                                 </span>
                             </td>
                             <td>
-                                <span style="font-size:12px;color:var(--yellow);">
-                                    <i class="fa-solid fa-star"></i>
-                                    @poi.AverageRating.ToString("F1") (@poi.TotalRatings)
-                                </span>
-                            </td>
-                            <td>
                                 @if (poi.IsActive)
                                 {
                                     <span class="badge-status badge-active">Hoạt động</span>
@@ -142,9 +134,6 @@
                                 {
                                     <span class="badge-status badge-inactive">Tạm dừng</span>
                                 }
-                            </td>
-                            <td style="color:var(--text-muted);font-size:12px;">
-                                @poi.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy")
                             </td>
                             <td>
                                 <div style="display:flex;gap:6px;">
