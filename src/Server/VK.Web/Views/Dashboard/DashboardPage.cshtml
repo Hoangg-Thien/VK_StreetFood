@@ -11,48 +11,40 @@
 }
 
 <div class="page-title">Dashboard</div>
-<div class="page-subtitle">Xin chào! Đây là tình hình hôm nay tại Vinh Khánh Food Street.</div>
+<div class="page-subtitle">Xin chào! Đây là tình hình hôm nay tại Vĩnh Khánh Food Street.</div>
 
 <!-- STAT CARDS -->
 <div class="stat-cards">
     <div class="stat-card">
         <div class="stat-card-header">
             <div class="stat-icon orange"><i class="fa-solid fa-map-pin"></i></div>
-            <span class="stat-trend up">+6.2%</span>
         </div>
         <div class="stat-value">@totalPOIs</div>
         <div class="stat-label">Tổng địa điểm (POI)</div>
-        <div class="stat-compare">vs. tháng trước</div>
     </div>
 
     <div class="stat-card">
         <div class="stat-card-header">
             <div class="stat-icon green"><i class="fa-solid fa-headphones"></i></div>
-            <span class="stat-trend up">+3.2%</span>
         </div>
         <div class="stat-value">@totalAudio</div>
         <div class="stat-label">Nội dung Audio</div>
-        <div class="stat-compare">4 bản mới chờ duyệt</div>
     </div>
 
     <div class="stat-card">
         <div class="stat-card-header">
             <div class="stat-icon blue"><i class="fa-solid fa-star"></i></div>
-            <span class="stat-trend up">+8.4%</span>
         </div>
         <div class="stat-value">@averageRating.ToString("F1")</div>
         <div class="stat-label">Đánh giá trung bình</div>
-        <div class="stat-compare">Tăng từ @(averageRating > 0.2 ? (averageRating - 0.2).ToString("F1") : "0.0")</div>
     </div>
 
     <div class="stat-card">
         <div class="stat-card-header">
             <div class="stat-icon purple"><i class="fa-solid fa-users"></i></div>
-            <span class="stat-trend new">Mới</span>
         </div>
         <div class="stat-value">@totalTourists</div>
         <div class="stat-label">Du khách</div>
-        <div class="stat-compare">Giờ cao điểm: 7PM - 9PM</div>
     </div>
 </div>
 
@@ -100,7 +92,6 @@
                     <div class="live-stat-label">Audio đang phát</div>
                     <div class="live-stat-value">@(totalAudio > 0 ? totalAudio : 24) Đang hoạt động</div>
                 </div>
-                <div class="live-stat-badge" style="color:var(--green);font-size:11px;font-weight:600;">12m avg</div>
             </div>
 
             <div class="live-stat-item">
@@ -109,8 +100,6 @@
                     <div class="live-stat-label">Du khách hiện tại</div>
                     <div class="live-stat-value">@(totalTourists > 0 ? Math.Min(totalTourists, 142) : 142) đang tham
                         quan</div>
-                    </div>
-                    <div class="live-stat-badge" style="color:var(--yellow);font-size:11px;font-weight:600;">88% Công suất
                     </div>
                 </div>
 
@@ -121,10 +110,6 @@
                         <div class="live-stat-value">@(totalPOIs > 0 ? totalPOIs : 0) Địa điểm</div>
                     </div>
                 </div>
-
-                <p style="font-size:11px;color:var(--text-muted);margin-top:12px;line-height:1.6;">
-                    *Lượng khách cao điểm dự kiến trong 45 phút tới dựa trên dữ liệu lịch sử ngày thứ Sáu.
-                </p>
 
                 <a href="/UsageHistory" class="heatmap-btn">
                     <i class="fa-solid fa-fire-flame-curved" style="margin-right:6px;"></i>
