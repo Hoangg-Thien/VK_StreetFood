@@ -42,7 +42,6 @@
     <div class="stat-card">
         <div class="stat-card-header">
             <div class="stat-icon purple"><i class="fa-solid fa-users"></i></div>
-            <span class="stat-trend new">Mới</span>
         </div>
         <div class="stat-value">@totalTourists</div>
         <div class="stat-label">Du khách</div>
@@ -90,9 +89,10 @@
             <div class="live-stat-item">
                 <div class="live-stat-icon orange"><i class="fa-solid fa-headphones"></i></div>
                 <div>
-                    <div class="live-stat-label">Audio</div>
+                    <div class="live-stat-label">Audio đang phát</div>
                     <div class="live-stat-value">@(totalAudio > 0 ? totalAudio : 24) Đang hoạt động</div>
                 </div>
+            </div>
 
             <div class="live-stat-item">
                 <div class="live-stat-icon blue"><i class="fa-solid fa-person-walking"></i></div>
@@ -100,6 +100,7 @@
                     <div class="live-stat-label">Du khách hiện tại</div>
                     <div class="live-stat-value">@(totalTourists > 0 ? Math.Min(totalTourists, 142) : 142) đang tham
                         quan</div>
+                    </div>
                 </div>
 
                 <div class="live-stat-item">
