@@ -38,4 +38,5 @@ public class PointOfInterest : BaseEntity
     public virtual ICollection<Analytics> Analytics { get; set; } = new List<Analytics>();
     public virtual ICollection<Rating> Ratings { get; set; } = new List<Rating>();
     public virtual ICollection<Favorite> Favorites { get; set; } = new List<Favorite>();
+    public virtual ICollection<TourPointOfInterest> TourPoints { get; set; } = new List<TourPointOfInterest>();
 }

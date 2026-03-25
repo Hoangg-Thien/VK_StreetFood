@@ -2,26 +2,25 @@
     ViewData["Title"] = "Quản lý Tour";
     Layout = "_AdminLayout";
 
+    var tours = ViewBag.Tours as IEnumerable<VK.Core.Entities.Tour> ?? new List<VK.Core.Entities.Tour>();
     var pois = ViewBag.POIs as IEnumerable<VK.Core.Entities.PointOfInterest> ?? new List<VK.Core.Entities.PointOfInterest>();
     var categories = ViewBag.Categories as IEnumerable<VK.Core.Entities.Category> ?? new List<VK.Core.Entities.Category>();
+    int totalTours = ViewBag.TotalTours ?? tours.Count();
     int totalPOIs = ViewBag.TotalPOIs ?? 0;
     int totalAudio = ViewBag.TotalAudio ?? 0;
-
-    // Demo tours (since no Tour entity exists yet)
-    var demoTours = new[] {
-        new { Id = 1, Name = "Tour ẩm thực buổi sáng", Emoji = "🌅", POICount = 5, Duration = "2 giờ", Lang = 3, Status = "active", Desc = "Khám phá các món ăn sáng đặc trưng tại chợ Vĩnh Khánh" },
-        new { Id = 2, Name = "Tour đường phố ban đêm", Emoji = "🌙", POICount = 8, Duration = "3 giờ", Lang = 4, Status = "active", Desc = "Trải nghiệm ẩm thực phố đêm sôi động và đặc sắc" },
-        new { Id = 3, Name = "Tour hải sản tươi sống", Emoji = "🦞", POICount = 4, Duration = "1.5 giờ", Lang = 2, Status = "draft", Desc = "Thưởng thức hải sản tươi ngon trực tiếp từ biển" },
-        new { Id = 4, Name = "Tour cà phê & bánh mì", Emoji = "☕", POICount = 6, Duration = "1 giờ", Lang = 3, Status = "active", Desc = "Điểm qua các quán cà phê và tiệm bánh mì nổi tiếng" },
-        new { Id = 5, Name = "Tour food court tổng hợp", Emoji = "🍜", POICount = 10, Duration = "4 giờ", Lang = 4, Status = "draft", Desc = "Tham quan toàn bộ khu ẩm thực đường phố lớn nhất" },
-        new { Id = 6, Name = "Tour chay & healthy", Emoji = "🥗", POICount = 3, Duration = "1.5 giờ", Lang = 2, Status = "inactive", Desc = "Khám phá các quán ăn chay và healthy food tại Vĩnh Khánh" },
-    };
+    var statusFilter = (ViewBag.Status as string ?? string.Empty).ToLowerInvariant();
 }
 
 @if (TempData["Success"] != null)
 {
     <div style="background:rgba(34,197,94,0.12);border:1px solid rgba(34,197,94,0.2);border-radius:8px;padding:12px 16px;margin-bottom:16px;color:#22C55E;font-size:13px;">
         <i class="fa-solid fa-circle-check"></i> @TempData["Success"]
+    </div>
+}
+@if (TempData["Error"] != null)
+{
+    <div style="background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.2);border-radius:8px;padding:12px 16px;margin-bottom:16px;color:#EF4444;font-size:13px;">
+        <i class="fa-solid fa-circle-xmark"></i> @TempData["Error"]
     </div>
 }
 
@@ -42,9 +41,9 @@
         <div class="stat-card-header">
             <div class="stat-icon orange"><i class="fa-solid fa-route"></i></div>
         </div>
-        <div class="stat-value">@demoTours.Length</div>
+        <div class="stat-value">@totalTours</div>
         <div class="stat-label">Tổng số tour</div>
-        <div class="stat-compare">@demoTours.Count(t => t.Status == "active") đang hoạt động</div>
+        <div class="stat-compare">@tours.Count(t => t.Status == "active") đang hoạt động</div>
     </div>
     <div class="stat-card">
         <div class="stat-card-header">
@@ -75,52 +74,79 @@
 <!-- TOUR CARDS GRID -->
 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
     <div style="font-size:14px;font-weight:600;color:var(--text-secondary);">
-        Tất cả tour (@demoTours.Length)
+        Tất cả tour (@totalTours)
     </div>
-    <div style="display:flex;gap:8px;">
-        <select class="form-control-admin" style="width:auto;padding:8px 12px;font-size:13px;">
-            <option>Tất cả trạng thái</option>
-            <option>Đang hoạt động</option>
-            <option>Nháp</option>
-            <option>Tạm dừng</option>
+    <form method="get" action="/Tour" style="display:flex;gap:8px;">
+        <select name="status" class="form-control-admin" style="width:auto;padding:8px 12px;font-size:13px;">
+            <option value="" selected="@(string.IsNullOrEmpty(statusFilter) ? "selected" : null)">Tất cả trạng thái</option>
+            <option value="active" selected="@(statusFilter == "active" ? "selected" : null)">Đang hoạt động</option>
+            <option value="draft" selected="@(statusFilter == "draft" ? "selected" : null)">Nháp</option>
+            <option value="inactive" selected="@(statusFilter == "inactive" ? "selected" : null)">Tạm dừng</option>
         </select>
-    </div>
+        <button type="submit" class="btn-secondary-admin" style="font-size:12px;padding:8px 12px;">Lọc</button>
+    </form>
 </div>
 
 <div class="grid-cards">
-    @foreach (var tour in demoTours)
+    @if (tours.Any())
     {
-        var statusCss = tour.Status == "active" ? "badge-active" : tour.Status == "draft" ? "badge-pending" : "badge-inactive";
-        var statusLabel = tour.Status == "active" ? "Hoạt động" : tour.Status == "draft" ? "Nháp" : "Tạm dừng";
-        <div class="tour-card">
-            <div class="tour-card-img" style="background:linear-gradient(135deg,#1A1D2E,#252840);">
-                <span style="font-size:52px;">@tour.Emoji</span>
-                <span class="badge-status @statusCss" style="position:absolute;top:12px;right:12px;">@statusLabel</span>
-            </div>
-            <div class="tour-card-body">
-                <div class="tour-card-title">@tour.Name</div>
-                <div style="font-size:12px;color:var(--text-muted);margin-bottom:10px;line-height:1.6;">@tour.Desc</div>
-                <div class="tour-card-meta">
-                    <span><i class="fa-solid fa-map-pin"></i> @tour.POICount địa điểm</span>
-                    <span><i class="fa-regular fa-clock"></i> @tour.Duration</span>
-                    <span><i class="fa-solid fa-globe"></i> @tour.Lang ngôn ngữ</span>
+        @foreach (var tour in tours)
+        {
+            var statusCss = tour.Status == "active" ? "badge-active" : tour.Status == "draft" ? "badge-pending" : "badge-inactive";
+            var statusLabel = tour.Status == "active" ? "Hoạt động" : tour.Status == "draft" ? "Nháp" : "Tạm dừng";
+            var poiCount = tour.TourPoints.Count;
+            var durationLabel = tour.EstimatedDurationMinutes.HasValue
+                ? (tour.EstimatedDurationMinutes.Value < 60
+                    ? $"{tour.EstimatedDurationMinutes.Value} phút"
+                    : (tour.EstimatedDurationMinutes.Value % 60 == 0
+                        ? $"{tour.EstimatedDurationMinutes.Value / 60} giờ"
+                        : $"{tour.EstimatedDurationMinutes.Value / 60d:0.#} giờ"))
+                : "—";
+
+            <div class="tour-card">
+                <div class="tour-card-img" style="background:linear-gradient(135deg,#1A1D2E,#252840);">
+                    <span style="font-size:52px;">@tour.Emoji</span>
+                    <span class="badge-status @statusCss" style="position:absolute;top:12px;right:12px;">@statusLabel</span>
+                </div>
+                <div class="tour-card-body">
+                    <div class="tour-card-title">@tour.Name</div>
+                    <div style="font-size:12px;color:var(--text-muted);margin-bottom:10px;line-height:1.6;">@tour.Description</div>
+                    <div class="tour-card-meta">
+                        <span><i class="fa-solid fa-map-pin"></i> @poiCount địa điểm</span>
+                        <span><i class="fa-regular fa-clock"></i> @durationLabel</span>
+                        <span><i class="fa-solid fa-globe"></i> 3 ngôn ngữ</span>
+                    </div>
+                </div>
+                <div class="tour-card-footer">
+                    <div style="display:flex;gap:6px;">
+                        <button class="action-btn edit"
+                                onclick='openEditTourModal(@tour.Id, @Html.Raw(System.Text.Json.JsonSerializer.Serialize(tour.Name)), @Html.Raw(System.Text.Json.JsonSerializer.Serialize(tour.Description ?? "")), @Html.Raw(System.Text.Json.JsonSerializer.Serialize(tour.Emoji)), @(tour.EstimatedDurationMinutes.HasValue ? tour.EstimatedDurationMinutes.Value.ToString() : "null"), @Html.Raw(System.Text.Json.JsonSerializer.Serialize(tour.Status)), @Html.Raw(System.Text.Json.JsonSerializer.Serialize(tour.TourPoints.OrderBy(tp => tp.SortOrder).Select(tp => tp.PointOfInterestId).ToList())))'
+                                title="Chỉnh sửa">
+                            <i class="fa-solid fa-pen"></i>
+                        </button>
+                        <button class="action-btn view" title="Xem chi tiết" onclick="alert('Tính năng chi tiết tour đang được phát triển.');">
+                            <i class="fa-solid fa-eye"></i>
+                        </button>
+                        <form method="post" action="/Tour/Delete" style="display:inline;" onsubmit="return confirm('Xóa tour này?')">
+                            <input type="hidden" name="id" value="@tour.Id" />
+                            <button type="submit" class="action-btn delete" title="Xóa">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                        </form>
+                    </div>
+                    <a href="javascript:void(0)" class="btn-primary-admin" style="font-size:11px;padding:6px 12px;">
+                        <i class="fa-solid fa-route"></i> Xem lộ trình
+                    </a>
                 </div>
             </div>
-            <div class="tour-card-footer">
-                <div style="display:flex;gap:6px;">
-                    <button class="action-btn edit" onclick="openEditTourModal(@tour.Id, '@tour.Name', '@tour.Desc')" title="Chỉnh sửa">
-                        <i class="fa-solid fa-pen"></i>
-                    </button>
-                    <button class="action-btn view" title="Xem chi tiết" onclick="openModal('tourDetailModal@(tour.Id)')">
-                        <i class="fa-solid fa-eye"></i>
-                    </button>
-                    <button class="action-btn delete" title="Xóa" onclick="return confirm('Xóa tour này?')">
-                        <i class="fa-solid fa-trash"></i>
-                    </button>
-                </div>
-                <a href="#" class="btn-primary-admin" style="font-size:11px;padding:6px 12px;">
-                    <i class="fa-solid fa-route"></i> Xem lộ trình
-                </a>
+        }
+    }
+    else
+    {
+        <div class="admin-card" style="grid-column:1/-1;">
+            <div class="empty-state">
+                <i class="fa-solid fa-route"></i>
+                <p>Chưa có tour nào. Hãy tạo tour đầu tiên!</p>
             </div>
         </div>
     }
@@ -199,55 +225,61 @@
             <span class="modal-title"><i class="fa-solid fa-route" style="color:var(--accent-orange);margin-right:8px;"></i>Tạo tour mới</span>
             <button class="modal-close" onclick="closeModal('addTourModal')"><i class="fa-solid fa-xmark"></i></button>
         </div>
-        <div class="modal-body">
-            <div class="form-group">
-                <label class="form-label">Tên tour *</label>
-                <input type="text" class="form-control-admin" placeholder="VD: Tour ẩm thực buổi sáng..." />
-            </div>
-            <div class="form-group">
-                <label class="form-label">Mô tả</label>
-                <textarea class="form-control-admin" rows="3" placeholder="Mô tả ngắn về tour..."></textarea>
-            </div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <form method="post" action="/Tour/Create">
+            <div class="modal-body">
                 <div class="form-group">
-                    <label class="form-label">Thời lượng ước tính</label>
-                    <input type="text" class="form-control-admin" placeholder="VD: 2 giờ" />
+                    <label class="form-label">Tên tour *</label>
+                    <input type="text" name="Name" class="form-control-admin" placeholder="VD: Tour ẩm thực buổi sáng..." required />
                 </div>
                 <div class="form-group">
-                    <label class="form-label">Icon (emoji)</label>
-                    <input type="text" class="form-control-admin" placeholder="🍜" />
+                    <label class="form-label">Mô tả</label>
+                    <textarea name="Description" class="form-control-admin" rows="3" placeholder="Mô tả ngắn về tour..."></textarea>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                    <div class="form-group">
+                        <label class="form-label">Thời lượng ước tính (phút)</label>
+                        <input type="number" name="EstimatedDurationMinutes" min="1" class="form-control-admin" placeholder="VD: 120" />
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Icon (emoji)</label>
+                        <input type="text" name="Emoji" class="form-control-admin" placeholder="🍜" />
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Trạng thái</label>
+                    <select name="Status" class="form-control-admin">
+                        <option value="draft" selected>Nháp</option>
+                        <option value="active">Hoạt động</option>
+                        <option value="inactive">Tạm dừng</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Chọn địa điểm</label>
+                    <div style="max-height:180px;overflow-y:auto;border:1px solid var(--border-color);border-radius:8px;">
+                        @foreach (var poi in pois.Take(15))
+                        {
+                            <label style="display:flex;align-items:center;gap:8px;padding:8px 12px;cursor:pointer;border-bottom:1px solid var(--border-color);">
+                                <input type="checkbox" name="PoiIds" value="@poi.Id" style="accent-color:var(--accent-orange);" />
+                                <span style="font-size:13px;">@poi.Name</span>
+                                <span style="font-size:11px;color:var(--text-muted);margin-left:auto;">@(poi.Category?.Name ?? "—")</span>
+                            </label>
+                        }
+                        @if (!pois.Any())
+                        {
+                            <div style="padding:16px;text-align:center;color:var(--text-muted);font-size:13px;">
+                                Chưa có địa điểm nào. <a href="/Poi" style="color:var(--accent-orange);">Thêm ngay</a>
+                            </div>
+                        }
+                    </div>
                 </div>
             </div>
-            <div class="form-group">
-                <label class="form-label">Chọn địa điểm</label>
-                <div style="max-height:180px;overflow-y:auto;border:1px solid var(--border-color);border-radius:8px;">
-                    @foreach (var poi in pois.Take(15))
-                    {
-                        <label style="display:flex;align-items:center;gap:8px;padding:8px 12px;cursor:pointer;border-bottom:1px solid var(--border-color);">
-                            <input type="checkbox" style="accent-color:var(--accent-orange);" />
-                            <span style="font-size:13px;">@poi.Name</span>
-                            <span style="font-size:11px;color:var(--text-muted);margin-left:auto;">@(poi.Category?.Name ?? "—")</span>
-                        </label>
-                    }
-                    @if (!pois.Any())
-                    {
-                        <div style="padding:16px;text-align:center;color:var(--text-muted);font-size:13px;">
-                            Chưa có địa điểm nào. <a href="/Poi" style="color:var(--accent-orange);">Thêm ngay</a>
-                        </div>
-                    }
-                </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary-admin" onclick="closeModal('addTourModal')">Hủy</button>
+                <button type="submit" class="btn-primary-admin">
+                    <i class="fa-solid fa-floppy-disk"></i> Lưu tour
+                </button>
             </div>
-            <p style="font-size:11px;color:var(--text-muted);background:rgba(232,93,4,0.08);border:1px solid rgba(232,93,4,0.15);border-radius:6px;padding:10px;">
-                <i class="fa-solid fa-info-circle" style="color:var(--accent-orange);"></i>
-                Tính năng lưu tour đang được phát triển. Demo UI.
-            </p>
-        </div>
-        <div class="modal-footer">
-            <button type="button" class="btn-secondary-admin" onclick="closeModal('addTourModal')">Hủy</button>
-            <button type="button" class="btn-primary-admin" onclick="alert('Tính năng đang phát triển!');closeModal('addTourModal');">
-                <i class="fa-solid fa-floppy-disk"></i> Lưu tour
-            </button>
-        </div>
+        </form>
     </div>
 </div>
 
@@ -258,34 +290,74 @@
             <span class="modal-title"><i class="fa-solid fa-pen" style="color:var(--blue);margin-right:8px;"></i>Chỉnh sửa tour</span>
             <button class="modal-close" onclick="closeModal('editTourModal')"><i class="fa-solid fa-xmark"></i></button>
         </div>
-        <div class="modal-body">
-            <div class="form-group">
-                <label class="form-label">Tên tour</label>
-                <input type="text" id="editTourName" class="form-control-admin" />
+        <form method="post" action="/Tour/Edit">
+            <div class="modal-body">
+                <input type="hidden" id="editTourId" name="Id" />
+                <div class="form-group">
+                    <label class="form-label">Tên tour</label>
+                    <input type="text" id="editTourName" name="Name" class="form-control-admin" required />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Mô tả</label>
+                    <textarea id="editTourDesc" name="Description" class="form-control-admin" rows="3"></textarea>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                    <div class="form-group">
+                        <label class="form-label">Thời lượng ước tính (phút)</label>
+                        <input type="number" id="editTourDuration" name="EstimatedDurationMinutes" min="1" class="form-control-admin" />
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Icon (emoji)</label>
+                        <input type="text" id="editTourEmoji" name="Emoji" class="form-control-admin" />
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Trạng thái</label>
+                    <select id="editTourStatus" name="Status" class="form-control-admin">
+                        <option value="draft">Nháp</option>
+                        <option value="active">Hoạt động</option>
+                        <option value="inactive">Tạm dừng</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Chọn địa điểm</label>
+                    <div style="max-height:180px;overflow-y:auto;border:1px solid var(--border-color);border-radius:8px;">
+                        @foreach (var poi in pois.Take(15))
+                        {
+                            <label style="display:flex;align-items:center;gap:8px;padding:8px 12px;cursor:pointer;border-bottom:1px solid var(--border-color);">
+                                <input type="checkbox" name="PoiIds" value="@poi.Id" class="edit-tour-poi" style="accent-color:var(--accent-orange);" />
+                                <span style="font-size:13px;">@poi.Name</span>
+                                <span style="font-size:11px;color:var(--text-muted);margin-left:auto;">@(poi.Category?.Name ?? "—")</span>
+                            </label>
+                        }
+                    </div>
+                </div>
             </div>
-            <div class="form-group">
-                <label class="form-label">Mô tả</label>
-                <textarea id="editTourDesc" class="form-control-admin" rows="3"></textarea>
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary-admin" onclick="closeModal('editTourModal')">Hủy</button>
+                <button type="submit" class="btn-primary-admin">
+                    <i class="fa-solid fa-floppy-disk"></i> Cập nhật
+                </button>
             </div>
-            <p style="font-size:11px;color:var(--text-muted);background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.15);border-radius:6px;padding:10px;">
-                <i class="fa-solid fa-info-circle" style="color:var(--blue);"></i>
-                Tính năng chỉnh sửa tour đang được phát triển.
-            </p>
-        </div>
-        <div class="modal-footer">
-            <button type="button" class="btn-secondary-admin" onclick="closeModal('editTourModal')">Hủy</button>
-            <button type="button" class="btn-primary-admin" onclick="alert('Tính năng đang phát triển!');closeModal('editTourModal');">
-                <i class="fa-solid fa-floppy-disk"></i> Cập nhật
-            </button>
-        </div>
+        </form>
     </div>
 </div>
 
 @section Scripts {
 <script>
-function openEditTourModal(id, name, desc) {
+function openEditTourModal(id, name, desc, emoji, durationMinutes, status, poiIds) {
+    document.getElementById('editTourId').value = id;
     document.getElementById('editTourName').value = name;
     document.getElementById('editTourDesc').value = desc;
+    document.getElementById('editTourEmoji').value = emoji || '🍜';
+    document.getElementById('editTourDuration').value = durationMinutes ?? '';
+    document.getElementById('editTourStatus').value = status || 'draft';
+
+    const selectedPoiIds = Array.isArray(poiIds) ? poiIds.map(Number) : [];
+    document.querySelectorAll('.edit-tour-poi').forEach((checkbox) => {
+        checkbox.checked = selectedPoiIds.includes(Number(checkbox.value));
+    });
+
     openModal('editTourModal');
 }
 </script>
