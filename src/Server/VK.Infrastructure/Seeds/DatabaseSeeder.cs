@@ -16,6 +16,7 @@ public static class DatabaseSeeder
 
         if (context.PointsOfInterest.Any())
         {
+            await EnsureBaselineToursAsync(context);
             await EnsureBaselineVendorsAsync(context);
             await EnsureBaselineOwnerUsersAsync(context);
             return; // Database has been seeded
@@ -414,6 +415,7 @@ public static class DatabaseSeeder
         }
         await context.SaveChangesAsync();
 
+        await EnsureBaselineToursAsync(context);
         await EnsureBaselineVendorsAsync(context);
         await EnsureBaselineOwnerUsersAsync(context);
     }
@@ -574,6 +576,131 @@ public static class DatabaseSeeder
         }
 
         await context.SaveChangesAsync();
+    }
+
+    /// <summary>
+    /// Ensure baseline tours always exist for admin tour management page.
+    /// Idempotent by tour name (case-insensitive), does not duplicate records.
+    /// </summary>
+    private static async Task EnsureBaselineToursAsync(VKStreetFoodDbContext context)
+    {
+        var pois = await context.PointsOfInterest
+            .Where(p => !p.IsDeleted && p.IsActive)
+            .ToListAsync();
+
+        if (pois.Count == 0)
+            return;
+
+        var poiByName = pois
+            .GroupBy(p => p.Name.Trim(), StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(g => g.Key, g => g.First(), StringComparer.OrdinalIgnoreCase);
+
+        var baselineTours = new[]
+        {
+            new
+            {
+                Name = "Tour ẩm thực buổi sáng",
+                Description = "Khám phá các món ăn sáng đặc trưng tại khu Vĩnh Khánh.",
+                Emoji = "🌅",
+                EstimatedDurationMinutes = 120,
+                Status = "active",
+                PoiNames = new[]
+                {
+                    "Cổng chào Phố Ẩm thực Vĩnh Khánh",
+                    "Bún Cá Châu Đốc Dì Tư",
+                    "Ốc Vũ",
+                    "Ốc Thảo"
+                }
+            },
+            new
+            {
+                Name = "Tour đường phố ban đêm",
+                Description = "Trải nghiệm ẩm thực phố đêm sôi động và đặc sắc.",
+                Emoji = "🌙",
+                EstimatedDurationMinutes = 180,
+                Status = "active",
+                PoiNames = new[]
+                {
+                    "Cổng chào Phố Ẩm thực Vĩnh Khánh",
+                    "Ốc Oanh",
+                    "A Fat Hot Pot",
+                    "Alo Quán – Seafood & Beer",
+                    "Lãng Quán",
+                    "Ớt Xiêm Quán"
+                }
+            },
+            new
+            {
+                Name = "Tour hải sản tươi sống",
+                Description = "Thưởng thức hải sản tươi ngon tại các quán nổi bật.",
+                Emoji = "🦞",
+                EstimatedDurationMinutes = 90,
+                Status = "draft",
+                PoiNames = new[]
+                {
+                    "Ốc Vũ",
+                    "Ốc Oanh",
+                    "Ốc Đào 2",
+                    "Alo Quán – Seafood & Beer"
+                }
+            },
+            new
+            {
+                Name = "Tour lẩu & nướng",
+                Description = "Hành trình cho tín đồ lẩu và nướng tại Vĩnh Khánh.",
+                Emoji = "🍲",
+                EstimatedDurationMinutes = 150,
+                Status = "draft",
+                PoiNames = new[]
+                {
+                    "A Fat Hot Pot",
+                    "Chilli Lẩu Nướng Tự Chọn",
+                    "Lãng Quán",
+                    "Ớt Xiêm Quán"
+                }
+            }
+        };
+
+        var existingTours = await context.Tours
+            .Select(t => new { t.Id, t.Name })
+            .ToListAsync();
+
+        foreach (var template in baselineTours)
+        {
+            var existed = existingTours.Any(t =>
+                string.Equals(t.Name?.Trim(), template.Name, StringComparison.OrdinalIgnoreCase));
+
+            if (existed)
+                continue;
+
+            var tour = new Tour
+            {
+                Name = template.Name,
+                Description = template.Description,
+                Emoji = template.Emoji,
+                EstimatedDurationMinutes = template.EstimatedDurationMinutes,
+                Status = template.Status
+            };
+
+            context.Tours.Add(tour);
+            await context.SaveChangesAsync();
+
+            var sortOrder = 1;
+            foreach (var poiName in template.PoiNames)
+            {
+                if (!poiByName.TryGetValue(poiName, out var poi))
+                    continue;
+
+                context.TourPointsOfInterest.Add(new TourPointOfInterest
+                {
+                    TourId = tour.Id,
+                    PointOfInterestId = poi.Id,
+                    SortOrder = sortOrder++
+                });
+            }
+
+            await context.SaveChangesAsync();
+        }
     }
 
     private static string HashPassword(string plainText)
