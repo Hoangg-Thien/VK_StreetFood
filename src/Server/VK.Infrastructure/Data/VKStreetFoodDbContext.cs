@@ -25,6 +25,8 @@ public class VKStreetFoodDbContext : DbContext
     public DbSet<PoiContentChangeRequest> PoiContentChangeRequests { get; set; }
     public DbSet<Favorite> Favorites { get; set; }
     public DbSet<OpeningHours> OpeningHours { get; set; }
+    public DbSet<Tour> Tours { get; set; }
+    public DbSet<TourPointOfInterest> TourPointsOfInterest { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -49,6 +51,8 @@ public class VKStreetFoodDbContext : DbContext
         modelBuilder.Entity<PoiContentChangeRequest>().HasQueryFilter(r => !r.IsDeleted);
         modelBuilder.Entity<Favorite>().HasQueryFilter(f => !f.IsDeleted);
         modelBuilder.Entity<OpeningHours>().HasQueryFilter(o => !o.IsDeleted);
+        modelBuilder.Entity<Tour>().HasQueryFilter(t => !t.IsDeleted);
+        modelBuilder.Entity<TourPointOfInterest>().HasQueryFilter(tp => !tp.IsDeleted);
 
         modelBuilder.Entity<PoiOwnerRegistration>()
             .HasOne(r => r.User)
