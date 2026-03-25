@@ -22,7 +22,7 @@ public class TourController : AdminBaseController
         {
             var status = (Request.Query["status"].ToString() ?? string.Empty).Trim().ToLowerInvariant();
 
-            var toursQuery = _context.Set<Tour>()
+            var toursQuery = _context.Tours
                 .Include(t => t.TourPoints.OrderBy(tp => tp.SortOrder))
                 .ThenInclude(tp => tp.PointOfInterest)
                 .AsQueryable();
@@ -88,9 +88,8 @@ public class TourController : AdminBaseController
                 Status = NormalizeStatus(input.Status)
             };
 
-            _context.Add(tour);
+            _context.Tours.Add(tour);
             await _context.SaveChangesAsync();
-
             await SyncTourPointsAsync(tour.Id, input.PoiIds);
 
             TempData["Success"] = "Tạo tour thành công!";
@@ -121,7 +120,7 @@ public class TourController : AdminBaseController
                 return RedirectToAction(nameof(Index));
             }
 
-            var tour = await _context.Set<Tour>()
+            var tour = await _context.Tours
                 .Include(t => t.TourPoints)
                 .FirstOrDefaultAsync(t => t.Id == input.Id);
 
@@ -155,14 +154,14 @@ public class TourController : AdminBaseController
     {
         try
         {
-            var tour = await _context.Set<Tour>().FirstOrDefaultAsync(t => t.Id == id);
+            var tour = await _context.Tours.FirstOrDefaultAsync(t => t.Id == id);
             if (tour == null)
             {
                 TempData["Error"] = "Không tìm thấy tour.";
                 return RedirectToAction(nameof(Index));
             }
 
-            var tourPoints = await _context.Set<TourPointOfInterest>()
+            var tourPoints = await _context.TourPointsOfInterest
                 .Where(tp => tp.TourId == id)
                 .ToListAsync();
 
@@ -194,11 +193,9 @@ public class TourController : AdminBaseController
             .Distinct()
             .ToList();
 
-        var existing = await _context.Set<TourPointOfInterest>()
+        var existing = await _context.TourPointsOfInterest
             .Where(tp => tp.TourId == tourId)
             .ToListAsync();
-
-        var existingIds = existing.Select(tp => tp.PointOfInterestId).ToHashSet();
 
         foreach (var point in existing)
         {
@@ -223,7 +220,7 @@ public class TourController : AdminBaseController
                 continue;
             }
 
-            _context.Add(new TourPointOfInterest
+            _context.TourPointsOfInterest.Add(new TourPointOfInterest
             {
                 TourId = tourId,
                 PointOfInterestId = poiId,
