@@ -79,9 +79,9 @@ public partial class POIDetailViewModel : ObservableObject, IQueryAttributable
     {
         AudioTranscript = value?.TextContent ?? string.Empty;
         HasTranscript = !string.IsNullOrWhiteSpace(AudioTranscript);
-        // Estimate duration from word count (~130 wpm)
-        var words = AudioTranscript.Split(' ', StringSplitOptions.RemoveEmptyEntries).Length;
-        _totalSeconds = Math.Max(10, words * 60 / 130);
+        _totalSeconds = value?.DurationSeconds is > 0
+            ? value.DurationSeconds.Value
+            : EstimateDurationFromTranscript(AudioTranscript);
         AudioDurationText = FormatTime(_totalSeconds);
         AudioPositionRatio = 0;
         AudioPositionText = "0:00";
@@ -324,9 +324,9 @@ public partial class POIDetailViewModel : ObservableObject, IQueryAttributable
                 _usingAudioService = true;
                 if (_elapsedSeconds == 0)
                 {
-                    // Duration chưa biết — estimate từ word count làm placeholder
-                    var words = (SelectedAudio?.TextContent ?? "").Split(' ', StringSplitOptions.RemoveEmptyEntries).Length;
-                    _totalSeconds = Math.Max(10, words * 60 / 130);
+                    _totalSeconds = SelectedAudio?.DurationSeconds is > 0
+                        ? SelectedAudio.DurationSeconds.Value
+                        : EstimateDurationFromTranscript(SelectedAudio?.TextContent);
                     AudioDurationText = FormatTime(_totalSeconds);
                     AudioPositionRatio = 0;
                     AudioPositionText = "0:00";
@@ -379,6 +379,12 @@ public partial class POIDetailViewModel : ObservableObject, IQueryAttributable
             if (touristId != null && Poi != null)
                 _ = _apiService.TrackEventAsync(touristId, Poi.Id, "audio_play", SelectedLanguage);
         }
+    }
+
+    private static int EstimateDurationFromTranscript(string? transcript)
+    {
+        var words = (transcript ?? string.Empty).Split(' ', StringSplitOptions.RemoveEmptyEntries).Length;
+        return Math.Max(10, words * 60 / 130);
     }
 
     [RelayCommand]

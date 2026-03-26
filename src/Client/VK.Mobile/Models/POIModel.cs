@@ -54,8 +54,15 @@ public class AudioInfo
     public string LanguageCode { get; set; } = "vi";
     public string? AudioFileUrl { get; set; }
 
-    [JsonPropertyName("durationInSeconds")]
+    [JsonPropertyName("durationSeconds")]
     public int? DurationSeconds { get; set; }
+
+    [JsonPropertyName("durationInSeconds")]
+    public int? DurationInSeconds
+    {
+        get => DurationSeconds;
+        set => DurationSeconds = value;
+    }
 
     public string? TextContent { get; set; }
 }
