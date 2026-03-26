@@ -27,7 +27,7 @@ public class TourController : AdminBaseController
                 .ThenInclude(tp => tp.PointOfInterest)
                 .AsQueryable();
 
-            if (status is "active" or "draft" or "inactive")
+            if (status is "active" or "inactive")
             {
                 toursQuery = toursQuery.Where(t => t.Status == status);
             }
@@ -234,7 +234,7 @@ public class TourController : AdminBaseController
     private static string NormalizeStatus(string? status)
     {
         var value = (status ?? string.Empty).Trim().ToLowerInvariant();
-        return value is "active" or "draft" or "inactive" ? value : "draft";
+        return value is "active" ? "active" : "inactive";
     }
 
     public sealed class TourUpsertInput
