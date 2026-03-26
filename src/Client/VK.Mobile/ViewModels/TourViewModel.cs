@@ -49,10 +49,13 @@ public partial class TourViewModel : ObservableObject
 
             var tours = await _apiService.GetToursAsync();
 
-            ActiveTour = tours.FirstOrDefault(t => string.Equals(t.Status, "active", StringComparison.OrdinalIgnoreCase));
+            ActiveTour = tours.FirstOrDefault(t => string.Equals(t.Status, "active", StringComparison.OrdinalIgnoreCase))
+                         ?? tours.FirstOrDefault();
 
             UpcomingTours = new ObservableCollection<TourModel>(
-                tours.Where(t => string.Equals(t.Status, "draft", StringComparison.OrdinalIgnoreCase)));
+                tours.Where(t =>
+                    (ActiveTour == null || t.Id != ActiveTour.Id) &&
+                    !string.Equals(t.Status, "inactive", StringComparison.OrdinalIgnoreCase)));
 
             CompletedTours = new ObservableCollection<TourModel>(
                 tours.Where(t => string.Equals(t.Status, "inactive", StringComparison.OrdinalIgnoreCase)));

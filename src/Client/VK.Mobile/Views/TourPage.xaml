@@ -47,6 +47,7 @@
                            BorderColor="Transparent"
                            IsVisible="{Binding HasActiveTour}">
                         <VerticalStackLayout Spacing="0"
+                                             x:DataType="models:TourModel"
                                              BindingContext="{Binding ActiveTour}">
                             <Image Source="{Binding CoverImageUrl}"
                                    Aspect="AspectFill"
