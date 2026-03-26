@@ -1,0 +1,246 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:VK.Mobile.ViewModels"
+             xmlns:models="clr-namespace:VK.Mobile.Models"
+             xmlns:loc="clr-namespace:VK.Mobile.Services"
+             x:Class="VK.Mobile.Views.TourPage"
+             x:DataType="vm:TourViewModel"
+             BackgroundColor="{StaticResource PageBackground}">
+
+    <Grid>
+        <ActivityIndicator IsRunning="{Binding IsLoading}"
+                           IsVisible="{Binding IsLoading}"
+                           Color="{StaticResource Primary}"
+                           VerticalOptions="Center"
+                           HorizontalOptions="Center"/>
+
+        <ScrollView IsVisible="{Binding IsLoading, Converter={StaticResource InvertedBoolConverter}}">
+            <VerticalStackLayout Padding="16,8,16,20"
+                                 Spacing="20">
+
+                <Label Text="{Binding Source={x:Static loc:LocalizationResourceManager.Instance}, Path=[ToursTitle]}"
+                       FontSize="28"
+                       FontAttributes="Bold"
+                       TextColor="{StaticResource TextPrimary}"/>
+
+                <VerticalStackLayout IsVisible="{Binding ErrorMessage, Converter={StaticResource StringNotEmptyConverter}}"
+                                     Spacing="10">
+                    <Label Text="{Binding ErrorMessage}"
+                           FontSize="13"
+                           TextColor="{StaticResource Error}"/>
+                    <Button Text="{Binding Source={x:Static loc:LocalizationResourceManager.Instance}, Path=[MenuRetry]}"
+                            Command="{Binding LoadToursCommand}"/>
+                </VerticalStackLayout>
+
+                <!-- Active Tour -->
+                <VerticalStackLayout Spacing="10">
+                    <Label Text="{Binding Source={x:Static loc:LocalizationResourceManager.Instance}, Path=[ToursActiveSection]}"
+                           FontSize="24"
+                           FontAttributes="Bold"
+                           TextColor="{StaticResource TextPrimary}"/>
+
+                    <Frame Padding="0"
+                           HasShadow="True"
+                           CornerRadius="16"
+                           BackgroundColor="{StaticResource CardBackground}"
+                           BorderColor="Transparent"
+                           IsVisible="{Binding HasActiveTour}">
+                        <VerticalStackLayout Spacing="0"
+                                             BindingContext="{Binding ActiveTour}">
+                            <Image Source="{Binding CoverImageUrl}"
+                                   Aspect="AspectFill"
+                                   HeightRequest="220"/>
+
+                            <VerticalStackLayout Padding="16"
+                                                 Spacing="8">
+                                <HorizontalStackLayout Spacing="8">
+                                    <Border BackgroundColor="{StaticResource Primary}"
+                                            Stroke="Transparent"
+                                            StrokeShape="RoundRectangle 8"
+                                            Padding="8,2">
+                                        <Label Text="{Binding Source={x:Static loc:LocalizationResourceManager.Instance}, Path=[ToursLiveNow]}"
+                                               FontSize="12"
+                                               FontAttributes="Bold"
+                                               TextColor="White"/>
+                                    </Border>
+                                    <Label Text="{Binding EstimatedDurationMinutes, StringFormat='{0}m'}"
+                                           FontSize="14"
+                                           TextColor="{StaticResource TextSecondary}"
+                                           VerticalOptions="Center"/>
+                                </HorizontalStackLayout>
+
+                                <Label Text="{Binding Name}"
+                                       FontSize="30"
+                                       FontAttributes="Bold"
+                                       TextColor="{StaticResource TextPrimary}"
+                                       MaxLines="2"/>
+
+                                <Label Text="{Binding Description}"
+                                       FontSize="14"
+                                       TextColor="{StaticResource TextSecondary}"
+                                       MaxLines="2"/>
+
+                                <Label FontSize="14"
+                                       TextColor="{StaticResource TextSecondary}">
+                                    <Label.FormattedText>
+                                        <FormattedString>
+                                            <Span Text="{Binding StopsCount}"/>
+                                            <Span Text=" "/>
+                                            <Span Text="{Binding Source={x:Static loc:LocalizationResourceManager.Instance}, Path=[ToursStopsUnit]}"/>
+                                        </FormattedString>
+                                    </Label.FormattedText>
+                                </Label>
+
+                                <Button Text="{Binding Source={x:Static loc:LocalizationResourceManager.Instance}, Path=[ToursResume]}"
+                                        Command="{Binding Source={RelativeSource AncestorType={x:Type vm:TourViewModel}}, Path=ResumeTourCommand}"
+                                        CommandParameter="{Binding .}"
+                                        BackgroundColor="{StaticResource Success}"
+                                        TextColor="White"
+                                        FontAttributes="Bold"
+                                        HeightRequest="52"
+                                        CornerRadius="14"/>
+                            </VerticalStackLayout>
+                        </VerticalStackLayout>
+                    </Frame>
+                </VerticalStackLayout>
+
+                <!-- Upcoming -->
+                <VerticalStackLayout Spacing="10">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <Label Grid.Column="0"
+                               Text="{Binding Source={x:Static loc:LocalizationResourceManager.Instance}, Path=[ToursUpcomingSection]}"
+                               FontSize="24"
+                               FontAttributes="Bold"
+                               TextColor="{StaticResource TextPrimary}"/>
+                        <Label Grid.Column="1"
+                               Text="{Binding Source={x:Static loc:LocalizationResourceManager.Instance}, Path=[ToursViewAll]}"
+                               FontSize="14"
+                               FontAttributes="Bold"
+                               TextColor="{StaticResource Primary}"
+                               VerticalOptions="Center"/>
+                    </Grid>
+
+                    <CollectionView ItemsSource="{Binding UpcomingTours}"
+                                    SelectionMode="None">
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate x:DataType="models:TourModel">
+                                <Frame Margin="0,0,0,10"
+                                       Padding="10"
+                                       CornerRadius="14"
+                                       HasShadow="False"
+                                       BorderColor="{StaticResource Border}"
+                                       BackgroundColor="{StaticResource CardBackground}">
+                                    <Grid ColumnDefinitions="90,*,Auto"
+                                          ColumnSpacing="12">
+                                        <Image Grid.Column="0"
+                                               Source="{Binding CoverImageUrl}"
+                                               Aspect="AspectFill"
+                                               HeightRequest="90"
+                                               WidthRequest="90"/>
+
+                                        <VerticalStackLayout Grid.Column="1"
+                                                             Spacing="4"
+                                                             VerticalOptions="Center">
+                                            <Label Text="{Binding Name}"
+                                                   FontSize="28"
+                                                   FontAttributes="Bold"
+                                                   TextColor="{StaticResource TextPrimary}"
+                                                   MaxLines="2"/>
+                                            <Label Text="{Binding Description}"
+                                                   FontSize="12"
+                                                   TextColor="{StaticResource TextSecondary}"
+                                                   MaxLines="2"/>
+                                            <Label FontSize="12"
+                                                   TextColor="{StaticResource TextSecondary}">
+                                                <Label.FormattedText>
+                                                    <FormattedString>
+                                                        <Span Text="{Binding StopsCount}"/>
+                                                        <Span Text=" "/>
+                                                        <Span Text="{Binding Source={x:Static loc:LocalizationResourceManager.Instance}, Path=[ToursStopsUnit]}"/>
+                                                    </FormattedString>
+                                                </Label.FormattedText>
+                                            </Label>
+                                        </VerticalStackLayout>
+
+                                        <Button Grid.Column="2"
+                                                Text="{Binding Source={x:Static loc:LocalizationResourceManager.Instance}, Path=[ToursStart]}"
+                                                Command="{Binding Source={RelativeSource AncestorType={x:Type vm:TourViewModel}}, Path=StartTourCommand}"
+                                                CommandParameter="{Binding .}"
+                                                BackgroundColor="{StaticResource Secondary}"
+                                                TextColor="White"
+                                                VerticalOptions="End"
+                                                CornerRadius="10"
+                                                Padding="14,8"/>
+                                    </Grid>
+                                </Frame>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
+                </VerticalStackLayout>
+
+                <!-- Completed -->
+                <VerticalStackLayout Spacing="10">
+                    <Label Text="{Binding Source={x:Static loc:LocalizationResourceManager.Instance}, Path=[ToursCompletedSection]}"
+                           FontSize="24"
+                           FontAttributes="Bold"
+                           TextColor="{StaticResource TextPrimary}"/>
+
+                    <CollectionView ItemsSource="{Binding CompletedTours}"
+                                    SelectionMode="None">
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate x:DataType="models:TourModel">
+                                <Frame Margin="0,0,0,10"
+                                       Padding="14"
+                                       CornerRadius="14"
+                                       HasShadow="False"
+                                       BorderColor="{StaticResource Border}"
+                                       BackgroundColor="{StaticResource CardBackground}">
+                                    <Grid ColumnDefinitions="Auto,*,Auto"
+                                          ColumnSpacing="12">
+                                        <Border Grid.Column="0"
+                                                StrokeShape="RoundRectangle 20"
+                                                BackgroundColor="#E9F7EF"
+                                                Stroke="Transparent"
+                                                WidthRequest="40"
+                                                HeightRequest="40">
+                                            <Label Text="✓"
+                                                   FontAttributes="Bold"
+                                                   FontSize="18"
+                                                   TextColor="{StaticResource Success}"
+                                                   HorizontalOptions="Center"
+                                                   VerticalOptions="Center"/>
+                                        </Border>
+
+                                        <VerticalStackLayout Grid.Column="1"
+                                                             VerticalOptions="Center"
+                                                             Spacing="2">
+                                            <Label Text="{Binding Name}"
+                                                   FontSize="28"
+                                                   FontAttributes="Bold"
+                                                   TextColor="{StaticResource TextPrimary}"
+                                                   MaxLines="1"/>
+                                            <Label Text="{Binding Status}"
+                                                   FontSize="12"
+                                                   TextColor="{StaticResource TextSecondary}"/>
+                                        </VerticalStackLayout>
+
+                                        <Button Grid.Column="2"
+                                                Text="{Binding Source={x:Static loc:LocalizationResourceManager.Instance}, Path=[ToursSummary]}"
+                                                Command="{Binding Source={RelativeSource AncestorType={x:Type vm:TourViewModel}}, Path=OpenSummaryCommand}"
+                                                CommandParameter="{Binding .}"
+                                                BackgroundColor="Transparent"
+                                                TextColor="{StaticResource Primary}"
+                                                FontAttributes="Bold"
+                                                VerticalOptions="Center"/>
+                                    </Grid>
+                                </Frame>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
+                </VerticalStackLayout>
+            </VerticalStackLayout>
+        </ScrollView>
+    </Grid>
+
+</ContentPage>

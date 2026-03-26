@@ -71,6 +71,9 @@
   <data name="TabSettings" xml:space="preserve">
     <value>Settings</value>
   </data>
+  <data name="TabTours" xml:space="preserve">
+    <value>My Tours</value>
+  </data>
 
   <!-- Settings Page -->
   <data name="SettingsLanguageSection" xml:space="preserve">
@@ -199,6 +202,44 @@
   </data>
   <data name="MenuRetry" xml:space="preserve">
     <value>Retry</value>
+  </data>
+
+  <!-- Tours Page -->
+  <data name="ToursTitle" xml:space="preserve">
+    <value>My Food Tours</value>
+  </data>
+  <data name="ToursActiveSection" xml:space="preserve">
+    <value>Active Tour</value>
+  </data>
+  <data name="ToursUpcomingSection" xml:space="preserve">
+    <value>Upcoming</value>
+  </data>
+  <data name="ToursCompletedSection" xml:space="preserve">
+    <value>Completed</value>
+  </data>
+  <data name="ToursViewAll" xml:space="preserve">
+    <value>View All</value>
+  </data>
+  <data name="ToursLiveNow" xml:space="preserve">
+    <value>LIVE NOW</value>
+  </data>
+  <data name="ToursResume" xml:space="preserve">
+    <value>Resume Tour</value>
+  </data>
+  <data name="ToursStart" xml:space="preserve">
+    <value>Start Tour</value>
+  </data>
+  <data name="ToursSummary" xml:space="preserve">
+    <value>Summary</value>
+  </data>
+  <data name="ToursStopsUnit" xml:space="preserve">
+    <value>stops</value>
+  </data>
+  <data name="ToursLoadFailed" xml:space="preserve">
+    <value>Unable to load tours.</value>
+  </data>
+  <data name="ToursNoPoiToOpen" xml:space="preserve">
+    <value>This tour has no stop to open yet.</value>
   </data>
 
   <!-- Now Playing Page -->

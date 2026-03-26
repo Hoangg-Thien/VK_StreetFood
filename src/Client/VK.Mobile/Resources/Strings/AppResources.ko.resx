@@ -71,6 +71,9 @@
   <data name="TabSettings" xml:space="preserve">
     <value>설정</value>
   </data>
+  <data name="TabTours" xml:space="preserve">
+    <value>내 투어</value>
+  </data>
 
   <!-- Settings Page -->
   <data name="SettingsLanguageSection" xml:space="preserve">
@@ -199,6 +202,44 @@
   </data>
   <data name="MenuRetry" xml:space="preserve">
     <value>다시 시도</value>
+  </data>
+
+  <!-- Tours Page -->
+  <data name="ToursTitle" xml:space="preserve">
+    <value>내 푸드 투어</value>
+  </data>
+  <data name="ToursActiveSection" xml:space="preserve">
+    <value>진행 중 투어</value>
+  </data>
+  <data name="ToursUpcomingSection" xml:space="preserve">
+    <value>예정</value>
+  </data>
+  <data name="ToursCompletedSection" xml:space="preserve">
+    <value>완료</value>
+  </data>
+  <data name="ToursViewAll" xml:space="preserve">
+    <value>전체 보기</value>
+  </data>
+  <data name="ToursLiveNow" xml:space="preserve">
+    <value>진행 중</value>
+  </data>
+  <data name="ToursResume" xml:space="preserve">
+    <value>투어 계속</value>
+  </data>
+  <data name="ToursStart" xml:space="preserve">
+    <value>투어 시작</value>
+  </data>
+  <data name="ToursSummary" xml:space="preserve">
+    <value>요약</value>
+  </data>
+  <data name="ToursStopsUnit" xml:space="preserve">
+    <value>정거장</value>
+  </data>
+  <data name="ToursLoadFailed" xml:space="preserve">
+    <value>투어 목록을 불러올 수 없습니다.</value>
+  </data>
+  <data name="ToursNoPoiToOpen" xml:space="preserve">
+    <value>이 투어에는 열 수 있는 정거장이 없습니다.</value>
   </data>
 
   <!-- Now Playing Page -->

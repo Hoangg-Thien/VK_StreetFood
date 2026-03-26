@@ -42,6 +42,10 @@ public interface IApiService
     Task<TouristStatsModel?> GetMyStatsAsync(int touristId);
     Task<List<TopPOIModel>> GetTopPOIsAsync(int count = 10);
 
+    // Tours
+    Task<List<TourModel>> GetToursAsync();
+    Task<TourModel?> GetTourByIdAsync(int tourId);
+
     // Localization
     /// <summary>Hotset: Pre-warm audio cho top N POI gần nhất khi mở app.</summary>
     Task PrepareHotsetAsync(IEnumerable<int> poiIds, string languageCode = "vi", CancellationToken ct = default);
@@ -347,6 +351,32 @@ public class ApiService : IApiService
         {
             _logger.LogError(ex, "Error getting top POIs");
             return new List<TopPOIModel>();
+        }
+    }
+
+    public async Task<List<TourModel>> GetToursAsync()
+    {
+        try
+        {
+            return await _httpClient.GetFromJsonAsync<List<TourModel>>("tour", _jsonOptions) ?? new List<TourModel>();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting tours");
+            return new List<TourModel>();
+        }
+    }
+
+    public async Task<TourModel?> GetTourByIdAsync(int tourId)
+    {
+        try
+        {
+            return await _httpClient.GetFromJsonAsync<TourModel>($"tour/{tourId}", _jsonOptions);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting tour detail for {TourId}", tourId);
+            return null;
         }
     }
 

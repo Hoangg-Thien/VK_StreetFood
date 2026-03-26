@@ -115,6 +115,9 @@
   <data name="TabSettings" xml:space="preserve">
     <value>Cài đặt</value>
   </data>
+  <data name="TabTours" xml:space="preserve">
+    <value>Tour của tôi</value>
+  </data>
 
   <!-- Settings Page -->
   <data name="SettingsLanguageSection" xml:space="preserve">
@@ -245,6 +248,44 @@
   </data>
   <data name="MenuRetry" xml:space="preserve">
     <value>Thử lại</value>
+  </data>
+
+  <!-- Tours Page -->
+  <data name="ToursTitle" xml:space="preserve">
+    <value>Tour của tôi</value>
+  </data>
+  <data name="ToursActiveSection" xml:space="preserve">
+    <value>Tour đang chạy</value>
+  </data>
+  <data name="ToursUpcomingSection" xml:space="preserve">
+    <value>Sắp tới</value>
+  </data>
+  <data name="ToursCompletedSection" xml:space="preserve">
+    <value>Đã hoàn thành</value>
+  </data>
+  <data name="ToursViewAll" xml:space="preserve">
+    <value>Xem tất cả</value>
+  </data>
+  <data name="ToursLiveNow" xml:space="preserve">
+    <value>ĐANG DIỄN RA</value>
+  </data>
+  <data name="ToursResume" xml:space="preserve">
+    <value>Tiếp tục tour</value>
+  </data>
+  <data name="ToursStart" xml:space="preserve">
+    <value>Bắt đầu</value>
+  </data>
+  <data name="ToursSummary" xml:space="preserve">
+    <value>Tóm tắt</value>
+  </data>
+  <data name="ToursStopsUnit" xml:space="preserve">
+    <value>điểm dừng</value>
+  </data>
+  <data name="ToursLoadFailed" xml:space="preserve">
+    <value>Không tải được danh sách tour.</value>
+  </data>
+  <data name="ToursNoPoiToOpen" xml:space="preserve">
+    <value>Tour này chưa có điểm dừng để mở.</value>
   </data>
 
   <!-- Now Playing Page -->

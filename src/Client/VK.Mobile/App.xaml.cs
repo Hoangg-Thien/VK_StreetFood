@@ -1,6 +1,4 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-
-namespace VK.Mobile;
+﻿namespace VK.Mobile;
 
 public partial class App : Application
 {
