@@ -80,8 +80,7 @@
         <select name="status" class="form-control-admin" style="width:auto;padding:8px 12px;font-size:13px;">
             <option value="" selected="@(string.IsNullOrEmpty(statusFilter) ? "selected" : null)">Tất cả trạng thái</option>
             <option value="active" selected="@(statusFilter == "active" ? "selected" : null)">Đang hoạt động</option>
-            <option value="draft" selected="@(statusFilter == "draft" ? "selected" : null)">Nháp</option>
-            <option value="inactive" selected="@(statusFilter == "inactive" ? "selected" : null)">Tạm dừng</option>
+            <option value="inactive" selected="@(statusFilter == "inactive" ? "selected" : null)">Dừng</option>
         </select>
         <button type="submit" class="btn-secondary-admin" style="font-size:12px;padding:8px 12px;">Lọc</button>
     </form>
@@ -92,8 +91,8 @@
     {
         @foreach (var tour in tours)
         {
-            var statusCss = tour.Status == "active" ? "badge-active" : tour.Status == "draft" ? "badge-pending" : "badge-inactive";
-            var statusLabel = tour.Status == "active" ? "Hoạt động" : tour.Status == "draft" ? "Nháp" : "Tạm dừng";
+            var statusCss = tour.Status == "active" ? "badge-active" : "badge-inactive";
+            var statusLabel = tour.Status == "active" ? "Hoạt động" : "Dừng";
             var poiCount = tour.TourPoints.Count;
             var durationLabel = tour.EstimatedDurationMinutes.HasValue
                 ? (tour.EstimatedDurationMinutes.Value < 60
@@ -123,9 +122,6 @@
                                 onclick='openEditTourModal(@tour.Id, @Html.Raw(System.Text.Json.JsonSerializer.Serialize(tour.Name)), @Html.Raw(System.Text.Json.JsonSerializer.Serialize(tour.Description ?? "")), @Html.Raw(System.Text.Json.JsonSerializer.Serialize(tour.Emoji)), @(tour.EstimatedDurationMinutes.HasValue ? tour.EstimatedDurationMinutes.Value.ToString() : "null"), @Html.Raw(System.Text.Json.JsonSerializer.Serialize(tour.Status)), @Html.Raw(System.Text.Json.JsonSerializer.Serialize(tour.TourPoints.OrderBy(tp => tp.SortOrder).Select(tp => tp.PointOfInterestId).ToList())))'
                                 title="Chỉnh sửa">
                             <i class="fa-solid fa-pen"></i>
-                        </button>
-                        <button class="action-btn view" title="Xem chi tiết" onclick="alert('Tính năng chi tiết tour đang được phát triển.');">
-                            <i class="fa-solid fa-eye"></i>
                         </button>
                         <form method="post" action="/Tour/Delete" style="display:inline;" onsubmit="return confirm('Xóa tour này?')">
                             <input type="hidden" name="id" value="@tour.Id" />
@@ -200,7 +196,7 @@
                                 </td>
                                 <td>
                                     @if (poi.IsActive) { <span class="badge-status badge-active">Hoạt động</span> }
-                                    else { <span class="badge-status badge-inactive">Tạm dừng</span> }
+                                    else { <span class="badge-status badge-inactive">Dừng</span> }
                                 </td>
                             </tr>
                         }
@@ -248,9 +244,8 @@
                 <div class="form-group">
                     <label class="form-label">Trạng thái</label>
                     <select name="Status" class="form-control-admin">
-                        <option value="draft" selected>Nháp</option>
                         <option value="active">Hoạt động</option>
-                        <option value="inactive">Tạm dừng</option>
+                        <option value="inactive" selected>Dừng</option>
                     </select>
                 </div>
                 <div class="form-group">
@@ -315,7 +310,7 @@
                     <label class="form-label">Trạng thái</label>
                     <select id="editTourStatus" name="Status" class="form-control-admin">
                         <option value="active">Hoạt động</option>
-                        <option value="inactive">Tạm dừng</option>
+                        <option value="inactive">Dừng</option>
                     </select>
                 </div>
                 <div class="form-group">
@@ -350,7 +345,7 @@ function openEditTourModal(id, name, desc, emoji, durationMinutes, status, poiId
     document.getElementById('editTourDesc').value = desc;
     document.getElementById('editTourEmoji').value = emoji || '🍜';
     document.getElementById('editTourDuration').value = durationMinutes ?? '';
-    document.getElementById('editTourStatus').value = status || 'draft';
+    document.getElementById('editTourStatus').value = status === 'active' ? 'active' : 'inactive';
 
     const selectedPoiIds = Array.isArray(poiIds) ? poiIds.map(Number) : [];
     document.querySelectorAll('.edit-tour-poi').forEach((checkbox) => {
