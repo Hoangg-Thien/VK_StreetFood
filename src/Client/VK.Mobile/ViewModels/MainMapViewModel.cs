@@ -5,6 +5,7 @@ using VK.Mobile.Models;
 using VK.Mobile.Services;
 using System.Collections.ObjectModel;
 using Microsoft.Extensions.Logging;
+using System.Collections.Specialized;
 
 namespace VK.Mobile.ViewModels;
 
@@ -17,10 +18,12 @@ public partial class MainMapViewModel : ObservableObject
     private readonly IOfflineContentService _offlineContentService;
     private readonly StorageService _storageService;
     private readonly LocalPOIDatabase _localDb;
+    private readonly ITourSessionService _tourSession;
     private readonly ILogger<MainMapViewModel> _logger;
     private static LocalizationResourceManager L => LocalizationResourceManager.Instance;
 
     private DateTime _lastServerLocationUpdate = DateTime.MinValue;
+    private List<POIModel> _allPois = new();
 
     [ObservableProperty]
     private ObservableCollection<POIModel> _pois = new();
@@ -56,6 +59,8 @@ public partial class MainMapViewModel : ObservableObject
     partial void OnPoiLoadErrorChanged(string? value)
         => OnPropertyChanged(nameof(HasPoiError));
 
+    public bool HasRunningTour => _tourSession.ActiveTour != null;
+
     [ObservableProperty]
     private string _selectedLanguage = "vi";
 
@@ -85,6 +90,7 @@ public partial class MainMapViewModel : ObservableObject
         IOfflineContentService offlineContentService,
         StorageService storageService,
         LocalPOIDatabase localDb,
+        ITourSessionService tourSession,
         ILogger<MainMapViewModel> logger)
     {
         _apiService = apiService;
@@ -94,9 +100,11 @@ public partial class MainMapViewModel : ObservableObject
         _offlineContentService = offlineContentService;
         _storageService = storageService;
         _localDb = localDb;
+        _tourSession = tourSession;
         _logger = logger;
 
         _locationService.LocationChanged += OnLocationChanged;
+        _tourSession.ActiveTourChanged += OnActiveTourChanged;
 
         // Sync SelectedLanguageIndex khi ngôn ngữ đổi từ trang khác (SettingsPage)
         LocalizationResourceManager.Instance.PropertyChanged += (_, _) =>
@@ -207,11 +215,8 @@ public partial class MainMapViewModel : ObservableObject
                 PoiLoadError = L["MainMapNoOfflineData"];
             }
 
-            Pois.Clear();
-            foreach (var poi in poiList)
-            {
-                Pois.Add(poi);
-            }
+            _allPois = poiList;
+            ApplyTourFilter();
 
             PoiLoadError = Pois.Count > 0 ? null : PoiLoadError;
 
@@ -224,11 +229,8 @@ public partial class MainMapViewModel : ObservableObject
             try
             {
                 var cached = await _localDb.GetCachedPOIsAsync();
-                Pois.Clear();
-                foreach (var poi in cached)
-                {
-                    Pois.Add(poi);
-                }
+                _allPois = cached;
+                ApplyTourFilter();
 
                 PoiLoadError = Pois.Count > 0
                     ? null
@@ -243,6 +245,49 @@ public partial class MainMapViewModel : ObservableObject
                     ex.Message);
             }
         }
+    }
+
+    private void OnActiveTourChanged(object? sender, EventArgs e)
+        => MainThread.BeginInvokeOnMainThread(() =>
+        {
+            OnPropertyChanged(nameof(HasRunningTour));
+            ApplyTourFilter();
+        });
+
+    [RelayCommand]
+    private Task ExitActiveTourAsync()
+    {
+        _tourSession.ClearActiveTour();
+        return Task.CompletedTask;
+    }
+
+    private void ApplyTourFilter()
+    {
+        IEnumerable<POIModel> source = _allPois;
+        var allowedPoiIds = _tourSession.ActivePoiIds;
+
+        if (allowedPoiIds.Count > 0)
+            source = source.Where(p => allowedPoiIds.Contains(p.Id));
+
+        var filtered = source.ToList();
+
+        Pois.Clear();
+        foreach (var poi in filtered)
+            Pois.Add(poi);
+
+        if (CurrentLocation != null)
+        {
+            NearestPoi = Pois
+                .Where(p => p.Latitude != 0 || p.Longitude != 0)
+                .OrderBy(p => _locationService.CalculateDistance(
+                    CurrentLocation.Latitude,
+                    CurrentLocation.Longitude,
+                    p.Latitude,
+                    p.Longitude))
+                .FirstOrDefault();
+        }
+
+        NearbyPOIs.Clear();
     }
 
     [RelayCommand]

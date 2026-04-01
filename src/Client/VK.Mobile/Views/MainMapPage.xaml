@@ -117,6 +117,21 @@
                             Padding="0"
                             Clicked="OnClearRouteClicked"/>
                 </Border>
+
+                <Border BackgroundColor="#D9DE0000"
+                        StrokeShape="RoundRectangle 8"
+                        Stroke="Transparent"
+                        WidthRequest="36"
+                        HeightRequest="36"
+                        Margin="0,8,0,0"
+                        IsVisible="{Binding HasRunningTour}">
+                    <Button Text="✕"
+                            FontSize="16"
+                            TextColor="White"
+                            BackgroundColor="Transparent"
+                            Padding="0"
+                            Command="{Binding ExitActiveTourCommand}"/>
+                </Border>
             </VerticalStackLayout>
 
             <!-- API Error Banner (top of map) -->
@@ -340,7 +355,7 @@
                           RowSpacing="8">
                         <!-- Nghe thuyết minh: nút chính toàn chiều rộng -->
                         <Button Grid.Row="0"
-                            Text="{Binding Source={x:Static loc:LocalizationResourceManager.Instance}, Path=[MainMapButtonListen]}"
+                                Text="{Binding Source={x:Static loc:LocalizationResourceManager.Instance}, Path=[MainMapButtonListen]}"
                                 FontSize="14"
                                 FontAttributes="Bold"
                                 BackgroundColor="#FF5722"

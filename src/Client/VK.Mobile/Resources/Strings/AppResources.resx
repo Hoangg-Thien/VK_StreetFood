@@ -258,7 +258,7 @@
     <value>Tour đang chạy</value>
   </data>
   <data name="ToursUpcomingSection" xml:space="preserve">
-    <value>Sắp tới</value>
+    <value>Sẵn sàng</value>
   </data>
   <data name="ToursCompletedSection" xml:space="preserve">
     <value>Đã hoàn thành</value>
@@ -286,6 +286,9 @@
   </data>
   <data name="ToursNoPoiToOpen" xml:space="preserve">
     <value>Tour này chưa có điểm dừng để mở.</value>
+  </data>
+  <data name="ToursExitActive" xml:space="preserve">
+    <value>Thoát tour đang chạy</value>
   </data>
 
   <!-- Now Playing Page -->
@@ -378,9 +381,6 @@
   </data>
   <data name="SettingsOfflineDownloading" xml:space="preserve">
     <value>Đang tải gói offline...</value>
-  </data>
-  <data name="SettingsOfflineStatusSummaryFormat" xml:space="preserve">
-    <value>POI: {0}, Script: {1}, Lần cuối: {2}</value>
   </data>
   <data name="SettingsOfflineNeverSynced" xml:space="preserve">
     <value>chưa sync</value>
