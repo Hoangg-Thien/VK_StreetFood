@@ -212,7 +212,7 @@
     <value>Active Tour</value>
   </data>
   <data name="ToursUpcomingSection" xml:space="preserve">
-    <value>Upcoming</value>
+    <value>Ready</value>
   </data>
   <data name="ToursCompletedSection" xml:space="preserve">
     <value>Completed</value>
@@ -240,6 +240,9 @@
   </data>
   <data name="ToursNoPoiToOpen" xml:space="preserve">
     <value>This tour has no stop to open yet.</value>
+  </data>
+  <data name="ToursExitActive" xml:space="preserve">
+    <value>Exit current tour</value>
   </data>
 
   <!-- Now Playing Page -->
@@ -332,9 +335,6 @@
   </data>
   <data name="SettingsOfflineDownloading" xml:space="preserve">
     <value>Downloading offline package...</value>
-  </data>
-  <data name="SettingsOfflineStatusSummaryFormat" xml:space="preserve">
-    <value>POIs: {0}, Scripts: {1}, Last sync: {2}</value>
   </data>
   <data name="SettingsOfflineNeverSynced" xml:space="preserve">
     <value>never synced</value>

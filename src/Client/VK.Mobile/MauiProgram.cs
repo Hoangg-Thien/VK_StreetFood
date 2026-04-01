@@ -45,6 +45,7 @@ public static class MauiProgram
 #endif
 		builder.Services.AddSingleton<StorageService>();
 		builder.Services.AddSingleton<LocalPOIDatabase>();
+		builder.Services.AddSingleton<ITourSessionService, TourSessionService>();
 		builder.Services.AddSingleton(AudioManager.Current);
 
 		// Register HttpClient

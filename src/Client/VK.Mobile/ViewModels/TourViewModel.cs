@@ -10,13 +10,16 @@ namespace VK.Mobile.ViewModels;
 public partial class TourViewModel : ObservableObject
 {
     private readonly IApiService _apiService;
+    private readonly ITourSessionService _tourSession;
     private readonly ILogger<TourViewModel> _logger;
     private static LocalizationResourceManager L => LocalizationResourceManager.Instance;
 
-    public TourViewModel(IApiService apiService, ILogger<TourViewModel> logger)
+    public TourViewModel(IApiService apiService, ITourSessionService tourSession, ILogger<TourViewModel> logger)
     {
         _apiService = apiService;
+        _tourSession = tourSession;
         _logger = logger;
+        _tourSession.ActiveTourChanged += OnTourSessionChanged;
     }
 
     [ObservableProperty]
@@ -26,18 +29,20 @@ public partial class TourViewModel : ObservableObject
     private string? _errorMessage;
 
     [ObservableProperty]
-    private TourModel? _activeTour;
-
-    [ObservableProperty]
     private ObservableCollection<TourModel> _upcomingTours = new();
 
     [ObservableProperty]
     private ObservableCollection<TourModel> _completedTours = new();
 
-    public bool HasActiveTour => ActiveTour != null;
+    public bool HasRunningTour => _tourSession.ActiveTour != null;
 
-    partial void OnActiveTourChanged(TourModel? value)
-        => OnPropertyChanged(nameof(HasActiveTour));
+    public string RunningTourName => _tourSession.ActiveTour?.Name ?? string.Empty;
+
+    private void OnTourSessionChanged(object? sender, EventArgs e)
+    {
+        OnPropertyChanged(nameof(HasRunningTour));
+        OnPropertyChanged(nameof(RunningTourName));
+    }
 
     [RelayCommand]
     private async Task LoadToursAsync()
@@ -48,17 +53,12 @@ public partial class TourViewModel : ObservableObject
             ErrorMessage = null;
 
             var tours = await _apiService.GetToursAsync();
+            var readyTours = tours.Where(IsReadyStatus).ToList();
+            var completedTours = tours.Where(IsCompletedStatus).ToList();
 
-            ActiveTour = tours.FirstOrDefault(t => string.Equals(t.Status, "active", StringComparison.OrdinalIgnoreCase))
-                         ?? tours.FirstOrDefault();
+            UpcomingTours = new ObservableCollection<TourModel>(readyTours);
 
-            UpcomingTours = new ObservableCollection<TourModel>(
-                tours.Where(t =>
-                    (ActiveTour == null || t.Id != ActiveTour.Id) &&
-                    !string.Equals(t.Status, "inactive", StringComparison.OrdinalIgnoreCase)));
-
-            CompletedTours = new ObservableCollection<TourModel>(
-                tours.Where(t => string.Equals(t.Status, "inactive", StringComparison.OrdinalIgnoreCase)));
+            CompletedTours = new ObservableCollection<TourModel>(completedTours);
         }
         catch (Exception ex)
         {
@@ -89,19 +89,31 @@ public partial class TourViewModel : ObservableObject
         await OpenTourAsync(tour);
     }
 
+    [RelayCommand]
+    private Task ExitTourAsync()
+    {
+        _tourSession.ClearActiveTour();
+        return Task.CompletedTask;
+    }
+
     private async Task OpenTourAsync(TourModel? tour)
     {
         if (tour == null)
             return;
 
-        var targetPoiId = tour.FirstPoiId;
-        if (targetPoiId == null)
+        var detail = await _apiService.GetTourByIdAsync(tour.Id) ?? tour;
+        if (detail.Points.Count == 0)
+            detail = tour;
+
+        if (detail.Points.Count == 0 && detail.FirstPoiId is int singlePoiId && singlePoiId > 0)
         {
-            var detail = await _apiService.GetTourByIdAsync(tour.Id);
-            targetPoiId = detail?.FirstPoiId;
+            detail.Points = new List<TourPointModel>
+            {
+                new() { PoiId = singlePoiId, Name = detail.Name }
+            };
         }
 
-        if (targetPoiId == null)
+        if (detail.Points.Count == 0)
         {
             await Application.Current!.MainPage!.DisplayAlert(
                 L["Error"],
@@ -110,6 +122,15 @@ public partial class TourViewModel : ObservableObject
             return;
         }
 
-        await Shell.Current.GoToAsync($"POIDetail?poiId={targetPoiId.Value}");
+        _tourSession.SetActiveTour(detail);
+        await Shell.Current.GoToAsync("//MainMap");
     }
+
+    private static bool IsReadyStatus(TourModel tour)
+        => string.Equals(tour.Status, "ready", StringComparison.OrdinalIgnoreCase)
+           || string.Equals(tour.Status, "active", StringComparison.OrdinalIgnoreCase);
+
+    private static bool IsCompletedStatus(TourModel tour)
+        => string.Equals(tour.Status, "completed", StringComparison.OrdinalIgnoreCase)
+           || string.Equals(tour.Status, "inactive", StringComparison.OrdinalIgnoreCase);
 }

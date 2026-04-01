@@ -212,7 +212,7 @@
     <value>진행 중 투어</value>
   </data>
   <data name="ToursUpcomingSection" xml:space="preserve">
-    <value>예정</value>
+    <value>준비됨</value>
   </data>
   <data name="ToursCompletedSection" xml:space="preserve">
     <value>완료</value>
@@ -240,6 +240,9 @@
   </data>
   <data name="ToursNoPoiToOpen" xml:space="preserve">
     <value>이 투어에는 열 수 있는 정거장이 없습니다.</value>
+  </data>
+  <data name="ToursExitActive" xml:space="preserve">
+    <value>현재 투어 종료</value>
   </data>
 
   <!-- Now Playing Page -->
@@ -332,9 +335,6 @@
   </data>
   <data name="SettingsOfflineDownloading" xml:space="preserve">
     <value>오프라인 패키지 다운로드 중...</value>
-  </data>
-  <data name="SettingsOfflineStatusSummaryFormat" xml:space="preserve">
-    <value>POI: {0}, 스크립트: {1}, 마지막 동기화: {2}</value>
   </data>
   <data name="SettingsOfflineNeverSynced" xml:space="preserve">
     <value>동기화 안 됨</value>

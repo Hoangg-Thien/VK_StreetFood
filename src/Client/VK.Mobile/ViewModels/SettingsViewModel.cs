@@ -193,13 +193,7 @@ public partial class SettingsViewModel : ObservableObject
         {
             var status = await _offlineContentService.GetStatusAsync();
             var last = status.LastSyncUtc?.ToLocalTime().ToString("dd/MM HH:mm") ?? L["SettingsOfflineNeverSynced"];
-
-            OfflinePackageStatus = string.Format(
-                CultureInfo.CurrentCulture,
-                L["SettingsOfflineStatusSummaryFormat"],
-                status.PoiCount,
-                status.ScriptCount,
-                last);
+            
         }
         catch
         {
