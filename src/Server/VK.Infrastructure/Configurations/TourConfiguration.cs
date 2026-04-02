@@ -31,8 +31,37 @@ public class TourConfiguration : IEntityTypeConfiguration<Tour>
             .HasForeignKey(tp => tp.TourId)
             .OnDelete(DeleteBehavior.Cascade);
 
+        builder.HasMany(t => t.Translations)
+            .WithOne(tr => tr.Tour)
+            .HasForeignKey(tr => tr.TourId)
+            .OnDelete(DeleteBehavior.Cascade);
+
         builder.HasIndex(t => t.Name);
         builder.HasIndex(t => t.Status);
+    }
+}
+
+public class TourTranslationConfiguration : IEntityTypeConfiguration<TourTranslation>
+{
+    public void Configure(EntityTypeBuilder<TourTranslation> builder)
+    {
+        builder.ToTable("TourTranslations");
+
+        builder.HasKey(t => t.Id);
+
+        builder.Property(t => t.LanguageCode)
+            .IsRequired()
+            .HasMaxLength(10);
+
+        builder.Property(t => t.Name)
+            .IsRequired()
+            .HasMaxLength(200);
+
+        builder.Property(t => t.Description)
+            .HasMaxLength(1000);
+
+        builder.HasIndex(t => new { t.TourId, t.LanguageCode })
+            .IsUnique();
     }
 }
 

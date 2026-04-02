@@ -43,8 +43,8 @@ public interface IApiService
     Task<List<TopPOIModel>> GetTopPOIsAsync(int count = 10);
 
     // Tours
-    Task<List<TourModel>> GetToursAsync();
-    Task<TourModel?> GetTourByIdAsync(int tourId);
+    Task<List<TourModel>> GetToursAsync(string languageCode = "vi");
+    Task<TourModel?> GetTourByIdAsync(int tourId, string languageCode = "vi");
 
     // Localization
     /// <summary>Hotset: Pre-warm audio cho top N POI gần nhất khi mở app.</summary>
@@ -356,11 +356,13 @@ public class ApiService : IApiService
         }
     }
 
-    public async Task<List<TourModel>> GetToursAsync()
+    public async Task<List<TourModel>> GetToursAsync(string languageCode = "vi")
     {
         try
         {
-            return await _httpClient.GetFromJsonAsync<List<TourModel>>("tour", _jsonOptions) ?? new List<TourModel>();
+            return await _httpClient.GetFromJsonAsync<List<TourModel>>(
+                $"tour?languageCode={Uri.EscapeDataString(languageCode)}",
+                _jsonOptions) ?? new List<TourModel>();
         }
         catch (Exception ex)
         {
@@ -369,11 +371,13 @@ public class ApiService : IApiService
         }
     }
 
-    public async Task<TourModel?> GetTourByIdAsync(int tourId)
+    public async Task<TourModel?> GetTourByIdAsync(int tourId, string languageCode = "vi")
     {
         try
         {
-            return await _httpClient.GetFromJsonAsync<TourModel>($"tour/{tourId}", _jsonOptions);
+            return await _httpClient.GetFromJsonAsync<TourModel>(
+                $"tour/{tourId}?languageCode={Uri.EscapeDataString(languageCode)}",
+                _jsonOptions);
         }
         catch (Exception ex)
         {

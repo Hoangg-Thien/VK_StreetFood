@@ -20,6 +20,7 @@ public class Tour : BaseEntity
     [MaxLength(20)]
     public string Status { get; set; } = "draft";
 
+    public virtual ICollection<TourTranslation> Translations { get; set; } = new List<TourTranslation>();
     public virtual ICollection<TourPointOfInterest> TourPoints { get; set; } = new List<TourPointOfInterest>();
 }
 

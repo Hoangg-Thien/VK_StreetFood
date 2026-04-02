@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using VK.Core.Entities;
 using VK.Infrastructure.Data;
+using VK.Shared.Constants;
 using VK.Shared.DTOs;
 
 namespace VK.API.Controllers;
@@ -17,9 +19,12 @@ public class TourController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<List<TourListItemDto>>> GetTours()
+    public async Task<ActionResult<List<TourListItemDto>>> GetTours([FromQuery] string languageCode = LanguageConstants.Vietnamese)
     {
+        var normalizedLanguageCode = NormalizeLanguageCode(languageCode);
+
         var tours = await _context.Tours
+            .Include(t => t.Translations)
             .Include(t => t.TourPoints.OrderBy(tp => tp.SortOrder))
             .ThenInclude(tp => tp.PointOfInterest)
             .Where(t => t.Status == "active" || t.Status == "draft" || t.Status == "inactive")
@@ -38,7 +43,7 @@ public class TourController : ControllerBase
 
             var firstPoi = orderedPoints.FirstOrDefault()?.PointOfInterest;
 
-            return new TourListItemDto
+            var dto = new TourListItemDto
             {
                 TourId = t.Id,
                 Name = t.Name,
@@ -50,17 +55,24 @@ public class TourController : ControllerBase
                 FirstPoiId = firstPoi?.Id,
                 CoverImageUrl = PrependBase(baseUrl, firstPoi?.ImageUrl)
             };
+
+            ApplyLocalizedFields(dto, t, normalizedLanguageCode);
+            return dto;
         }).ToList();
 
         return Ok(result);
     }
 
     [HttpGet("{tourId:int}")]
-    public async Task<ActionResult<TourDetailDto>> GetTourById(int tourId)
+    public async Task<ActionResult<TourDetailDto>> GetTourById(int tourId, [FromQuery] string languageCode = LanguageConstants.Vietnamese)
     {
+        var normalizedLanguageCode = NormalizeLanguageCode(languageCode);
+
         var tour = await _context.Tours
+            .Include(t => t.Translations)
             .Include(t => t.TourPoints.OrderBy(tp => tp.SortOrder))
             .ThenInclude(tp => tp.PointOfInterest)
+            .ThenInclude(p => p.Translations)
             .FirstOrDefaultAsync(t => t.Id == tourId);
 
         if (tour == null)
@@ -71,15 +83,21 @@ public class TourController : ControllerBase
         var points = tour.TourPoints
             .Where(tp => tp.PointOfInterest != null)
             .OrderBy(tp => tp.SortOrder)
-            .Select(tp => new TourPointDto
+            .Select(tp =>
             {
-                PoiId = tp.PointOfInterest.Id,
-                Name = tp.PointOfInterest.Name,
-                Address = tp.PointOfInterest.Address,
-                ImageUrl = PrependBase(baseUrl, tp.PointOfInterest.ImageUrl),
-                Latitude = tp.PointOfInterest.Latitude,
-                Longitude = tp.PointOfInterest.Longitude,
-                SortOrder = tp.SortOrder
+                var point = new TourPointDto
+                {
+                    PoiId = tp.PointOfInterest.Id,
+                    Name = tp.PointOfInterest.Name,
+                    Address = tp.PointOfInterest.Address,
+                    ImageUrl = PrependBase(baseUrl, tp.PointOfInterest.ImageUrl),
+                    Latitude = tp.PointOfInterest.Latitude,
+                    Longitude = tp.PointOfInterest.Longitude,
+                    SortOrder = tp.SortOrder
+                };
+
+                ApplyLocalizedPoiFields(point, tp.PointOfInterest, normalizedLanguageCode);
+                return point;
             })
             .ToList();
 
@@ -97,7 +115,55 @@ public class TourController : ControllerBase
             Points = points
         };
 
+        ApplyLocalizedFields(detail, tour, normalizedLanguageCode);
+
         return Ok(detail);
+    }
+
+    private static void ApplyLocalizedFields(TourListItemDto dto, Tour tour, string languageCode)
+    {
+        var translation = ResolveTourTranslation(tour, languageCode);
+        if (translation == null)
+            return;
+
+        if (!string.IsNullOrWhiteSpace(translation.Name))
+            dto.Name = translation.Name;
+
+        if (!string.IsNullOrWhiteSpace(translation.Description))
+            dto.Description = translation.Description;
+    }
+
+    private static TourTranslation? ResolveTourTranslation(Tour tour, string languageCode)
+    {
+        var normalized = NormalizeLanguageCode(languageCode);
+        return tour.Translations.FirstOrDefault(t => NormalizeLanguageCode(t.LanguageCode) == normalized)
+            ?? tour.Translations.FirstOrDefault(t => NormalizeLanguageCode(t.LanguageCode) == LanguageConstants.Vietnamese);
+    }
+
+    private static void ApplyLocalizedPoiFields(TourPointDto dto, PointOfInterest poi, string languageCode)
+    {
+        var normalized = NormalizeLanguageCode(languageCode);
+        var translation = poi.Translations.FirstOrDefault(t => NormalizeLanguageCode(t.LanguageCode) == normalized)
+            ?? poi.Translations.FirstOrDefault(t => NormalizeLanguageCode(t.LanguageCode) == LanguageConstants.Vietnamese);
+
+        if (translation == null)
+            return;
+
+        if (!string.IsNullOrWhiteSpace(translation.Name))
+            dto.Name = translation.Name;
+
+        if (!string.IsNullOrWhiteSpace(translation.Address))
+            dto.Address = translation.Address;
+    }
+
+    private static string NormalizeLanguageCode(string? languageCode)
+    {
+        if (string.IsNullOrWhiteSpace(languageCode))
+            return LanguageConstants.Vietnamese;
+
+        var code = languageCode.Trim().ToLowerInvariant();
+        var separatorIndex = code.IndexOfAny(new[] { '-', '_' });
+        return separatorIndex > 0 ? code[..separatorIndex] : code;
     }
 
     private static string? PrependBase(string baseUrl, string? path)

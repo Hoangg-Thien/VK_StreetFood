@@ -18,6 +18,7 @@ public static class DatabaseSeeder
         {
             await EnsurePoiTranslationsAsync(context);
             await EnsureBaselineToursAsync(context);
+            await EnsureTourTranslationsAsync(context);
             await EnsureBaselineVendorsAsync(context);
             await EnsureBaselineOwnerUsersAsync(context);
             return; // Database has been seeded
@@ -418,6 +419,7 @@ public static class DatabaseSeeder
         await context.SaveChangesAsync();
 
         await EnsureBaselineToursAsync(context);
+        await EnsureTourTranslationsAsync(context);
         await EnsureBaselineVendorsAsync(context);
         await EnsureBaselineOwnerUsersAsync(context);
     }
@@ -498,6 +500,69 @@ public static class DatabaseSeeder
 
                 context.PointOfInterestTranslations.Add(newTranslation);
                 poiTranslations.Add(newTranslation);
+                existingTranslations.Add(newTranslation);
+            }
+        }
+
+        await context.SaveChangesAsync();
+    }
+
+    /// <summary>
+    /// Backfill default translation rows for existing tours.
+    /// Vietnamese row is canonical source; missing en/ko rows are created from vi/base text.
+    /// </summary>
+    private static async Task EnsureTourTranslationsAsync(VKStreetFoodDbContext context)
+    {
+        var existingTranslations = await context.TourTranslations
+            .Where(t => !t.IsDeleted)
+            .ToListAsync();
+
+        var tours = await context.Tours
+            .Where(t => !t.IsDeleted)
+            .ToListAsync();
+
+        foreach (var tour in tours)
+        {
+            var tourTranslations = existingTranslations
+                .Where(t => t.TourId == tour.Id)
+                .ToList();
+
+            var viTranslation = tourTranslations.FirstOrDefault(t =>
+                string.Equals(t.LanguageCode, LanguageConstants.Vietnamese, StringComparison.OrdinalIgnoreCase));
+
+            if (viTranslation == null)
+            {
+                viTranslation = new TourTranslation
+                {
+                    TourId = tour.Id,
+                    LanguageCode = LanguageConstants.Vietnamese,
+                    Name = tour.Name,
+                    Description = tour.Description
+                };
+
+                context.TourTranslations.Add(viTranslation);
+                tourTranslations.Add(viTranslation);
+                existingTranslations.Add(viTranslation);
+            }
+
+            foreach (var lang in LanguageConstants.SupportedLanguages)
+            {
+                if (tourTranslations.Any(t => string.Equals(t.LanguageCode, lang, StringComparison.OrdinalIgnoreCase)))
+                    continue;
+
+                var defaultName = !string.IsNullOrWhiteSpace(viTranslation.Name) ? viTranslation.Name : tour.Name;
+                var defaultDescription = !string.IsNullOrWhiteSpace(viTranslation.Description) ? viTranslation.Description : tour.Description;
+
+                var newTranslation = new TourTranslation
+                {
+                    TourId = tour.Id,
+                    LanguageCode = lang,
+                    Name = defaultName,
+                    Description = defaultDescription
+                };
+
+                context.TourTranslations.Add(newTranslation);
+                tourTranslations.Add(newTranslation);
                 existingTranslations.Add(newTranslation);
             }
         }

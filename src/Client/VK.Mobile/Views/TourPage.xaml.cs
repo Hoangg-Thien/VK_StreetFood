@@ -28,7 +28,10 @@ public partial class TourPage : ContentPage
     }
 
     private void OnLanguageChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
-        => UpdateTitle();
+    {
+        UpdateTitle();
+        MainThread.BeginInvokeOnMainThread(async () => await _viewModel.LoadToursCommand.ExecuteAsync(null));
+    }
 
     private void UpdateTitle()
         => Title = LocalizationResourceManager.Instance["TabTours"];

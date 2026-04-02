@@ -51,8 +51,9 @@ public partial class TourViewModel : ObservableObject
         {
             IsLoading = true;
             ErrorMessage = null;
+            var language = LocalizationResourceManager.Instance.CurrentLanguage;
 
-            var tours = await _apiService.GetToursAsync();
+            var tours = await _apiService.GetToursAsync(language);
             var readyTours = tours.Where(IsReadyStatus).ToList();
             var completedTours = tours.Where(IsCompletedStatus).ToList();
 
@@ -101,7 +102,8 @@ public partial class TourViewModel : ObservableObject
         if (tour == null)
             return;
 
-        var detail = await _apiService.GetTourByIdAsync(tour.Id) ?? tour;
+        var language = LocalizationResourceManager.Instance.CurrentLanguage;
+        var detail = await _apiService.GetTourByIdAsync(tour.Id, language) ?? tour;
         if (detail.Points.Count == 0)
             detail = tour;
 

@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using VK.Core.Entities;
 using VK.Infrastructure.Data;
+using VK.Shared.Constants;
 
 namespace VK.Web.Controllers;
 
@@ -90,6 +91,11 @@ public class TourController : AdminBaseController
 
             _context.Tours.Add(tour);
             await _context.SaveChangesAsync();
+            await EnsureDefaultTranslationsAsync(
+                tour.Id,
+                tour.Name,
+                tour.Description,
+                updateVietnamese: true);
             await SyncTourPointsAsync(tour.Id, input.PoiIds);
 
             TempData["Success"] = "Tạo tour thành công!";
@@ -135,6 +141,12 @@ public class TourController : AdminBaseController
             tour.Emoji = string.IsNullOrWhiteSpace(input.Emoji) ? "🍜" : input.Emoji.Trim();
             tour.EstimatedDurationMinutes = input.EstimatedDurationMinutes;
             tour.Status = NormalizeStatus(input.Status);
+
+            await EnsureDefaultTranslationsAsync(
+                tour.Id,
+                tour.Name,
+                tour.Description,
+                updateVietnamese: true);
 
             await SyncTourPointsAsync(tour.Id, input.PoiIds);
 
@@ -235,6 +247,44 @@ public class TourController : AdminBaseController
     {
         var value = (status ?? string.Empty).Trim().ToLowerInvariant();
         return value is "active" ? "active" : "inactive";
+    }
+
+    private async Task EnsureDefaultTranslationsAsync(
+        int tourId,
+        string name,
+        string description,
+        bool updateVietnamese)
+    {
+        var translations = await _context.TourTranslations
+            .Where(t => t.TourId == tourId)
+            .ToListAsync();
+
+        var byLang = translations
+            .ToDictionary(t => t.LanguageCode, StringComparer.OrdinalIgnoreCase);
+
+        foreach (var lang in LanguageConstants.SupportedLanguages)
+        {
+            if (byLang.TryGetValue(lang, out var existing))
+            {
+                if (updateVietnamese && string.Equals(lang, LanguageConstants.Vietnamese, StringComparison.OrdinalIgnoreCase))
+                {
+                    existing.Name = name;
+                    existing.Description = description;
+                }
+
+                continue;
+            }
+
+            _context.TourTranslations.Add(new TourTranslation
+            {
+                TourId = tourId,
+                LanguageCode = lang,
+                Name = name,
+                Description = description
+            });
+        }
+
+        await _context.SaveChangesAsync();
     }
 
     public sealed class TourUpsertInput
