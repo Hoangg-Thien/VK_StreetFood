@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="vi">
+
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -74,7 +75,7 @@
             <a href="/OwnerContentApproval"
                    class='@(ViewContext.RouteData.Values["controller"]?.ToString() == "OwnerContentApproval" ? "active" : "")'>
                 <i class="fa-solid fa-file-circle-check"></i>
-                Duyệt nội dung owner
+                Duyệt nội dung của quán
             </a>
         </nav>
     </aside>
@@ -88,12 +89,6 @@
                 <input type="text" placeholder="Tìm kiếm địa điểm, audio, tour..." />
             </div>
             <div class="header-right">
-                <div class="header-icon-btn">
-                    <i class="fa-regular fa-bell"></i>
-                </div>
-                <div class="header-icon-btn">
-                    <i class="fa-solid fa-gear"></i>
-                </div>
                 <div class="header-user">
                     <div class="user-avatar">
                         <i class="fa-solid fa-user" style="font-size:12px;"></i>
