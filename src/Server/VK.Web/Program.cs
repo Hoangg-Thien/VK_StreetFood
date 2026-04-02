@@ -23,7 +23,8 @@ builder.Services.AddDbContext<VKStreetFoodDbContext>(options =>
 // Add HttpClient to call API
 builder.Services.AddHttpClient("VKAPI", client =>
 {
-    client.BaseAddress = new Uri("http://localhost:5089/api/");
+    var apiBaseUrl = builder.Configuration["ApiSettings:BaseUrl"] ?? "http://localhost:5089/api/";
+    client.BaseAddress = new Uri(apiBaseUrl);
     client.Timeout = TimeSpan.FromSeconds(30);
 });
 

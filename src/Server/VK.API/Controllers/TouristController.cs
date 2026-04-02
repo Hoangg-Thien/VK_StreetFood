@@ -108,6 +108,10 @@ public class TouristController : ControllerBase
     [HttpPost("{touristId}/visits")]
     public async Task<ActionResult> LogVisit(int touristId, [FromBody] LogVisitRequest request)
     {
+        var poiId = request.EffectivePoiId;
+        if (poiId <= 0)
+            return BadRequest(new { message = "Thiếu poiId hợp lệ" });
+
         var tourist = await _context.Tourists
             .FirstOrDefaultAsync(t => t.Id == touristId && !t.IsDeleted);
 
@@ -117,28 +121,34 @@ public class TouristController : ControllerBase
         }
 
         var poi = await _context.PointsOfInterest
-            .FirstOrDefaultAsync(p => p.Id == request.PoiId && !p.IsDeleted);
+            .FirstOrDefaultAsync(p => p.Id == poiId && !p.IsDeleted);
 
         if (poi == null)
         {
             return NotFound(new { message = "POI không tồn tại" });
         }
 
-        // Check if already visited today
-        var today = DateTime.UtcNow.Date;
+        // Dedupe only within a short cooldown window to keep heatmap/routes meaningful.
+        var nowUtc = DateTime.UtcNow;
+        var dedupeSinceUtc = nowUtc.AddMinutes(-5);
         var existingVisit = await _context.VisitLogs
             .FirstOrDefaultAsync(v =>
                 v.TouristId == touristId &&
-                v.PointOfInterestId == request.PoiId &&
-                v.VisitedAt.Date == today);
+                v.PointOfInterestId == poiId &&
+            v.VisitedAt >= dedupeSinceUtc);
 
         if (existingVisit == null)
         {
             var visitLog = new VisitLog
             {
                 TouristId = touristId,
-                PointOfInterestId = request.PoiId,
-                VisitedAt = DateTime.UtcNow
+                PointOfInterestId = poiId,
+                VisitedAt = nowUtc,
+                VisitorLatitude = request.Latitude ?? tourist.LastLatitude ?? 0,
+                VisitorLongitude = request.Longitude ?? tourist.LastLongitude ?? 0,
+                LanguageUsed = string.IsNullOrWhiteSpace(request.LanguageCode)
+                    ? (tourist.PreferredLanguage ?? "vi")
+                    : request.LanguageCode
             };
 
             _context.VisitLogs.Add(visitLog);
@@ -146,7 +156,11 @@ public class TouristController : ControllerBase
 
             await _context.SaveChangesAsync();
 
-            _logger.LogInformation("Tourist {TouristId} visited POI {PoiId}", touristId, request.PoiId);
+            _logger.LogInformation(
+                "Tourist {TouristId} visited POI {PoiId} via {TriggerMethod}",
+                touristId,
+                poiId,
+                request.TriggerMethod ?? "unknown");
         }
 
         return Ok(new { success = true, message = "Visit logged successfully" });

@@ -5,7 +5,6 @@
 ![.NET](https://img.shields.io/badge/.NET-10.0-512BD4?style=flat-square&logo=dotnet)
 ![MAUI](https://img.shields.io/badge/MAUI-Android%2FiOS-512BD4?style=flat-square&logo=dotnet)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Supabase-4169E1?style=flat-square&logo=postgresql&logoColor=white)
-![License](https://img.shields.io/badge/license-MIT-green?style=flat-square)
 
 **Hệ thống du lịch ẩm thực thông minh với tính năng thuyết minh tự động dựa trên vị trí GPS**
 
@@ -68,6 +67,7 @@
 <td width="50%">
 
 #### Bản đồ & Định vị
+
 - 🗺️ Hiển thị POI trên OpenStreetMap
 - 📍 Theo dõi GPS thời gian thực
 - 🎯 Geofence tự động phát audio
@@ -77,6 +77,7 @@
 <td width="50%">
 
 #### Nội dung & Trải nghiệm
+
 - 🔊 Audio guide đa ngôn ngữ
 - 📷 Ảnh quán, món ăn chi tiết
 - ⭐ Đánh giá & yêu thích
@@ -88,6 +89,7 @@
 <td>
 
 #### QR & Deep Link
+
 - 📲 Quét QR mở chi tiết quán
 - 🔗 Deep link navigation
 - ⚡ Truy cập nhanh từ poster
@@ -96,6 +98,7 @@
 <td>
 
 #### Offline & Performance
+
 - 💾 Cache POI, route, audio
 - 🌐 Map offline (.mbtiles)
 - 🎵 Audio warmup/hotset
@@ -108,18 +111,21 @@
 ### 🖥️ Web Admin
 
 #### Dashboard KPI
+
 - 📊 Thống kê POI, visits, ratings
 - 📈 Trend analysis & heatmap
 - 🎯 Top POIs theo lượt truy cập
 - 🔊 Audio coverage theo ngôn ngữ
 
 #### Quản lý nội dung
+
 - 🏪 CRUD POI, tour, categories
 - 🎙️ Quản lý audio & translations
 - 🖼️ Upload & quản lý media
 - 🌍 Localization management
 
 #### Quản trị Owner
+
 - 👥 Đăng ký & duyệt chủ quán
 - ✅ Approve/reject requests
 - 📝 Content moderation workflow
@@ -128,6 +134,7 @@
 ### 🛠️ API Backend
 
 #### Core APIs
+
 - **POI**: List, nearby, detail, categories
 - **Tourist**: Device registration, location tracking, visit history
 - **Audio**: Multi-language, TTS on-demand, batch generation
@@ -135,6 +142,7 @@
 - **Analytics**: Event logging, statistics, dashboard data
 
 #### Special Features
+
 - 🔄 TTS on-demand với task deduplication
 - 🌐 Localization hotset & warmup
 - 📦 Offline package upload/download
@@ -300,6 +308,7 @@ VK_StreetFood/
 ### Data Flow
 
 #### 1️⃣ Tourist Opens App
+
 ```
 Mobile App → GET /api/pois → API → Database
                 ↓
@@ -307,6 +316,7 @@ Mobile App → GET /api/pois → API → Database
 ```
 
 #### 2️⃣ Geofence Trigger
+
 ```
 GPS Update → Geofence Check → Distance < Radius
                 ↓
@@ -316,6 +326,7 @@ GPS Update → Geofence Check → Distance < Radius
 ```
 
 #### 3️⃣ QR Code Scan
+
 ```
 QR Scan → Parse Deep Link → Navigate to POI Detail
               ↓
@@ -325,6 +336,7 @@ QR Scan → Parse Deep Link → Navigate to POI Detail
 ```
 
 #### 4️⃣ Owner Updates Content
+
 ```
 Login (Cookie Auth) → Edit POI → Submit Request
          ↓
@@ -411,6 +423,7 @@ Mở **Supabase SQL Editor** và chạy lần lượt:
 Cập nhật trong các file sau:
 
 #### `src/Server/VK.API/appsettings.json`
+
 ```json
 {
   "ConnectionStrings": {
@@ -420,6 +433,7 @@ Cập nhật trong các file sau:
 ```
 
 #### `src/Server/VK.Web/appsettings.json`
+
 ```json
 {
   "ConnectionStrings": {
@@ -488,16 +502,17 @@ public static class AppSettings
 {
     // Android Emulator
     public const string ApiBaseUrl = "http://10.0.2.2:5089/api/";
-    
+
     // Thiết bị thật (thay YOUR_IP bằng IP máy dev)
     // public const string ApiBaseUrl = "http://192.168.1.10:5089/api/";
-    
+
     // Production
     // public const string ApiBaseUrl = "https://api.vkstreetfood.com/api/";
 }
 ```
 
 📌 **Lưu ý**:
+
 - Android Emulator **PHẢI** dùng `10.0.2.2` thay vì `localhost`
 - Thiết bị thật phải cùng mạng WiFi với máy dev
 - Bật firewall port 5089 nếu cần
@@ -536,7 +551,7 @@ File: `src/Server/VK.Web/appsettings.json`
   },
   "AdminAuth": {
     "Username": "admin",
-    "Password": "Admin@123"  // ⚠️ ĐỔI PASSWORD PRODUCTION!
+    "Password": "Admin@123" // ⚠️ ĐỔI PASSWORD PRODUCTION!
   },
   "Session": {
     "IdleTimeout": "00:30:00",
@@ -553,15 +568,15 @@ File: `src/Client/VK.Mobile/Models/AppSettings.cs`
 public static class AppSettings
 {
     public const string ApiBaseUrl = "http://10.0.2.2:5089/api/";
-    
+
     // Geofence settings
     public const double DefaultGeofenceRadius = 50.0; // meters
     public const double LocationUpdateInterval = 5.0; // seconds
-    
+
     // Audio settings
     public const string DefaultLanguage = "vi";
     public const double AudioFadeOutDuration = 2.0; // seconds
-    
+
     // Cache settings
     public const int MaxCachedAudios = 50;
     public const int CacheExpirationDays = 7;
@@ -574,21 +589,23 @@ public static class AppSettings
 
 ### 📍 POI APIs
 
-| Method | Endpoint | Description | Auth |
-|--------|----------|-------------|------|
-| GET | `/api/pois` | Lấy danh sách POI | ❌ |
-| GET | `/api/pois/nearby` | Tìm POI gần vị trí | ❌ |
-| GET | `/api/pois/{id}` | Chi tiết POI | ❌ |
-| GET | `/api/pois/categories` | Danh mục POI | ❌ |
-| GET | `/api/pois/{id}/images` | Ảnh của POI | ❌ |
-| GET | `/api/pois/{id}/menu` | Menu món ăn | ❌ |
+| Method | Endpoint                | Description        | Auth |
+| ------ | ----------------------- | ------------------ | ---- |
+| GET    | `/api/pois`             | Lấy danh sách POI  | ❌   |
+| GET    | `/api/pois/nearby`      | Tìm POI gần vị trí | ❌   |
+| GET    | `/api/pois/{id}`        | Chi tiết POI       | ❌   |
+| GET    | `/api/pois/categories`  | Danh mục POI       | ❌   |
+| GET    | `/api/pois/{id}/images` | Ảnh của POI        | ❌   |
+| GET    | `/api/pois/{id}/menu`   | Menu món ăn        | ❌   |
 
 **Example Request:**
+
 ```bash
 curl -X GET "http://localhost:5089/api/pois/nearby?lat=10.7553&lng=106.6986&radius=500"
 ```
 
 **Example Response:**
+
 ```json
 {
   "pois": [
@@ -607,58 +624,58 @@ curl -X GET "http://localhost:5089/api/pois/nearby?lat=10.7553&lng=106.6986&radi
 
 ### 👤 Tourist APIs
 
-| Method | Endpoint | Description | Auth |
-|--------|----------|-------------|------|
-| POST | `/api/tourists/register` | Đăng ký device | ❌ |
-| PUT | `/api/tourists/location` | Cập nhật vị trí | ❌ |
-| POST | `/api/tourists/visit` | Ghi nhận visit | ❌ |
-| POST | `/api/tourists/favorites` | Thêm yêu thích | ❌ |
-| GET | `/api/tourists/{id}/history` | Lịch sử tham quan | ❌ |
+| Method | Endpoint                     | Description       | Auth |
+| ------ | ---------------------------- | ----------------- | ---- |
+| POST   | `/api/tourists/register`     | Đăng ký device    | ❌   |
+| PUT    | `/api/tourists/location`     | Cập nhật vị trí   | ❌   |
+| POST   | `/api/tourists/visit`        | Ghi nhận visit    | ❌   |
+| POST   | `/api/tourists/favorites`    | Thêm yêu thích    | ❌   |
+| GET    | `/api/tourists/{id}/history` | Lịch sử tham quan | ❌   |
 
 ### 🔊 Audio APIs
 
-| Method | Endpoint | Description | Auth |
-|--------|----------|-------------|------|
-| GET | `/api/audio/{poiId}/{lang}` | Lấy audio theo ngôn ngữ | ❌ |
-| POST | `/api/audio/tts` | Generate TTS on-demand | ✅ Admin |
-| POST | `/api/audio/generate-batch` | Generate batch audio | ✅ Admin |
-| GET | `/api/audio/status` | Audio coverage status | ✅ Admin |
+| Method | Endpoint                    | Description             | Auth     |
+| ------ | --------------------------- | ----------------------- | -------- |
+| GET    | `/api/audio/{poiId}/{lang}` | Lấy audio theo ngôn ngữ | ❌       |
+| POST   | `/api/audio/tts`            | Generate TTS on-demand  | ✅ Admin |
+| POST   | `/api/audio/generate-batch` | Generate batch audio    | ✅ Admin |
+| GET    | `/api/audio/status`         | Audio coverage status   | ✅ Admin |
 
 ### 🗺️ Tour APIs
 
-| Method | Endpoint | Description | Auth |
-|--------|----------|-------------|------|
-| GET | `/api/tours` | Danh sách tour | ❌ |
-| GET | `/api/tours/{id}` | Chi tiết tour | ❌ |
-| GET | `/api/tours/{id}/waypoints` | Điểm dừng trong tour | ❌ |
+| Method | Endpoint                    | Description          | Auth |
+| ------ | --------------------------- | -------------------- | ---- |
+| GET    | `/api/tours`                | Danh sách tour       | ❌   |
+| GET    | `/api/tours/{id}`           | Chi tiết tour        | ❌   |
+| GET    | `/api/tours/{id}/waypoints` | Điểm dừng trong tour | ❌   |
 
 ### 📊 Analytics APIs
 
-| Method | Endpoint | Description | Auth |
-|--------|----------|-------------|------|
-| POST | `/api/analytics/event` | Ghi event | ❌ |
-| GET | `/api/analytics/dashboard` | Dashboard stats | ✅ Admin |
-| GET | `/api/analytics/top-pois` | Top POIs | ✅ Admin |
-| GET | `/api/analytics/trends` | Xu hướng | ✅ Admin |
+| Method | Endpoint                   | Description     | Auth     |
+| ------ | -------------------------- | --------------- | -------- |
+| POST   | `/api/analytics/event`     | Ghi event       | ❌       |
+| GET    | `/api/analytics/dashboard` | Dashboard stats | ✅ Admin |
+| GET    | `/api/analytics/top-pois`  | Top POIs        | ✅ Admin |
+| GET    | `/api/analytics/trends`    | Xu hướng        | ✅ Admin |
 
 ### 📦 Offline APIs
 
-| Method | Endpoint | Description | Auth |
-|--------|----------|-------------|------|
-| GET | `/api/offline/map-package` | Download map .mbtiles | ❌ |
-| POST | `/api/offline/map-package` | Upload map package | ✅ Admin |
-| GET | `/api/offline/route-package` | Download route .json | ❌ |
-| POST | `/api/offline/route-package` | Upload route package | ✅ Admin |
-| GET | `/api/offline/map-status` | Map package status | ❌ |
+| Method | Endpoint                     | Description           | Auth     |
+| ------ | ---------------------------- | --------------------- | -------- |
+| GET    | `/api/offline/map-package`   | Download map .mbtiles | ❌       |
+| POST   | `/api/offline/map-package`   | Upload map package    | ✅ Admin |
+| GET    | `/api/offline/route-package` | Download route .json  | ❌       |
+| POST   | `/api/offline/route-package` | Upload route package  | ✅ Admin |
+| GET    | `/api/offline/map-status`    | Map package status    | ❌       |
 
 ### 🔧 Admin APIs
 
-| Method | Endpoint | Description | Auth |
-|--------|----------|-------------|------|
-| GET | `/api/admin/health` | Health check | ✅ Admin |
-| GET | `/api/admin/stats` | System statistics | ✅ Admin |
-| POST | `/api/admin/owners/approve` | Duyệt chủ quán | ✅ Admin |
-| POST | `/api/admin/owners/reject` | Từ chối chủ quán | ✅ Admin |
+| Method | Endpoint                    | Description       | Auth     |
+| ------ | --------------------------- | ----------------- | -------- |
+| GET    | `/api/admin/health`         | Health check      | ✅ Admin |
+| GET    | `/api/admin/stats`          | System statistics | ✅ Admin |
+| POST   | `/api/admin/owners/approve` | Duyệt chủ quán    | ✅ Admin |
+| POST   | `/api/admin/owners/reject`  | Từ chối chủ quán  | ✅ Admin |
 
 📖 **Full API Documentation**: Xem Swagger UI tại `http://localhost:5089/swagger`
 
@@ -669,6 +686,7 @@ curl -X GET "http://localhost:5089/api/pois/nearby?lat=10.7553&lng=106.6986&radi
 ### Core Tables
 
 #### `pois` (Points of Interest)
+
 ```sql
 id              UUID PRIMARY KEY
 name            TEXT NOT NULL
@@ -689,6 +707,7 @@ updated_at      TIMESTAMP WITH TIME ZONE
 ```
 
 #### `audio_contents`
+
 ```sql
 id              UUID PRIMARY KEY
 poi_id          UUID REFERENCES pois(id)
@@ -701,6 +720,7 @@ created_at      TIMESTAMP WITH TIME ZONE
 ```
 
 #### `tourists`
+
 ```sql
 id              UUID PRIMARY KEY
 device_id       TEXT UNIQUE NOT NULL
@@ -713,6 +733,7 @@ last_active_at  TIMESTAMP WITH TIME ZONE
 ```
 
 #### `tours`
+
 ```sql
 id              UUID PRIMARY KEY
 name            TEXT NOT NULL
@@ -726,6 +747,7 @@ created_at      TIMESTAMP WITH TIME ZONE
 ```
 
 #### `categories`
+
 ```sql
 id              UUID PRIMARY KEY
 name            TEXT UNIQUE NOT NULL
@@ -736,6 +758,7 @@ display_order   INTEGER
 ```
 
 #### `poi_owners`
+
 ```sql
 id              UUID PRIMARY KEY
 username        TEXT UNIQUE NOT NULL
@@ -761,7 +784,7 @@ tours ───────┘            ├── tour_pois
                           ├── favorites ──< tourists
                           │
                           └── poi_images
-                          
+
 poi_owners ──< owner_pois
 ```
 
@@ -773,11 +796,11 @@ poi_owners ──< owner_pois
 
 ### Roles
 
-| Role | Description | Permissions |
-|------|-------------|-------------|
-| **admin** | Quản trị viên hệ thống | Full access: quản lý POI, users, audio, analytics |
-| **poi_owner** | Chủ quán | Chỉnh sửa POI của mình, upload ảnh/audio (cần duyệt) |
-| **tourist** | Du khách | Xem POI, nghe audio, lưu favorites (không cần đăng nhập) |
+| Role          | Description            | Permissions                                              |
+| ------------- | ---------------------- | -------------------------------------------------------- |
+| **admin**     | Quản trị viên hệ thống | Full access: quản lý POI, users, audio, analytics        |
+| **poi_owner** | Chủ quán               | Chỉnh sửa POI của mình, upload ảnh/audio (cần duyệt)     |
+| **tourist**   | Du khách               | Xem POI, nghe audio, lưu favorites (không cần đăng nhập) |
 
 ### Default Admin Account
 
@@ -791,6 +814,7 @@ Password: Admin@123
 > ⚠️ **QUAN TRỌNG**: Đổi mật khẩu ngay sau khi deploy production!
 
 Cấu hình trong `src/Server/VK.Web/appsettings.json`:
+
 ```json
 {
   "AdminAuth": {
@@ -805,13 +829,11 @@ Cấu hình trong `src/Server/VK.Web/appsettings.json`:
 1. **Đăng ký**: Chủ quán điền form `/Owner/Register`
    - Username, password, email, phone
    - Chọn POI liên kết (optional)
-   
 2. **Pending**: Hệ thống tạo account với `status = 'pending'`
 
 3. **Admin Review**: Admin vào dashboard `/Admin/Owners`
    - Xem danh sách pending owners
    - Kiểm tra thông tin
-   
 4. **Approve/Reject**:
    - ✅ Approve → `status = 'approved'`, `is_verified = true`
    - ❌ Reject → `status = 'rejected'`
@@ -855,6 +877,7 @@ dotnet test tests/VK.Core.Tests/VK.Core.Tests.csproj
 ### Test Coverage
 
 > ⚠️ **Note**: Test projects hiện đang ở giai đoạn khởi tạo mẫu. Cần bổ sung test cases cho:
+>
 > - POI business logic
 > - Audio generation & fallback
 > - Geofence triggers
@@ -924,6 +947,7 @@ az webapp deployment source config-zip \
 #### Mobile App
 
 **Android (Google Play):**
+
 1. Build Release APK/AAB:
    ```bash
    dotnet publish -f net10.0-android -c Release
@@ -932,6 +956,7 @@ az webapp deployment source config-zip \
 3. Upload to Google Play Console
 
 **iOS (App Store):**
+
 1. Build Archive (macOS):
    ```bash
    dotnet publish -f net10.0-ios -c Release
@@ -957,11 +982,13 @@ Logging__LogLevel__Default=Warning
 #### 1. API không kết nối được từ Mobile
 
 **Triệu chứng:**
+
 ```
 Network request failed
 ```
 
 **Giải pháp:**
+
 - ✅ Android Emulator: Dùng `http://10.0.2.2:5089/api/` thay vì `localhost`
 - ✅ iOS Simulator: Có thể dùng `http://localhost:5089/api/`
 - ✅ Thiết bị thật: Dùng IP máy dev (VD: `http://192.168.1.10:5089/api/`)
@@ -976,11 +1003,13 @@ curl http://localhost:5089/api/pois
 #### 2. Database Migration Failed
 
 **Triệu chứng:**
+
 ```
 Table 'pois' does not exist
 ```
 
 **Giải pháp:**
+
 1. Kiểm tra connection string đúng
 2. Chạy lại migrations theo thứ tự:
    ```sql
@@ -993,10 +1022,12 @@ Table 'pois' does not exist
 #### 3. Audio không phát
 
 **Triệu chứng:**
+
 - Không có âm thanh khi geofence trigger
 - Lỗi "Audio file not found"
 
 **Giải pháp:**
+
 - ✅ Kiểm tra bảng `audio_contents` có records cho POI & ngôn ngữ
 - ✅ Verify `audio_url` trỏ đúng file trong `wwwroot/audio/`
 - ✅ File MP3 phải tồn tại và không corrupt
@@ -1004,17 +1035,19 @@ Table 'pois' does not exist
 
 ```sql
 -- Check audio coverage
-SELECT poi_id, language_code, audio_url 
-FROM audio_contents 
+SELECT poi_id, language_code, audio_url
+FROM audio_contents
 WHERE poi_id = 'your-poi-id';
 ```
 
 #### 4. Geofence không trigger
 
 **Triệu chứng:**
+
 - Đã vào vùng POI nhưng không phát audio
 
 **Giải pháp:**
+
 - ✅ Kiểm tra GPS permissions được grant
 - ✅ Verify `geofence_radius` trong database (VD: 50m)
 - ✅ Test với bán kính lớn hơn (100m) trước
@@ -1028,6 +1061,7 @@ Console.WriteLine($"Distance to POI: {distance}m, Radius: {radius}m");
 #### 5. Web Admin không gọi được API
 
 **Triệu chứng:**
+
 ```
 CORS policy: No 'Access-Control-Allow-Origin' header
 ```
@@ -1035,6 +1069,7 @@ CORS policy: No 'Access-Control-Allow-Origin' header
 **Giải pháp:**
 
 `VK.Web/appsettings.json`:
+
 ```json
 {
   "ApiSettings": {
@@ -1046,11 +1081,13 @@ CORS policy: No 'Access-Control-Allow-Origin' header
 #### 6. Build Mobile Failed
 
 **Triệu chứng:**
+
 ```
 Error: The Android SDK is not installed
 ```
 
 **Giải pháp:**
+
 1. Mở Visual Studio Installer
 2. Modify → ☑️ Mobile development with .NET
 3. Install Android SDK (API 21+)
@@ -1059,18 +1096,20 @@ Error: The Android SDK is not installed
 #### 7. Owner không thể login
 
 **Triệu chứng:**
+
 - Login failed với credentials đúng
 
 **Giải pháp:**
+
 ```sql
 -- Check owner status
-SELECT username, status, is_verified 
-FROM poi_owners 
+SELECT username, status, is_verified
+FROM poi_owners
 WHERE username = 'owner_username';
 
 -- If pending, admin cần approve:
-UPDATE poi_owners 
-SET status = 'approved', is_verified = true 
+UPDATE poi_owners
+SET status = 'approved', is_verified = true
 WHERE username = 'owner_username';
 ```
 
@@ -1079,6 +1118,7 @@ WHERE username = 'owner_username';
 Enable verbose logging:
 
 `appsettings.Development.json`:
+
 ```json
 {
   "Logging": {
@@ -1096,7 +1136,7 @@ Enable verbose logging:
 
 ## 🗺️ Roadmap
 
-### Phase 1: MVP ✅ (Current)
+### Phase 1: POC ✅ (Current)
 
 - [x] Core API endpoints
 - [x] Mobile MAUI app với geofence
@@ -1116,7 +1156,7 @@ Enable verbose logging:
 ### Phase 3: Scale 📅 (Planned)
 
 - [ ] **Multi-region**: Mở rộng sang khu phố khác (Quận 1, Quận 5)
-- [ ] **AI Features**: 
+- [ ] **AI Features**:
   - Gợi ý quán dựa trên preference & history
   - AR navigation overlay
   - Voice-controlled tour guide
@@ -1140,7 +1180,7 @@ Enable verbose logging:
 
 ## 🤝 Đóng góp
 
-Chúng tôi hoan nghênh mọi đóng góp từ cộng đồng!
+Tôi hoan nghênh mọi đóng góp từ cộng đồng!
 
 ### Quy trình Contribute
 
@@ -1177,8 +1217,8 @@ Chúng tôi hoan nghênh mọi đóng góp từ cộng đồng!
 /// <param name="radiusMeters">Search radius in meters</param>
 /// <returns>List of nearby POIs</returns>
 public async Task<List<POI>> GetNearbyPOIsAsync(
-    double latitude, 
-    double longitude, 
+    double latitude,
+    double longitude,
     double radiusMeters)
 {
     // Implementation
@@ -1196,6 +1236,7 @@ public async Task<List<POI>> GetNearbyPOIsAsync(
 Format: `<type>(<scope>): <subject>`
 
 **Types:**
+
 - `feat`: New feature
 - `fix`: Bug fix
 - `docs`: Documentation only
@@ -1205,6 +1246,7 @@ Format: `<type>(<scope>): <subject>`
 - `chore`: Build process, dependencies
 
 **Examples:**
+
 ```
 feat(api): add geofence radius configuration endpoint
 fix(mobile): resolve audio playback crash on iOS
@@ -1224,8 +1266,6 @@ docs(readme): update deployment instructions
 
 ## 📄 License
 
-This project is licensed under the **MIT License**.
-
 ---
 
 ## 🙏 Acknowledgments
@@ -1237,11 +1277,3 @@ This project is licensed under the **MIT License**.
 - Cộng đồng **Phố Vĩnh Khánh** đã hỗ trợ thu thập dữ liệu
 
 ---
-
-<div align="center">
-
-**⭐ Nếu project này hữu ích, hãy cho chúng tôi một star trên GitHub! ⭐**
-
-Made with ❤️ in Saigon
-
-</div>

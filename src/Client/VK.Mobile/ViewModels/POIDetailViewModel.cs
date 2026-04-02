@@ -22,6 +22,9 @@ public partial class POIDetailViewModel : ObservableObject, IQueryAttributable
     private int _totalSeconds;
     private string _fullText = string.Empty;
     private bool _usingAudioService;
+    private bool _hasTrackedAudioPlayForSession;
+    private bool _hasTrackedAudioCompleteForSession;
+    private DateTime _audioSessionStartedAtUtc;
 
     [ObservableProperty]
     private POIDetailModel? _poi;
@@ -86,6 +89,9 @@ public partial class POIDetailViewModel : ObservableObject, IQueryAttributable
         AudioPositionRatio = 0;
         AudioPositionText = "0:00";
         _elapsedSeconds = 0;
+        _hasTrackedAudioPlayForSession = false;
+        _hasTrackedAudioCompleteForSession = false;
+        _audioSessionStartedAtUtc = DateTime.UtcNow;
         OnPropertyChanged(nameof(AudioStatusText));
     }
 
@@ -109,7 +115,7 @@ public partial class POIDetailViewModel : ObservableObject, IQueryAttributable
             OnPropertyChanged(nameof(AverageRatingText));
         };
         _audioService.PlaybackCompleted += (_, _) =>
-            MainThread.BeginInvokeOnMainThread(() => { IsPlayingAudio = false; StopProgressTimer(); });
+            MainThread.BeginInvokeOnMainThread(() => _ = HandlePlaybackCompletedAsync());
     }
 
     // ── Progress timer (fake elapsed based on word-count estimate) ────────
@@ -142,6 +148,7 @@ public partial class POIDetailViewModel : ObservableObject, IQueryAttributable
                 IsPlayingAudio = false;
                 StopProgressTimer();
                 _ttsCts?.Cancel();
+                _ = TrackAudioCompleteIfNeededAsync();
             }
         };
         _progressTimer.Start();
@@ -334,6 +341,7 @@ public partial class POIDetailViewModel : ObservableObject, IQueryAttributable
                 }
                 IsPlayingAudio = true;
                 _ = _audioService.PlayAudioAsync(audioUrl, Poi?.Id);
+                _audioSessionStartedAtUtc = DateTime.UtcNow;
             }
             else
             {
@@ -365,6 +373,7 @@ public partial class POIDetailViewModel : ObservableObject, IQueryAttributable
                 var token = _ttsCts.Token;
                 var lang = SelectedLanguage;
                 IsPlayingAudio = true;
+                _audioSessionStartedAtUtc = DateTime.UtcNow;
                 var speakText = GetTextFromPosition(_fullText, _elapsedSeconds, _totalSeconds);
                 _ = _ttsService.SpeakTextAsync(speakText, lang, token)
                                .ContinueWith(t =>
@@ -376,8 +385,11 @@ public partial class POIDetailViewModel : ObservableObject, IQueryAttributable
 
             // Track in background
             var touristId = await _storageService.GetTouristIdAsync();
-            if (touristId != null && Poi != null)
+            if (touristId != null && Poi != null && !_hasTrackedAudioPlayForSession)
+            {
+                _hasTrackedAudioPlayForSession = true;
                 _ = _apiService.TrackEventAsync(touristId, Poi.Id, "audio_play", SelectedLanguage);
+            }
         }
     }
 
@@ -448,6 +460,8 @@ public partial class POIDetailViewModel : ObservableObject, IQueryAttributable
         IsPlayingAudio = false;
         _elapsedSeconds = 0;
         _usingAudioService = false;
+        _hasTrackedAudioPlayForSession = false;
+        _hasTrackedAudioCompleteForSession = false;
         AudioPositionRatio = 0;
         AudioPositionText = "0:00";
         StopProgressTimer();
@@ -546,5 +560,36 @@ public partial class POIDetailViewModel : ObservableObject, IQueryAttributable
         else
             await _ttsService.StopAsync();
         await Shell.Current.GoToAsync("..");
+    }
+
+    private async Task HandlePlaybackCompletedAsync()
+    {
+        IsPlayingAudio = false;
+        StopProgressTimer();
+        await TrackAudioCompleteIfNeededAsync();
+    }
+
+    private async Task TrackAudioCompleteIfNeededAsync()
+    {
+        if (_hasTrackedAudioCompleteForSession || Poi == null)
+            return;
+
+        _hasTrackedAudioCompleteForSession = true;
+        try
+        {
+            var touristId = await _storageService.GetTouristIdAsync();
+            if (touristId == null)
+                return;
+
+            var durationSeconds = _elapsedSeconds > 0
+                ? _elapsedSeconds
+                : Math.Max(1, (int)(DateTime.UtcNow - _audioSessionStartedAtUtc).TotalSeconds);
+
+            await _apiService.TrackEventAsync(touristId, Poi.Id, "audio_complete", SelectedLanguage, durationSeconds);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogDebug(ex, "Could not track audio_complete for POI {PoiId}", Poi?.Id);
+        }
     }
 }

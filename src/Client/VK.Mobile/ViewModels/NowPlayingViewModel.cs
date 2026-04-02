@@ -20,6 +20,7 @@ public partial class NowPlayingViewModel : ObservableObject
     private readonly ITTSService _ttsService;
     private readonly IAudioService _audioService;
     private readonly IApiService _apiService;
+    private readonly StorageService _storageService;
     private readonly IOfflineContentService _offlineContentService;
     private POIModel? _nextPoiModel;
     private List<POIModel> _allPois = new();
@@ -58,16 +59,21 @@ public partial class NowPlayingViewModel : ObservableObject
     private int _elapsedSeconds = 0;
     private int _totalSeconds = 0;
     private CancellationTokenSource? _ttsCts;
+    private bool _hasTrackedAudioPlay;
+    private bool _hasTrackedAudioComplete;
+    private DateTime _playbackStartedAtUtc;
 
     public NowPlayingViewModel(
         ITTSService ttsService,
         IAudioService audioService,
         IApiService apiService,
+        StorageService storageService,
         IOfflineContentService offlineContentService)
     {
         _ttsService = ttsService;
         _audioService = audioService;
         _apiService = apiService;
+        _storageService = storageService;
         _offlineContentService = offlineContentService;
         _audioService.PlaybackCompleted += OnAudioServicePlaybackCompleted;
 
@@ -124,6 +130,9 @@ public partial class NowPlayingViewModel : ObservableObject
         _audioFileUrl = audioFileUrl;
         IsFallback = isFallback;
         _usingAudioService = false; // reset; set to true in StartPlayingAsync if URL available
+        _hasTrackedAudioPlay = false;
+        _hasTrackedAudioComplete = false;
+        _playbackStartedAtUtc = DateTime.UtcNow;
     }
 
     private static string FormatWalk(double? km) => km switch
@@ -162,6 +171,8 @@ public partial class NowPlayingViewModel : ObservableObject
         _elapsedSeconds = 0;
         IsPlaying = true;
         UpdateProgress();
+        _playbackStartedAtUtc = DateTime.UtcNow;
+        _ = TrackAudioPlayIfNeededAsync();
 
         // Tier 1: Pre-generated MP3 → play immediately
         if (!string.IsNullOrWhiteSpace(_audioFileUrl))
@@ -366,6 +377,7 @@ public partial class NowPlayingViewModel : ObservableObject
                 IsPlaying = false;
                 StopTimer();
                 _ttsCts?.Cancel(); // no-op nếu AudioService path
+                _ = TrackAudioCompleteIfNeededAsync();
             }
         };
         _timer.Start();
@@ -415,6 +427,45 @@ public partial class NowPlayingViewModel : ObservableObject
         {
             IsPlaying = false;
             StopTimer();
+            _ = TrackAudioCompleteIfNeededAsync();
         });
+    }
+
+    private async Task TrackAudioPlayIfNeededAsync()
+    {
+        if (_hasTrackedAudioPlay || PoiId <= 0)
+            return;
+
+        _hasTrackedAudioPlay = true;
+        try
+        {
+            var touristId = await _storageService.GetTouristIdAsync();
+            await _apiService.TrackEventAsync(touristId, PoiId, "audio_play", Language);
+        }
+        catch
+        {
+            // Best effort analytics, never block playback.
+        }
+    }
+
+    private async Task TrackAudioCompleteIfNeededAsync()
+    {
+        if (_hasTrackedAudioComplete || PoiId <= 0)
+            return;
+
+        _hasTrackedAudioComplete = true;
+        try
+        {
+            var touristId = await _storageService.GetTouristIdAsync();
+            var durationSeconds = _elapsedSeconds > 0
+                ? _elapsedSeconds
+                : Math.Max(1, (int)(DateTime.UtcNow - _playbackStartedAtUtc).TotalSeconds);
+
+            await _apiService.TrackEventAsync(touristId, PoiId, "audio_complete", Language, durationSeconds);
+        }
+        catch
+        {
+            // Best effort analytics, never block playback.
+        }
     }
 }
