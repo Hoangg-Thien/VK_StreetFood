@@ -16,6 +16,7 @@ public static class DatabaseSeeder
 
         if (context.PointsOfInterest.Any())
         {
+            await EnsurePoiTranslationsAsync(context);
             await EnsureBaselineToursAsync(context);
             await EnsureBaselineVendorsAsync(context);
             await EnsureBaselineOwnerUsersAsync(context);
@@ -231,6 +232,7 @@ public static class DatabaseSeeder
 
         context.PointsOfInterest.AddRange(pois);
         await context.SaveChangesAsync();
+        await EnsurePoiTranslationsAsync(context);
 
         // Link tags to POIs (after IDs are generated)
         pois[4].Tags.Add(tags[0]); // Ốc Oanh - Michelin
@@ -435,6 +437,72 @@ public static class DatabaseSeeder
 
         if (poisToFix.Count > 0)
             await context.SaveChangesAsync();
+    }
+
+    /// <summary>
+    /// Backfill default translation rows for existing POIs.
+    /// Vietnamese row is canonical source; missing en/ko rows are created from vi/base text.
+    /// </summary>
+    private static async Task EnsurePoiTranslationsAsync(VKStreetFoodDbContext context)
+    {
+        var existingTranslations = await context.PointOfInterestTranslations
+            .Where(t => !t.IsDeleted)
+            .ToListAsync();
+
+        var pois = await context.PointsOfInterest
+            .Where(p => !p.IsDeleted)
+            .ToListAsync();
+
+        foreach (var poi in pois)
+        {
+            var poiTranslations = existingTranslations
+                .Where(t => t.PointOfInterestId == poi.Id)
+                .ToList();
+
+            var viTranslation = poiTranslations.FirstOrDefault(t =>
+                string.Equals(t.LanguageCode, LanguageConstants.Vietnamese, StringComparison.OrdinalIgnoreCase));
+
+            if (viTranslation == null)
+            {
+                viTranslation = new PointOfInterestTranslation
+                {
+                    PointOfInterestId = poi.Id,
+                    LanguageCode = LanguageConstants.Vietnamese,
+                    Name = poi.Name,
+                    Description = poi.Description,
+                    Address = poi.Address
+                };
+
+                context.PointOfInterestTranslations.Add(viTranslation);
+                poiTranslations.Add(viTranslation);
+                existingTranslations.Add(viTranslation);
+            }
+
+            foreach (var lang in LanguageConstants.SupportedLanguages)
+            {
+                if (poiTranslations.Any(t => string.Equals(t.LanguageCode, lang, StringComparison.OrdinalIgnoreCase)))
+                    continue;
+
+                var defaultName = !string.IsNullOrWhiteSpace(viTranslation.Name) ? viTranslation.Name : poi.Name;
+                var defaultDescription = !string.IsNullOrWhiteSpace(viTranslation.Description) ? viTranslation.Description : poi.Description;
+                var defaultAddress = !string.IsNullOrWhiteSpace(viTranslation.Address) ? viTranslation.Address : poi.Address;
+
+                var newTranslation = new PointOfInterestTranslation
+                {
+                    PointOfInterestId = poi.Id,
+                    LanguageCode = lang,
+                    Name = defaultName,
+                    Description = defaultDescription,
+                    Address = defaultAddress
+                };
+
+                context.PointOfInterestTranslations.Add(newTranslation);
+                poiTranslations.Add(newTranslation);
+                existingTranslations.Add(newTranslation);
+            }
+        }
+
+        await context.SaveChangesAsync();
     }
 
     /// <summary>

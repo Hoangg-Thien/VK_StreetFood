@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
 using VK.Infrastructure.Data;
 using VK.Core.Entities;
+using VK.Shared.Constants;
 
 namespace VK.Web.Controllers;
 
@@ -135,6 +136,14 @@ public class PoiController : Controller
 
             _context.PointsOfInterest.Add(model);
             await _context.SaveChangesAsync();
+
+            await EnsureDefaultTranslationsAsync(
+                model.Id,
+                model.Name,
+                model.Description,
+                model.Address,
+                updateVietnamese: true);
+
             TempData["Success"] = "Thêm địa điểm thành công!";
         }
         catch (Exception ex)
@@ -244,6 +253,13 @@ public class PoiController : Controller
             existing.CategoryId = model.CategoryId;
             existing.ImageUrl = model.ImageUrl;
 
+            await EnsureDefaultTranslationsAsync(
+                existing.Id,
+                model.Name,
+                model.Description,
+                model.Address,
+                updateVietnamese: true);
+
             await _context.SaveChangesAsync();
             TempData["Success"] = "Cập nhật địa điểm thành công!";
         }
@@ -343,5 +359,44 @@ public class PoiController : Controller
             await file.CopyToAsync(stream);
 
         return Ok(new { url = $"/images/poi/{fileName}" });
+    }
+
+    private async Task EnsureDefaultTranslationsAsync(
+        int poiId,
+        string name,
+        string description,
+        string address,
+        bool updateVietnamese)
+    {
+        var translations = await _context.PointOfInterestTranslations
+            .Where(t => t.PointOfInterestId == poiId)
+            .ToListAsync();
+
+        var byLang = translations
+            .ToDictionary(t => t.LanguageCode, StringComparer.OrdinalIgnoreCase);
+
+        foreach (var lang in LanguageConstants.SupportedLanguages)
+        {
+            if (byLang.TryGetValue(lang, out var existingTranslation))
+            {
+                if (updateVietnamese && string.Equals(lang, LanguageConstants.Vietnamese, StringComparison.OrdinalIgnoreCase))
+                {
+                    existingTranslation.Name = name;
+                    existingTranslation.Description = description;
+                    existingTranslation.Address = address;
+                }
+
+                continue;
+            }
+
+            _context.PointOfInterestTranslations.Add(new PointOfInterestTranslation
+            {
+                PointOfInterestId = poiId,
+                LanguageCode = lang,
+                Name = name,
+                Description = description,
+                Address = address
+            });
+        }
     }
 }

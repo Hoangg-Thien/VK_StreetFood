@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using VK.Infrastructure.Data;
 using VK.Core.Entities;
+using VK.Shared.Constants;
 using VK.Shared.DTOs;
 
 namespace VK.API.Controllers;
@@ -269,29 +270,44 @@ public class TouristController : ControllerBase
     /// Get tourist favorites
     /// </summary>
     [HttpGet("{touristId}/favorites")]
-    public async Task<ActionResult<List<POIListItemDto>>> GetFavorites(int touristId)
+    public async Task<ActionResult<List<POIListItemDto>>> GetFavorites(
+        int touristId,
+        [FromQuery] string languageCode = LanguageConstants.Vietnamese)
     {
-        var favorites = await _context.Set<Favorite>()
+        var normalizedLanguageCode = NormalizeLanguageCode(languageCode);
+
+        var favoriteEntities = await _context.Set<Favorite>()
             .Where(f => f.TouristId == touristId)
             .Include(f => f.PointOfInterest)
                 .ThenInclude(p => p.Category)
             .Include(f => f.PointOfInterest)
                 .ThenInclude(p => p.Tags)
-            .Select(f => new POIListItemDto
-            {
-                PoiId = f.PointOfInterest.Id,
-                Name = f.PointOfInterest.Name,
-                Description = f.PointOfInterest.Description,
-                Latitude = f.PointOfInterest.Latitude,
-                Longitude = f.PointOfInterest.Longitude,
-                Address = f.PointOfInterest.Address,
-                ImageUrl = f.PointOfInterest.ImageUrl,
-                AverageRating = f.PointOfInterest.AverageRating,
-                TotalRatings = f.PointOfInterest.TotalRatings,
-                Category = f.PointOfInterest.Category!.Name,
-                Tags = f.PointOfInterest.Tags.Select(t => t.Name).ToList()
-            })
+            .Include(f => f.PointOfInterest)
+                .ThenInclude(p => p.Translations)
             .ToListAsync();
+
+        var favorites = favoriteEntities
+            .Select(f =>
+            {
+                var dto = new POIListItemDto
+                {
+                    PoiId = f.PointOfInterest.Id,
+                    Name = f.PointOfInterest.Name,
+                    Description = f.PointOfInterest.Description,
+                    Latitude = f.PointOfInterest.Latitude,
+                    Longitude = f.PointOfInterest.Longitude,
+                    Address = f.PointOfInterest.Address,
+                    ImageUrl = f.PointOfInterest.ImageUrl,
+                    AverageRating = f.PointOfInterest.AverageRating,
+                    TotalRatings = f.PointOfInterest.TotalRatings,
+                    Category = f.PointOfInterest.Category?.Name ?? string.Empty,
+                    Tags = f.PointOfInterest.Tags.Select(t => t.Name).ToList()
+                };
+
+                ApplyLocalizedFields(dto, f.PointOfInterest, normalizedLanguageCode);
+                return dto;
+            })
+            .ToList();
 
         // Prepend base URL to relative image paths
         foreach (var fav in favorites)
@@ -456,4 +472,37 @@ public class TouristController : ControllerBase
     }
 
     private double ToRadians(double degrees) => degrees * Math.PI / 180;
+
+    private static void ApplyLocalizedFields(POIListItemDto dto, PointOfInterest poi, string languageCode)
+    {
+        var translation = ResolveTranslation(poi, languageCode);
+        if (translation == null)
+            return;
+
+        if (!string.IsNullOrWhiteSpace(translation.Name))
+            dto.Name = translation.Name;
+
+        if (!string.IsNullOrWhiteSpace(translation.Description))
+            dto.Description = translation.Description;
+
+        if (!string.IsNullOrWhiteSpace(translation.Address))
+            dto.Address = translation.Address;
+    }
+
+    private static PointOfInterestTranslation? ResolveTranslation(PointOfInterest poi, string languageCode)
+    {
+        var normalized = NormalizeLanguageCode(languageCode);
+        return poi.Translations.FirstOrDefault(t => NormalizeLanguageCode(t.LanguageCode) == normalized)
+            ?? poi.Translations.FirstOrDefault(t => NormalizeLanguageCode(t.LanguageCode) == LanguageConstants.Vietnamese);
+    }
+
+    private static string NormalizeLanguageCode(string? languageCode)
+    {
+        if (string.IsNullOrWhiteSpace(languageCode))
+            return LanguageConstants.Vietnamese;
+
+        var code = languageCode.Trim().ToLowerInvariant();
+        var separatorIndex = code.IndexOfAny(new[] { '-', '_' });
+        return separatorIndex > 0 ? code[..separatorIndex] : code;
+    }
 }

@@ -50,7 +50,7 @@ public partial class ProfileViewModel : ObservableObject
                 PreferredLanguage = await _storageService.GetPreferredLanguageAsync() ?? "vi";
 
                 // Load favorites count
-                var favorites = await _apiService.GetFavoritesAsync(touristId.Value);
+                var favorites = await _apiService.GetFavoritesAsync(touristId.Value, PreferredLanguage);
                 TotalFavorites = favorites.Count;
 
                 // Load visit / activity stats

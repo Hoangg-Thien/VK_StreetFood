@@ -191,22 +191,22 @@ public partial class MainMapViewModel : ObservableObject
 
             if (Connectivity.NetworkAccess != NetworkAccess.Internet)
             {
-                poiList = await _localDb.GetCachedPOIsAsync();
+                poiList = await _localDb.GetCachedPOIsAsync(SelectedLanguage);
                 _logger.LogInformation("Offline mode: loaded {Count} POIs from SQLite cache", poiList.Count);
             }
             else
             {
-                poiList = await _apiService.GetAllPOIsAsync();
+                poiList = await _apiService.GetAllPOIsAsync(languageCode: SelectedLanguage);
                 _logger.LogInformation("API returned {Count} POIs", poiList.Count);
 
                 if (poiList.Count > 0)
                 {
-                    await _localDb.SavePOIsAsync(poiList);
+                    await _localDb.SavePOIsAsync(poiList, SelectedLanguage);
                 }
                 else
                 {
                     _logger.LogWarning("API returned empty POI list, trying SQLite cache fallback");
-                    poiList = await _localDb.GetCachedPOIsAsync();
+                    poiList = await _localDb.GetCachedPOIsAsync(SelectedLanguage);
                 }
             }
 
@@ -228,7 +228,7 @@ public partial class MainMapViewModel : ObservableObject
 
             try
             {
-                var cached = await _localDb.GetCachedPOIsAsync();
+                var cached = await _localDb.GetCachedPOIsAsync(SelectedLanguage);
                 _allPois = cached;
                 ApplyTourFilter();
 

@@ -11,6 +11,7 @@ public class VKStreetFoodDbContext : DbContext
     }
 
     public DbSet<PointOfInterest> PointsOfInterest { get; set; }
+    public DbSet<PointOfInterestTranslation> PointOfInterestTranslations { get; set; }
     public DbSet<AudioContent> AudioContents { get; set; }
     public DbSet<Vendor> Vendors { get; set; }
     public DbSet<Product> Products { get; set; }
@@ -37,6 +38,7 @@ public class VKStreetFoodDbContext : DbContext
 
         // Global query filters for soft delete
         modelBuilder.Entity<PointOfInterest>().HasQueryFilter(p => !p.IsDeleted);
+        modelBuilder.Entity<PointOfInterestTranslation>().HasQueryFilter(t => !t.IsDeleted);
         modelBuilder.Entity<AudioContent>().HasQueryFilter(a => !a.IsDeleted);
         modelBuilder.Entity<Vendor>().HasQueryFilter(v => !v.IsDeleted);
         modelBuilder.Entity<Product>().HasQueryFilter(p => !p.IsDeleted);

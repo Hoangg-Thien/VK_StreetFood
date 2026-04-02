@@ -221,7 +221,11 @@ public partial class POIDetailViewModel : ObservableObject, IQueryAttributable
         {
             IsLoading = true;
 
-            var language = await _storageService.GetPreferredLanguageAsync() ?? "vi";
+            var language = LocalizationResourceManager.Instance.CurrentLanguage;
+            if (string.IsNullOrWhiteSpace(language))
+            {
+                language = await _storageService.GetPreferredLanguageAsync() ?? "vi";
+            }
             SelectedLanguage = language;
 
             POIDetailModel? detail = null;
@@ -235,7 +239,7 @@ public partial class POIDetailViewModel : ObservableObject, IQueryAttributable
             // Offline fallback: dùng dữ liệu cache
             if (detail == null)
             {
-                var cached = await _localDb.GetCachedPOIsAsync();
+                var cached = await _localDb.GetCachedPOIsAsync(language);
                 var poi = cached.FirstOrDefault(p => p.Id == poiId);
                 if (poi != null)
                 {
@@ -284,7 +288,7 @@ public partial class POIDetailViewModel : ObservableObject, IQueryAttributable
                     var touristId = await _storageService.GetTouristIdAsync();
                     if (touristId != null)
                     {
-                        var favorites = await _apiService.GetFavoritesAsync(touristId.Value);
+                        var favorites = await _apiService.GetFavoritesAsync(touristId.Value, language);
                         IsFavorite = favorites.Any(f => f.Id == poiId);
                     }
 

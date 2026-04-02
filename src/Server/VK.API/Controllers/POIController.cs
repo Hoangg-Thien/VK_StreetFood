@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using VK.Core.Entities;
 using VK.Infrastructure.Data;
+using VK.Shared.Constants;
 using VK.Shared.DTOs;
 
 namespace VK.API.Controllers;
@@ -43,12 +45,16 @@ public class POIController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<List<POIListItemDto>>> GetAllPOIs(
         [FromQuery] int? categoryId = null,
-        [FromQuery] string? search = null)
+        [FromQuery] string? search = null,
+        [FromQuery] string languageCode = LanguageConstants.Vietnamese)
     {
+        var normalizedLanguageCode = NormalizeLanguageCode(languageCode);
+
         var query = _context.PointsOfInterest
             .Where(p => !p.IsDeleted && p.IsActive)
             .Include(p => p.Category)
             .Include(p => p.Tags)
+            .Include(p => p.Translations)
             .AsQueryable();
 
         if (categoryId.HasValue)
@@ -56,31 +62,41 @@ public class POIController : ControllerBase
             query = query.Where(p => p.CategoryId == categoryId.Value);
         }
 
+        var entities = await query
+            .OrderBy(p => p.Id)
+            .ToListAsync();
+
+        var pois = entities
+            .Select(p =>
+            {
+                var dto = new POIListItemDto
+                {
+                    PoiId = p.Id,
+                    Name = p.Name,
+                    Description = p.Description,
+                    Latitude = p.Latitude,
+                    Longitude = p.Longitude,
+                    Address = p.Address,
+                    ImageUrl = p.ImageUrl,
+                    AverageRating = p.AverageRating,
+                    TotalRatings = p.TotalRatings,
+                    Category = p.Category?.Name ?? string.Empty,
+                    Tags = p.Tags.Select(t => t.Name).ToList()
+                };
+
+                ApplyLocalizedFields(dto, p, normalizedLanguageCode);
+                return dto;
+            })
+            .ToList();
+
         if (!string.IsNullOrWhiteSpace(search))
         {
-            query = query.Where(p =>
-                p.Name.Contains(search) ||
-                p.Description.Contains(search) ||
-                p.Address.Contains(search));
+            pois = pois.Where(p =>
+                    p.Name.Contains(search, StringComparison.OrdinalIgnoreCase) ||
+                    p.Description.Contains(search, StringComparison.OrdinalIgnoreCase) ||
+                    p.Address.Contains(search, StringComparison.OrdinalIgnoreCase))
+                .ToList();
         }
-
-        var pois = await query
-            .OrderBy(p => p.Id)
-            .Select(p => new POIListItemDto
-            {
-                PoiId = p.Id,
-                Name = p.Name,
-                Description = p.Description,
-                Latitude = p.Latitude,
-                Longitude = p.Longitude,
-                Address = p.Address,
-                ImageUrl = p.ImageUrl,
-                AverageRating = p.AverageRating,
-                TotalRatings = p.TotalRatings,
-                Category = p.Category!.Name,
-                Tags = p.Tags.Select(t => t.Name).ToList()
-            })
-            .ToListAsync();
 
         var baseUrl = $"{Request.Scheme}://{Request.Host}";
         foreach (var poi in pois)
@@ -101,13 +117,17 @@ public class POIController : ControllerBase
     public async Task<ActionResult<List<POIListItemDto>>> GetNearbyPOIs(
         [FromQuery] double latitude,
         [FromQuery] double longitude,
-        [FromQuery] double radiusKm = 1.0)
+        [FromQuery] double radiusKm = 1.0,
+        [FromQuery] string languageCode = LanguageConstants.Vietnamese)
     {
+        var normalizedLanguageCode = NormalizeLanguageCode(languageCode);
+
         // Simple distance calculation using Haversine formula approximation
         var pois = await _context.PointsOfInterest
             .Where(p => !p.IsDeleted && p.IsActive)
             .Include(p => p.Category)
             .Include(p => p.Tags)
+            .Include(p => p.Translations)
             .ToListAsync();
 
         var nearbyPois = pois
@@ -137,6 +157,12 @@ public class POIController : ControllerBase
             })
             .ToList();
 
+        foreach (var item in nearbyPois)
+        {
+            var source = pois.First(p => p.Id == item.PoiId);
+            ApplyLocalizedFields(item, source, normalizedLanguageCode);
+        }
+
         _logger.LogInformation("Found {Count} POIs within {Radius}km of ({Lat}, {Lng})",
             nearbyPois.Count, radiusKm, latitude, longitude);
 
@@ -147,11 +173,14 @@ public class POIController : ControllerBase
     /// Get POI details by ID
     /// </summary>
     [HttpGet("{id}")]
-    public async Task<ActionResult<POIDetailDto>> GetPOIById(int id, [FromQuery] string languageCode = "vi")
+    public async Task<ActionResult<POIDetailDto>> GetPOIById(int id, [FromQuery] string languageCode = LanguageConstants.Vietnamese)
     {
+        var normalizedLanguageCode = NormalizeLanguageCode(languageCode);
+
         var poi = await _context.PointsOfInterest
             .Include(p => p.Category)
             .Include(p => p.AudioContents)
+            .Include(p => p.Translations)
             .Include(p => p.Vendors)
                 .ThenInclude(v => v.Products)
             .Include(p => p.Vendors)
@@ -165,8 +194,8 @@ public class POIController : ControllerBase
             return NotFound(new { message = "POI không tồn tại" });
         }
 
-        var audio = poi.AudioContents.FirstOrDefault(a => a.LanguageCode == languageCode)
-                   ?? poi.AudioContents.FirstOrDefault(a => a.LanguageCode == "vi");
+        var audio = poi.AudioContents.FirstOrDefault(a => a.LanguageCode == normalizedLanguageCode)
+               ?? poi.AudioContents.FirstOrDefault(a => a.LanguageCode == LanguageConstants.Vietnamese);
 
         var response = new POIDetailDto
         {
@@ -230,6 +259,8 @@ public class POIController : ControllerBase
                 .ToList()
         };
 
+        ApplyLocalizedFields(response, poi, normalizedLanguageCode);
+
         return Ok(response);
     }
 
@@ -288,4 +319,37 @@ public class POIController : ControllerBase
         => PoiTriggerProfiles.TryGetValue(poiId, out var profile)
             ? profile
             : (0, null);
+
+    private static void ApplyLocalizedFields(POIListItemDto dto, PointOfInterest poi, string languageCode)
+    {
+        var translation = ResolveTranslation(poi, languageCode);
+        if (translation == null)
+            return;
+
+        if (!string.IsNullOrWhiteSpace(translation.Name))
+            dto.Name = translation.Name;
+
+        if (!string.IsNullOrWhiteSpace(translation.Description))
+            dto.Description = translation.Description;
+
+        if (!string.IsNullOrWhiteSpace(translation.Address))
+            dto.Address = translation.Address;
+    }
+
+    private static PointOfInterestTranslation? ResolveTranslation(PointOfInterest poi, string languageCode)
+    {
+        var normalized = NormalizeLanguageCode(languageCode);
+        return poi.Translations.FirstOrDefault(t => NormalizeLanguageCode(t.LanguageCode) == normalized)
+            ?? poi.Translations.FirstOrDefault(t => NormalizeLanguageCode(t.LanguageCode) == LanguageConstants.Vietnamese);
+    }
+
+    private static string NormalizeLanguageCode(string? languageCode)
+    {
+        if (string.IsNullOrWhiteSpace(languageCode))
+            return LanguageConstants.Vietnamese;
+
+        var code = languageCode.Trim().ToLowerInvariant();
+        var separatorIndex = code.IndexOfAny(new[] { '-', '_' });
+        return separatorIndex > 0 ? code[..separatorIndex] : code;
+    }
 }

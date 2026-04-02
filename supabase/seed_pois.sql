@@ -40,6 +40,19 @@ VALUES
 	(12, 'Bún Cá Châu Đốc Dì Tư', 'Quán bún cá miền Tây nổi tiếng.', 10.761123552507, 106.706606909857, '320/79 Vĩnh Khánh, Phường 9, Quận 4, TP.HCM', '/images/poi/bun-ca.jpg', TRUE, 3, 4.5, 0, NOW(), FALSE)
 ON CONFLICT ("Id") DO NOTHING;
 
+INSERT INTO "PointOfInterestTranslations"
+	("PointOfInterestId", "LanguageCode", "Name", "Description", "Address", "CreatedAt", "IsDeleted")
+SELECT
+	p."Id",
+	'vi',
+	p."Name",
+	p."Description",
+	p."Address",
+	NOW(),
+	FALSE
+FROM "PointsOfInterest" p
+ON CONFLICT ("PointOfInterestId", "LanguageCode") DO NOTHING;
+
 INSERT INTO "AudioContents"
 	("PointOfInterestId", "LanguageCode", "TextContent", "AudioFileUrl", "DurationSeconds", "IsGenerated", "CreatedAt", "IsDeleted")
 SELECT

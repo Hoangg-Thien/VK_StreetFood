@@ -120,8 +120,9 @@ public partial class SettingsViewModel : ObservableObject
     }
 
     [RelayCommand]
-    void SaveLanguage()
+    async Task SaveLanguage()
     {
+        await _storageService.SetPreferredLanguageAsync(SelectedLanguage);
         // Gọi LocalizationResourceManager để đổi ngôn ngữ toàn app
         LocalizationResourceManager.Instance.SetLanguage(SelectedLanguage);
     }
@@ -193,7 +194,7 @@ public partial class SettingsViewModel : ObservableObject
         {
             var status = await _offlineContentService.GetStatusAsync();
             var last = status.LastSyncUtc?.ToLocalTime().ToString("dd/MM HH:mm") ?? L["SettingsOfflineNeverSynced"];
-            
+
         }
         catch
         {

@@ -26,25 +26,41 @@ public class LocalPOIDatabase
         if (_db == null)
         {
             _db = new SQLiteAsyncConnection(DbPath);
-            await _db.CreateTableAsync<PoiCacheEntry>();
+            await _db.CreateTableAsync<PoiCacheEntryV2>();
             await _db.CreateTableAsync<AudioScriptCacheEntry>();
         }
         return _db;
     }
 
     /// <summary>Lưu toàn bộ danh sách POI vào SQLite.</summary>
-    public async Task SavePOIsAsync(List<POIModel> pois)
+    public async Task SavePOIsAsync(List<POIModel> pois, string languageCode = "vi")
     {
         try
         {
             var db = await GetDbAsync();
-            var entry = new PoiCacheEntry
+            var lang = string.IsNullOrWhiteSpace(languageCode)
+                ? "vi"
+                : languageCode.Trim().ToLowerInvariant();
+
+            var entry = await db.Table<PoiCacheEntryV2>()
+                .FirstOrDefaultAsync(x => x.LanguageCode == lang);
+
+            if (entry == null)
             {
-                Id = 1,
-                JsonData = JsonSerializer.Serialize(pois, _json),
-                CachedAt = DateTime.UtcNow
-            };
-            await db.InsertOrReplaceAsync(entry);
+                entry = new PoiCacheEntryV2
+                {
+                    LanguageCode = lang,
+                    JsonData = JsonSerializer.Serialize(pois, _json),
+                    CachedAt = DateTime.UtcNow
+                };
+                await db.InsertAsync(entry);
+            }
+            else
+            {
+                entry.JsonData = JsonSerializer.Serialize(pois, _json);
+                entry.CachedAt = DateTime.UtcNow;
+                await db.UpdateAsync(entry);
+            }
         }
         catch (Exception ex)
         {
@@ -56,12 +72,24 @@ public class LocalPOIDatabase
     /// Đọc POI từ cache SQLite.
     /// Trả về list rỗng nếu chưa có cache hoặc lỗi.
     /// </summary>
-    public async Task<List<POIModel>> GetCachedPOIsAsync()
+    public async Task<List<POIModel>> GetCachedPOIsAsync(string languageCode = "vi")
     {
         try
         {
             var db = await GetDbAsync();
-            var entry = await db.FindAsync<PoiCacheEntry>(1);
+            var lang = string.IsNullOrWhiteSpace(languageCode)
+                ? "vi"
+                : languageCode.Trim().ToLowerInvariant();
+
+            var entry = await db.Table<PoiCacheEntryV2>()
+                .FirstOrDefaultAsync(x => x.LanguageCode == lang);
+
+            if (entry == null && !string.Equals(lang, "vi", StringComparison.OrdinalIgnoreCase))
+            {
+                entry = await db.Table<PoiCacheEntryV2>()
+                    .FirstOrDefaultAsync(x => x.LanguageCode == "vi");
+            }
+
             if (entry == null || string.IsNullOrEmpty(entry.JsonData))
                 return new List<POIModel>();
 
@@ -81,9 +109,9 @@ public class LocalPOIDatabase
     }
 
     /// <summary>Số lượng POI hiện có trong cache.</summary>
-    public async Task<int> GetCachedPoiCountAsync()
+    public async Task<int> GetCachedPoiCountAsync(string languageCode = "vi")
     {
-        var list = await GetCachedPOIsAsync();
+        var list = await GetCachedPOIsAsync(languageCode);
         return list.Count;
     }
 
@@ -192,7 +220,9 @@ public class LocalPOIDatabase
         try
         {
             var db = await GetDbAsync();
-            var entry = await db.FindAsync<PoiCacheEntry>(1);
+            var entry = await db.Table<PoiCacheEntryV2>()
+                .OrderByDescending(x => x.CachedAt)
+                .FirstOrDefaultAsync();
             return entry?.CachedAt;
         }
         catch { return null; }
@@ -204,7 +234,7 @@ public class LocalPOIDatabase
         try
         {
             var db = await GetDbAsync();
-            await db.DeleteAllAsync<PoiCacheEntry>();
+            await db.DeleteAllAsync<PoiCacheEntryV2>();
             await db.DeleteAllAsync<AudioScriptCacheEntry>();
         }
         catch (Exception ex)
@@ -214,11 +244,14 @@ public class LocalPOIDatabase
     }
 }
 
-[SQLite.Table("poi_cache")]
-public class PoiCacheEntry
+[SQLite.Table("poi_cache_v2")]
+public class PoiCacheEntryV2
 {
-    [PrimaryKey]
-    public int Id { get; set; } = 1;
+    [PrimaryKey, AutoIncrement]
+    public int Id { get; set; }
+
+    [Indexed(Name = "IX_PoiCache_Language", Unique = true)]
+    public string LanguageCode { get; set; } = "vi";
 
     public string JsonData { get; set; } = string.Empty;
 
