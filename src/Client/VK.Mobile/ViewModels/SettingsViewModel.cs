@@ -99,7 +99,7 @@ public partial class SettingsViewModel : ObservableObject
     /// <summary>Index trong LanguageDisplayNames để bind Picker.SelectedIndex</summary>
     public int SelectedLanguageDisplayIndex
     {
-        get => Array.IndexOf(LanguageCodes, LocalizationResourceManager.Instance.CurrentLanguage);
+        get => Array.IndexOf(LanguageCodes, SelectedLanguage);
         set
         {
             if (value >= 0 && value < LanguageCodes.Length)

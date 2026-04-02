@@ -13,6 +13,7 @@ public partial class MenuViewModel : ObservableObject
     private readonly LocalPOIDatabase _localDb;
     private readonly ILogger<MenuViewModel> _logger;
     private static LocalizationResourceManager L => LocalizationResourceManager.Instance;
+    private string _lastLoadedLanguage = "vi";
 
     private List<POIModel> _allPois = new();
 
@@ -29,6 +30,9 @@ public partial class MenuViewModel : ObservableObject
     private string? _errorMessage;
 
     partial void OnSearchTextChanged(string value) => FilterPOIs(value);
+
+    public bool NeedsLanguageReload =>
+        !string.Equals(_lastLoadedLanguage, LocalizationResourceManager.Instance.CurrentLanguage, StringComparison.OrdinalIgnoreCase);
 
     public MenuViewModel(IApiService apiService, LocalPOIDatabase localDb, ILogger<MenuViewModel> logger)
     {
@@ -67,6 +71,7 @@ public partial class MenuViewModel : ObservableObject
             }
 
             _allPois = poiList;
+            _lastLoadedLanguage = language;
             FilterPOIs(SearchText);
 
             if (_allPois.Count == 0)
