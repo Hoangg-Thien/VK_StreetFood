@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using VK.Core.Entities;
 using VK.Infrastructure.Data;
 using VK.Shared.Constants;
+using VK.Web.Services;
 
 namespace VK.Web.Controllers;
 
@@ -10,11 +11,16 @@ public class TourController : AdminBaseController
 {
     private readonly VKStreetFoodDbContext _context;
     private readonly ILogger<TourController> _logger;
+    private readonly ITextTranslationService _textTranslationService;
 
-    public TourController(VKStreetFoodDbContext context, ILogger<TourController> logger)
+    public TourController(
+        VKStreetFoodDbContext context,
+        ILogger<TourController> logger,
+        ITextTranslationService textTranslationService)
     {
         _context = context;
         _logger = logger;
+        _textTranslationService = textTranslationService;
     }
 
     public async Task<IActionResult> Index()
@@ -255,6 +261,8 @@ public class TourController : AdminBaseController
         string description,
         bool updateVietnamese)
     {
+        var translatedValues = await BuildTranslatedValuesAsync(name, description);
+
         var translations = await _context.TourTranslations
             .Where(t => t.TourId == tourId)
             .ToListAsync();
@@ -264,12 +272,23 @@ public class TourController : AdminBaseController
 
         foreach (var lang in LanguageConstants.SupportedLanguages)
         {
+            var translated = translatedValues.TryGetValue(lang, out var value)
+                ? value
+                : (Name: name, Description: description);
+
             if (byLang.TryGetValue(lang, out var existing))
             {
                 if (updateVietnamese && string.Equals(lang, LanguageConstants.Vietnamese, StringComparison.OrdinalIgnoreCase))
                 {
                     existing.Name = name;
                     existing.Description = description;
+                    continue;
+                }
+
+                if (!string.Equals(lang, LanguageConstants.Vietnamese, StringComparison.OrdinalIgnoreCase))
+                {
+                    existing.Name = translated.Name;
+                    existing.Description = translated.Description;
                 }
 
                 continue;
@@ -279,12 +298,54 @@ public class TourController : AdminBaseController
             {
                 TourId = tourId,
                 LanguageCode = lang,
-                Name = name,
-                Description = description
+                Name = translated.Name,
+                Description = translated.Description
             });
         }
 
         await _context.SaveChangesAsync();
+    }
+
+    private async Task<Dictionary<string, (string Name, string Description)>> BuildTranslatedValuesAsync(
+        string vietnameseName,
+        string vietnameseDescription)
+    {
+        var results = new Dictionary<string, (string Name, string Description)>(StringComparer.OrdinalIgnoreCase)
+        {
+            [LanguageConstants.Vietnamese] = (vietnameseName, vietnameseDescription)
+        };
+
+        var tasks = new[]
+        {
+            BuildLanguageTranslationAsync(LanguageConstants.English, vietnameseName, vietnameseDescription),
+            BuildLanguageTranslationAsync(LanguageConstants.Korean, vietnameseName, vietnameseDescription)
+        };
+
+        var translated = await Task.WhenAll(tasks);
+        foreach (var item in translated)
+        {
+            results[item.LanguageCode] = (item.Name, item.Description);
+        }
+
+        return results;
+    }
+
+    private async Task<(string LanguageCode, string Name, string Description)> BuildLanguageTranslationAsync(
+        string languageCode,
+        string vietnameseName,
+        string vietnameseDescription)
+    {
+        var translatedName = await _textTranslationService.TranslateAsync(
+            vietnameseName,
+            LanguageConstants.Vietnamese,
+            languageCode);
+
+        var translatedDescription = await _textTranslationService.TranslateAsync(
+            vietnameseDescription,
+            LanguageConstants.Vietnamese,
+            languageCode);
+
+        return (languageCode, translatedName, translatedDescription);
     }
 
     public sealed class TourUpsertInput

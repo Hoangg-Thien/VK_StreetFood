@@ -28,6 +28,11 @@ builder.Services.AddHttpClient("VKAPI", client =>
     client.Timeout = TimeSpan.FromSeconds(30);
 });
 
+builder.Services.AddHttpClient<ITextTranslationService, GoogleTextTranslationService>(client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(20);
+});
+
 var app = builder.Build();
 
 await SchemaBootstrapper.EnsureOwnerAuthSchemaAsync(app.Services, app.Logger);
