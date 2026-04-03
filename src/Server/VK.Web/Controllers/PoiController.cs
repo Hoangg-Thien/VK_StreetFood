@@ -14,15 +14,18 @@ public class PoiController : Controller
     private readonly VKStreetFoodDbContext _context;
     private readonly ILogger<PoiController> _logger;
     private readonly ITextTranslationService _textTranslationService;
+    private readonly IWebHostEnvironment _environment;
 
     public PoiController(
         VKStreetFoodDbContext context,
         ILogger<PoiController> logger,
-        ITextTranslationService textTranslationService)
+        ITextTranslationService textTranslationService,
+        IWebHostEnvironment environment)
     {
         _context = context;
         _logger = logger;
         _textTranslationService = textTranslationService;
+        _environment = environment;
     }
 
     public override void OnActionExecuting(ActionExecutingContext context)
@@ -303,13 +306,59 @@ public class PoiController : Controller
 
         try
         {
-            var poi = await _context.PointsOfInterest.FindAsync(id);
-            if (poi != null)
+            await _context.VisitLogs
+                .IgnoreQueryFilters()
+                .Where(v => v.PointOfInterestId == id)
+                .ExecuteDeleteAsync();
+
+            await _context.Analytics
+                .IgnoreQueryFilters()
+                .Where(a => a.PointOfInterestId == id)
+                .ExecuteDeleteAsync();
+
+            await _context.Ratings
+                .IgnoreQueryFilters()
+                .Where(r => r.PointOfInterestId == id)
+                .ExecuteDeleteAsync();
+
+            await _context.Favorites
+                .IgnoreQueryFilters()
+                .Where(f => f.PointOfInterestId == id)
+                .ExecuteDeleteAsync();
+
+            await _context.TourPointsOfInterest
+                .IgnoreQueryFilters()
+                .Where(tp => tp.PointOfInterestId == id)
+                .ExecuteDeleteAsync();
+
+            await _context.PoiContentChangeRequests
+                .IgnoreQueryFilters()
+                .Where(r => r.PointOfInterestId == id)
+                .ExecuteDeleteAsync();
+
+            await _context.AudioContents
+                .IgnoreQueryFilters()
+                .Where(a => a.PointOfInterestId == id)
+                .ExecuteDeleteAsync();
+
+            // Hard delete translations first, then POI itself.
+            await _context.PointOfInterestTranslations
+                .IgnoreQueryFilters()
+                .Where(t => t.PointOfInterestId == id)
+                .ExecuteDeleteAsync();
+
+            var deletedPoiCount = await _context.PointsOfInterest
+                .IgnoreQueryFilters()
+                .Where(p => p.Id == id)
+                .ExecuteDeleteAsync();
+
+            if (deletedPoiCount == 0)
             {
-                poi.IsDeleted = true;
-                await _context.SaveChangesAsync();
-                TempData["Success"] = "Xóa địa điểm thành công!";
+                TempData["Error"] = "Không tìm thấy địa điểm.";
+                return RedirectToAction(nameof(Index));
             }
+
+            TempData["Success"] = "Xóa địa điểm thành công!";
         }
         catch (Exception ex)
         {
@@ -352,21 +401,36 @@ public class PoiController : Controller
         if (file.Length > 5 * 1024 * 1024)
             return BadRequest(new { error = "File too large (max 5MB)" });
 
-        // Also copy to VK.API wwwroot so the mobile app can load it
-        var apiWwwroot = Path.Combine(Directory.GetCurrentDirectory(),
-            "..", "VK.API", "wwwroot", "images", "poi");
-        Directory.CreateDirectory(apiWwwroot);
+        try
+        {
+            // Use ContentRootPath to avoid wrong relative paths when app is launched from solution root.
+            var apiImageRoot = Path.GetFullPath(Path.Combine(
+                _environment.ContentRootPath,
+                "..", "VK.API", "wwwroot", "images", "poi"));
 
-        var safeName = Path.GetFileNameWithoutExtension(file.FileName)
-            .ToLowerInvariant()
-            .Replace(" ", "-");
-        var fileName = $"{safeName}{ext}";
-        var destPath = Path.Combine(apiWwwroot, fileName);
+            Directory.CreateDirectory(apiImageRoot);
 
-        await using (var stream = new FileStream(destPath, FileMode.Create))
-            await file.CopyToAsync(stream);
+            var safeName = Path.GetFileNameWithoutExtension(file.FileName)
+                .ToLowerInvariant()
+                .Replace(" ", "-");
+            if (string.IsNullOrWhiteSpace(safeName))
+            {
+                safeName = $"poi-{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}";
+            }
 
-        return Ok(new { url = $"/images/poi/{fileName}" });
+            var fileName = $"{safeName}{ext}";
+            var destPath = Path.Combine(apiImageRoot, fileName);
+
+            await using (var stream = new FileStream(destPath, FileMode.Create))
+                await file.CopyToAsync(stream);
+
+            return Ok(new { url = $"/images/poi/{fileName}" });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "POI image upload failed for file {FileName}", file.FileName);
+            return StatusCode(500, new { error = "Upload failed" });
+        }
     }
 
     private async Task EnsureDefaultTranslationsAsync(
