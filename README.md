@@ -229,9 +229,10 @@ VK_StreetFood/
 │
 ├── 🗄️ supabase/
 │   ├── migrations/                   # SQL migration files
-│   │   ├── 001_create_schema.sql
-│   │   ├── 002_create_rls.sql
-│   │   └── 003_seed_pois.sql
+│   │   └──delta_align_existing_db.sql
+│   ├── schema.sql
+│   ├── rls.sql
+│   ├── seed_pois.sql
 │   └── MIGRATION_INSTRUCTIONS.md
 │
 ├── 🧪 tests/
@@ -407,13 +408,13 @@ Mở **Supabase SQL Editor** và chạy lần lượt:
 
 ```sql
 -- Step 1: Create schema and tables
--- Copy nội dung file: supabase/migrations/001_create_schema.sql
+-- Copy nội dung file: supabase/migrations/schema.sql
 
 -- Step 2: Create Row Level Security policies
--- Copy nội dung file: supabase/migrations/002_create_rls.sql
+-- Copy nội dung file: supabase/migrations/rls.sql
 
 -- Step 3: Seed initial data
--- Copy nội dung file: supabase/migrations/003_seed_pois.sql
+-- Copy nội dung file: supabase/migrations/seed_pois.sql
 ```
 
 📖 **Chi tiết**: Xem `supabase/MIGRATION_INSTRUCTIONS.md`
@@ -788,7 +789,7 @@ tours ───────┘            ├── tour_pois
 poi_owners ──< owner_pois
 ```
 
-📖 **Full Schema**: Xem `supabase/migrations/001_create_schema.sql`
+📖 **Full Schema**: Xem `supabase/migrations/schema.sql`
 
 ---
 
@@ -1013,9 +1014,9 @@ Table 'pois' does not exist
 1. Kiểm tra connection string đúng
 2. Chạy lại migrations theo thứ tự:
    ```sql
-   -- 001_create_schema.sql → Tạo tables
-   -- 002_create_rls.sql → RLS policies
-   -- 003_seed_pois.sql → Seed data
+   -- schema.sql → Tạo tables
+   -- rls.sql → RLS policies
+   -- seed_pois.sql → Seed data
    ```
 3. Verify trong Supabase Table Editor
 
