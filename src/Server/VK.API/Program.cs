@@ -68,7 +68,11 @@ app.UseStaticFiles(new StaticFileOptions
 // Serve static files from wwwroot.
 app.UseStaticFiles();
 
-app.UseHttpsRedirection();
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
+
 app.MapControllers();
 
 // Seed database in background — don't block startup

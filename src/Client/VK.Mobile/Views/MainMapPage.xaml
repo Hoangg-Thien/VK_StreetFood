@@ -171,7 +171,7 @@
                    CornerRadius="12"
                    BackgroundColor="White"
                    HasShadow="True"
-                   MaximumHeightRequest="200"
+                   MaximumHeightRequest="150"
                    IsVisible="{Binding HasPOIs}">
                 <VerticalStackLayout>
                     <Label Text="{Binding Source={x:Static loc:LocalizationResourceManager.Instance}, Path=[POIListTitle]}"
@@ -361,7 +361,7 @@
                                 BackgroundColor="#FF5722"
                                 TextColor="White"
                                 CornerRadius="10"
-                                HeightRequest="44"
+                                HeightRequest="52"
                                 Clicked="OnPOIListenClicked"/>
                         <!-- Xem chi tiết + Chỉ đường -->
                         <Grid Grid.Row="1"
@@ -373,7 +373,7 @@
                                     BackgroundColor="#FFF3E0"
                                     TextColor="#FF5722"
                                     CornerRadius="10"
-                                    HeightRequest="40"
+                                    HeightRequest="48"
                                     Clicked="OnPOIDetailClicked"/>
                             <Button Grid.Column="1"
                                     Text="{Binding Source={x:Static loc:LocalizationResourceManager.Instance}, Path=[MainMapButtonDirections]}"
@@ -381,7 +381,7 @@
                                     BackgroundColor="#E3F2FD"
                                     TextColor="#1565C0"
                                     CornerRadius="10"
-                                    HeightRequest="40"
+                                    HeightRequest="48"
                                     Clicked="OnPOIDirectionsClicked"/>
                         </Grid>
                     </Grid>

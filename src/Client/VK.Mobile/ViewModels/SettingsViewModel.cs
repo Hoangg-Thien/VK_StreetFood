@@ -38,11 +38,9 @@ public partial class SettingsViewModel : ObservableObject
         {
             _selectedLanguage = LocalizationResourceManager.Instance.CurrentLanguage;
             OnPropertyChanged(nameof(SelectedLanguageDisplayIndex));
-            _ = RefreshOfflineStatusAsync();
             _ = LoadTtsVoicesAsync();
         };
 
-        _ = RefreshOfflineStatusAsync();
         _ = LoadTtsVoicesAsync();
     }
 
@@ -168,22 +166,26 @@ public partial class SettingsViewModel : ObservableObject
         try
         {
             IsDownloadingOfflinePackage = true;
-            OfflinePackageStatus = L["SettingsOfflineDownloading"];
 
             var result = await _offlineContentService.DownloadOfflinePackageAsync(
                 SelectedLanguage,
                 IncludeAudioFilesInOfflinePackage);
 
-            OfflinePackageStatus = result.Message;
             await Application.Current!.MainPage!.DisplayAlert(
                 result.Success ? L["SettingsOfflineTitle"] : L["Error"],
                 result.Message,
                 L["OK"]);
         }
+        catch (Exception ex)
+        {
+            await Application.Current!.MainPage!.DisplayAlert(
+                L["Error"],
+                ex.Message,
+                L["OK"]);
+        }
         finally
         {
             IsDownloadingOfflinePackage = false;
-            await RefreshOfflineStatusAsync();
         }
     }
 

@@ -419,6 +419,7 @@ public partial class MainMapPage : ContentPage
         {
             var screenPos = e.ScreenPosition;
             var worldPos = _mapControl.Map.Navigator.Viewport.ScreenToWorld(screenPos.X, screenPos.Y);
+            var worldTapTolerance = _mapControl.Map.Navigator.Viewport.Resolution * 12; // ~12px tap radius
 
             PointFeature? closest = null;
             double minDist = double.MaxValue;
@@ -430,7 +431,7 @@ public partial class MainMapPage : ContentPage
                     var dx = pf.Point.X - worldPos.X;
                     var dy = pf.Point.Y - worldPos.Y;
                     var dist = Math.Sqrt(dx * dx + dy * dy);
-                    if (dist < 300 && dist < minDist)
+                    if (dist < worldTapTolerance && dist < minDist)
                     {
                         minDist = dist;
                         closest = pf;
@@ -443,7 +444,10 @@ public partial class MainMapPage : ContentPage
                 var poi = _viewModel.Pois.FirstOrDefault(p => p.Id == closestId);
                 if (poi != null)
                     MainThread.BeginInvokeOnMainThread(() => ShowPOIBottomCard(poi));
+                return;
             }
+
+            MainThread.BeginInvokeOnMainThread(HidePOIBottomCard);
         }
         catch (Exception ex)
         {
