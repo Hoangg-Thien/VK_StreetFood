@@ -120,7 +120,10 @@ public class OwnerContentApprovalController : AdminBaseController
                 .FirstOrDefaultAsync(a => a.Id == request.AudioContentId.Value && a.PointOfInterestId == request.PointOfInterestId);
 
             if (toDelete != null)
-                toDelete.IsDeleted = true;
+            {
+                DeleteAudioFileIfExists(toDelete.AudioFileUrl);
+                _context.AudioContents.Remove(toDelete);
+            }
 
             return;
         }
@@ -140,14 +143,23 @@ public class OwnerContentApprovalController : AdminBaseController
 
         if (normalizedAction == "create" || !request.AudioContentId.HasValue)
         {
+            var normalizedLanguageCode = request.LanguageCode.Trim().ToLowerInvariant();
+
             var existingByLang = await _context.AudioContents
+                .IgnoreQueryFilters()
                 .FirstOrDefaultAsync(a =>
                     a.PointOfInterestId == request.PointOfInterestId &&
-                    a.LanguageCode == request.LanguageCode);
+                    a.LanguageCode == normalizedLanguageCode);
 
             if (existingByLang != null)
             {
+                existingByLang.LanguageCode = normalizedLanguageCode;
                 existingByLang.TextContent = request.TextContent;
+                existingByLang.IsDeleted = false;
+                existingByLang.DeletedAt = null;
+                existingByLang.IsGenerated = false;
+                existingByLang.AudioFileUrl = null;
+                existingByLang.DurationSeconds = null;
                 request.AudioContentId = existingByLang.Id;
                 return;
             }
@@ -155,7 +167,7 @@ public class OwnerContentApprovalController : AdminBaseController
             var audio = new AudioContent
             {
                 PointOfInterestId = request.PointOfInterestId,
-                LanguageCode = request.LanguageCode,
+                LanguageCode = normalizedLanguageCode,
                 TextContent = request.TextContent,
                 IsGenerated = false,
                 AudioFileUrl = null,
@@ -209,5 +221,33 @@ public class OwnerContentApprovalController : AdminBaseController
         public bool IsActive { get; set; }
         public int? CategoryId { get; set; }
         public string? ImageUrl { get; set; }
+    }
+
+    private void DeleteAudioFileIfExists(string? audioFileUrl)
+    {
+        if (string.IsNullOrWhiteSpace(audioFileUrl))
+            return;
+
+        try
+        {
+            var apiStorageRoot = Path.GetFullPath(Path.Combine(
+                Directory.GetCurrentDirectory(),
+                "..", "VK.API", "App_Data"));
+
+            var relativePath = audioFileUrl
+                .Replace('/', Path.DirectorySeparatorChar)
+                .TrimStart(Path.DirectorySeparatorChar);
+
+            var fullPath = Path.GetFullPath(Path.Combine(apiStorageRoot, relativePath));
+            if (!fullPath.StartsWith(apiStorageRoot, StringComparison.OrdinalIgnoreCase))
+                return;
+
+            if (System.IO.File.Exists(fullPath))
+                System.IO.File.Delete(fullPath);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Could not delete audio file {AudioFileUrl}", audioFileUrl);
+        }
     }
 }

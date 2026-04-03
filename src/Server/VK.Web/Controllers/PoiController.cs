@@ -5,6 +5,7 @@ using System.Text.Json;
 using VK.Infrastructure.Data;
 using VK.Core.Entities;
 using VK.Shared.Constants;
+using VK.Web.Services;
 
 namespace VK.Web.Controllers;
 
@@ -12,11 +13,16 @@ public class PoiController : Controller
 {
     private readonly VKStreetFoodDbContext _context;
     private readonly ILogger<PoiController> _logger;
+    private readonly ITextTranslationService _textTranslationService;
 
-    public PoiController(VKStreetFoodDbContext context, ILogger<PoiController> logger)
+    public PoiController(
+        VKStreetFoodDbContext context,
+        ILogger<PoiController> logger,
+        ITextTranslationService textTranslationService)
     {
         _context = context;
         _logger = logger;
+        _textTranslationService = textTranslationService;
     }
 
     public override void OnActionExecuting(ActionExecutingContext context)
@@ -143,6 +149,8 @@ public class PoiController : Controller
                 model.Description,
                 model.Address,
                 updateVietnamese: true);
+
+            await _context.SaveChangesAsync();
 
             TempData["Success"] = "Thêm địa điểm thành công!";
         }
@@ -368,6 +376,8 @@ public class PoiController : Controller
         string address,
         bool updateVietnamese)
     {
+        var translatedValues = await BuildTranslatedValuesAsync(description, address);
+
         var translations = await _context.PointOfInterestTranslations
             .Where(t => t.PointOfInterestId == poiId)
             .ToListAsync();
@@ -377,6 +387,10 @@ public class PoiController : Controller
 
         foreach (var lang in LanguageConstants.SupportedLanguages)
         {
+            var translated = translatedValues.TryGetValue(lang, out var value)
+                ? value
+                : (Description: description, Address: address);
+
             if (byLang.TryGetValue(lang, out var existingTranslation))
             {
                 if (updateVietnamese && string.Equals(lang, LanguageConstants.Vietnamese, StringComparison.OrdinalIgnoreCase))
@@ -394,9 +408,52 @@ public class PoiController : Controller
                 PointOfInterestId = poiId,
                 LanguageCode = lang,
                 Name = name,
-                Description = description,
-                Address = address
+                Description = translated.Description,
+                Address = translated.Address
             });
         }
+    }
+
+    private async Task<Dictionary<string, (string Description, string Address)>> BuildTranslatedValuesAsync(
+        string vietnameseDescription,
+        string vietnameseAddress)
+    {
+        var results = new Dictionary<string, (string Description, string Address)>(StringComparer.OrdinalIgnoreCase)
+        {
+            [LanguageConstants.Vietnamese] = (vietnameseDescription, vietnameseAddress)
+        };
+
+        var targetLanguages = LanguageConstants.SupportedLanguages
+            .Where(lang => !string.Equals(lang, LanguageConstants.Vietnamese, StringComparison.OrdinalIgnoreCase))
+            .ToList();
+
+        var tasks = targetLanguages
+            .Select(lang => BuildLanguageTranslationAsync(lang, vietnameseDescription, vietnameseAddress));
+
+        var translated = await Task.WhenAll(tasks);
+        foreach (var item in translated)
+        {
+            results[item.LanguageCode] = (item.Description, item.Address);
+        }
+
+        return results;
+    }
+
+    private async Task<(string LanguageCode, string Description, string Address)> BuildLanguageTranslationAsync(
+        string languageCode,
+        string vietnameseDescription,
+        string vietnameseAddress)
+    {
+        var translatedDescription = await _textTranslationService.TranslateAsync(
+            vietnameseDescription,
+            LanguageConstants.Vietnamese,
+            languageCode);
+
+        var translatedAddress = await _textTranslationService.TranslateAsync(
+            vietnameseAddress,
+            LanguageConstants.Vietnamese,
+            languageCode);
+
+        return (languageCode, translatedDescription, translatedAddress);
     }
 }

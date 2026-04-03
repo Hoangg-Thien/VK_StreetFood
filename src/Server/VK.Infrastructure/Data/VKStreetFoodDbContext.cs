@@ -99,6 +99,12 @@ public class VKStreetFoodDbContext : DbContext
             }
             else if (entry.State == EntityState.Deleted)
             {
+                if (entry.Entity is AudioContent)
+                {
+                    // AudioContent must be physically deleted so language rows and generated files stay in sync.
+                    continue;
+                }
+
                 entry.State = EntityState.Modified;
                 entry.Entity.IsDeleted = true;
                 entry.Entity.DeletedAt = DateTime.UtcNow;

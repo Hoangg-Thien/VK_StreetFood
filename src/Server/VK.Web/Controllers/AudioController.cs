@@ -108,6 +108,8 @@ public class AudioController : Controller
         var isOwner = string.Equals(HttpContext.Session.GetString("UserRole"), "poi_owner", StringComparison.OrdinalIgnoreCase);
         try
         {
+            model.LanguageCode = model.LanguageCode.Trim().ToLowerInvariant();
+
             if (isOwner)
             {
                 var ownerData = await GetOwnerContextAsync();
@@ -134,6 +136,26 @@ public class AudioController : Controller
 
                 await _context.SaveChangesAsync();
                 TempData["Success"] = "Đã gửi yêu cầu thêm audio. Chờ admin duyệt.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            var existingAny = await _context.AudioContents
+                .IgnoreQueryFilters()
+                .FirstOrDefaultAsync(a =>
+                    a.PointOfInterestId == model.PointOfInterestId &&
+                    a.LanguageCode == model.LanguageCode);
+
+            if (existingAny != null)
+            {
+                existingAny.TextContent = model.TextContent;
+                existingAny.IsDeleted = false;
+                existingAny.DeletedAt = null;
+                existingAny.IsGenerated = false;
+                existingAny.AudioFileUrl = null;
+                existingAny.DurationSeconds = null;
+
+                await _context.SaveChangesAsync();
+                TempData["Success"] = "Đã khôi phục audio cũ và cập nhật nội dung!";
                 return RedirectToAction(nameof(Index));
             }
 
@@ -243,7 +265,8 @@ public class AudioController : Controller
                     return RedirectToAction(nameof(Index));
                 }
 
-                audio.IsDeleted = true;
+                DeleteAudioFileIfExists(audio.AudioFileUrl);
+                _context.AudioContents.Remove(audio);
                 await _context.SaveChangesAsync();
                 TempData["Success"] = "Xóa audio thành công!";
             }
@@ -289,5 +312,33 @@ public class AudioController : Controller
             return null;
 
         return (userId.Value, vendorId.Value, poiId.Value);
+    }
+
+    private void DeleteAudioFileIfExists(string? audioFileUrl)
+    {
+        if (string.IsNullOrWhiteSpace(audioFileUrl))
+            return;
+
+        try
+        {
+            var apiWwwroot = Path.GetFullPath(Path.Combine(
+                Directory.GetCurrentDirectory(),
+                "..", "VK.API", "App_Data"));
+
+            var relativePath = audioFileUrl
+                .Replace('/', Path.DirectorySeparatorChar)
+                .TrimStart(Path.DirectorySeparatorChar);
+
+            var fullPath = Path.GetFullPath(Path.Combine(apiWwwroot, relativePath));
+            if (!fullPath.StartsWith(apiWwwroot, StringComparison.OrdinalIgnoreCase))
+                return;
+
+            if (System.IO.File.Exists(fullPath))
+                System.IO.File.Delete(fullPath);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Could not delete audio file {AudioFileUrl}", audioFileUrl);
+        }
     }
 }

@@ -139,6 +139,7 @@ public class TranslationController : Controller
                 var existing = await _context.AudioContents.FindAsync(existingId.Value);
                 if (existing != null)
                 {
+                    existing.LanguageCode = languageCode.Trim().ToLowerInvariant();
                     existing.TextContent = textContent;
                     await _context.SaveChangesAsync();
                     TempData["Success"] = $"Cập nhật bản dịch [{languageCode.ToUpper()}] thành công!";
@@ -146,10 +147,32 @@ public class TranslationController : Controller
                 }
             }
 
+            var normalizedLanguageCode = languageCode.Trim().ToLowerInvariant();
+            var existingAny = await _context.AudioContents
+                .IgnoreQueryFilters()
+                .FirstOrDefaultAsync(a =>
+                    a.PointOfInterestId == poiId &&
+                    a.LanguageCode == normalizedLanguageCode);
+
+            if (existingAny != null)
+            {
+                existingAny.TextContent = textContent;
+                existingAny.LanguageCode = normalizedLanguageCode;
+                existingAny.IsDeleted = false;
+                existingAny.DeletedAt = null;
+                existingAny.IsGenerated = false;
+                existingAny.AudioFileUrl = null;
+                existingAny.DurationSeconds = null;
+
+                await _context.SaveChangesAsync();
+                TempData["Success"] = $"Đã khôi phục bản dịch [{normalizedLanguageCode.ToUpper()}] thành công!";
+                return RedirectToAction(nameof(Index));
+            }
+
             var newAudio = new AudioContent
             {
                 PointOfInterestId = poiId,
-                LanguageCode = languageCode,
+                LanguageCode = normalizedLanguageCode,
                 TextContent = textContent
             };
             _context.AudioContents.Add(newAudio);
@@ -203,7 +226,8 @@ public class TranslationController : Controller
                     return RedirectToAction(nameof(Index));
                 }
 
-                audio.IsDeleted = true;
+                DeleteAudioFileIfExists(audio.AudioFileUrl);
+                _context.AudioContents.Remove(audio);
                 await _context.SaveChangesAsync();
                 TempData["Success"] = "Xóa bản dịch thành công!";
             }
@@ -249,5 +273,33 @@ public class TranslationController : Controller
             return null;
 
         return (userId.Value, vendorId.Value, poiId.Value);
+    }
+
+    private void DeleteAudioFileIfExists(string? audioFileUrl)
+    {
+        if (string.IsNullOrWhiteSpace(audioFileUrl))
+            return;
+
+        try
+        {
+            var apiStorageRoot = Path.GetFullPath(Path.Combine(
+                Directory.GetCurrentDirectory(),
+                "..", "VK.API", "App_Data"));
+
+            var relativePath = audioFileUrl
+                .Replace('/', Path.DirectorySeparatorChar)
+                .TrimStart(Path.DirectorySeparatorChar);
+
+            var fullPath = Path.GetFullPath(Path.Combine(apiStorageRoot, relativePath));
+            if (!fullPath.StartsWith(apiStorageRoot, StringComparison.OrdinalIgnoreCase))
+                return;
+
+            if (System.IO.File.Exists(fullPath))
+                System.IO.File.Delete(fullPath);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Could not delete audio file {AudioFileUrl}", audioFileUrl);
+        }
     }
 }
