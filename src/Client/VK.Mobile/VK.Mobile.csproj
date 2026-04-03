@@ -51,11 +51,11 @@
 		<!-- App Icon -->
 		<MauiIcon Include="Resources\Images\app.png" />
 
-		<!-- Splash Screen (keep original image ratio, avoid tight crop) -->
-		<MauiSplashScreen Include="Resources\Images\app.png" Color="#F27A4F" BaseSize="700, 1000" />
+		<!-- Splash Screen: use pre-cropped round logo for startup screen -->
+		<MauiSplashScreen Include="Resources\Images\splash_round.png" Color="#ed7c53" BaseSize="700,700" />
 
 		<!-- Images -->
-		<MauiImage Include="Resources\Images\*" Exclude="Resources\Images\app.png" />
+		<MauiImage Include="Resources\Images\*" Exclude="Resources\Images\app.png;Resources\Images\splash_round.png" />
 		<MauiImage Update="Resources\Images\dotnet_bot.png" Resize="True" BaseSize="300,185" />
 		
 		<!-- Custom Fonts -->
