@@ -119,17 +119,18 @@
                 </Border>
 
                 <Border BackgroundColor="#D9DE0000"
-                        StrokeShape="RoundRectangle 8"
+                        StrokeShape="RoundRectangle 10"
                         Stroke="Transparent"
-                        WidthRequest="36"
+                        WidthRequest="92"
                         HeightRequest="36"
                         Margin="0,8,0,0"
                         IsVisible="{Binding HasRunningTour}">
-                    <Button Text="✕"
-                            FontSize="16"
+                    <Button Text="Thoát"
+                            FontSize="12"
+                            FontAttributes="Bold"
                             TextColor="White"
                             BackgroundColor="Transparent"
-                            Padding="0"
+                            Padding="8,0"
                             Command="{Binding ExitActiveTourCommand}"/>
                 </Border>
             </VerticalStackLayout>
