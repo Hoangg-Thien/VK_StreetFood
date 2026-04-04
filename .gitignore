@@ -96,3 +96,5 @@ TestResults/
 **/*.trx
 **/*.coverage
 **/*.coveragexml
+
+**/Directory.Build.props

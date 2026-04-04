@@ -172,27 +172,27 @@ public class TourController : AdminBaseController
     {
         try
         {
-            var tour = await _context.Tours.FirstOrDefaultAsync(t => t.Id == id);
-            if (tour == null)
+            await _context.TourPointsOfInterest
+                .IgnoreQueryFilters()
+                .Where(tp => tp.TourId == id)
+                .ExecuteDeleteAsync();
+
+            await _context.TourTranslations
+                .IgnoreQueryFilters()
+                .Where(t => t.TourId == id)
+                .ExecuteDeleteAsync();
+
+            var deletedTourCount = await _context.Tours
+                .IgnoreQueryFilters()
+                .Where(t => t.Id == id)
+                .ExecuteDeleteAsync();
+
+            if (deletedTourCount == 0)
             {
                 TempData["Error"] = "Không tìm thấy tour.";
                 return RedirectToAction(nameof(Index));
             }
 
-            var tourPoints = await _context.TourPointsOfInterest
-                .Where(tp => tp.TourId == id)
-                .ToListAsync();
-
-            foreach (var point in tourPoints)
-            {
-                point.IsDeleted = true;
-                point.DeletedAt = DateTime.UtcNow;
-            }
-
-            tour.IsDeleted = true;
-            tour.DeletedAt = DateTime.UtcNow;
-
-            await _context.SaveChangesAsync();
             TempData["Success"] = "Xóa tour thành công!";
         }
         catch (Exception ex)
