@@ -11,7 +11,7 @@ namespace VK.Mobile.ViewModels;
 [QueryProperty(nameof(PoiImage), "poiImage")]
 [QueryProperty(nameof(AudioText), "audioText")]
 [QueryProperty(nameof(Language), "language")]
-public partial class NowPlayingViewModel : ObservableObject
+public partial class NowPlayingViewModel : ObservableObject, IQueryAttributable
 {
     public static event EventHandler? AutoCloseRequested;
     public static void RequestAutoClose() => AutoCloseRequested?.Invoke(null, EventArgs.Empty);
@@ -40,7 +40,7 @@ public partial class NowPlayingViewModel : ObservableObject
     [ObservableProperty] private bool _hasDistance;
     [ObservableProperty] private string _audioText = string.Empty;
     [ObservableProperty] private string _language = "vi";
-    [ObservableProperty] private bool _isPlaying = true;
+    [ObservableProperty] private bool _isPlaying = false;
     [ObservableProperty] private double _progressRatio = 0;
     [ObservableProperty] private string _elapsedText = "0:00";
     [ObservableProperty] private string _totalText = "0:00";
@@ -62,6 +62,8 @@ public partial class NowPlayingViewModel : ObservableObject
     private bool _hasTrackedAudioPlay;
     private bool _hasTrackedAudioComplete;
     private DateTime _playbackStartedAtUtc;
+    private bool _shouldAutoplayFromQuery;
+    private bool _hasAutoStartedFromQuery;
 
     public NowPlayingViewModel(
         ITTSService ttsService,
@@ -130,9 +132,90 @@ public partial class NowPlayingViewModel : ObservableObject
         _audioFileUrl = audioFileUrl;
         IsFallback = isFallback;
         _usingAudioService = false; // reset; set to true in StartPlayingAsync if URL available
+        IsPlaying = false;
         _hasTrackedAudioPlay = false;
         _hasTrackedAudioComplete = false;
         _playbackStartedAtUtc = DateTime.UtcNow;
+        _hasAutoStartedFromQuery = false;
+    }
+
+    public void ApplyQueryAttributes(IDictionary<string, object> query)
+    {
+        if (!query.TryGetValue("poiId", out var poiVal))
+            return;
+
+        var poiId = poiVal is int i
+            ? i
+            : int.TryParse(poiVal?.ToString(), out var parsed) ? parsed : 0;
+
+        if (poiId <= 0)
+            return;
+
+        var requestedLanguage = query.TryGetValue("language", out var langVal)
+            ? langVal?.ToString()
+            : null;
+
+        _shouldAutoplayFromQuery = query.TryGetValue("autoplay", out var autoVal)
+            && (autoVal?.ToString()?.Trim().ToLowerInvariant() is "1" or "true");
+
+        _ = LoadFromPoiQueryAsync(poiId, requestedLanguage);
+    }
+
+    private async Task LoadFromPoiQueryAsync(int poiId, string? requestedLanguage)
+    {
+        try
+        {
+            var lang = string.IsNullOrWhiteSpace(requestedLanguage)
+                ? (LocalizationResourceManager.Instance.CurrentLanguage ?? "vi")
+                : requestedLanguage!.Trim().ToLowerInvariant();
+
+            var poi = await _apiService.GetPOIDetailAsync(poiId, lang);
+            if (poi == null)
+            {
+                return;
+            }
+
+            var narration = await _offlineContentService.GetCachedNarrationTextAsync(poiId, lang);
+            string audioFileUrl = string.Empty;
+            bool isFallback = false;
+
+            var audioFromApi = await _apiService.GetAudioForPOIAsync(poiId, lang);
+            if (!string.IsNullOrWhiteSpace(audioFromApi?.TextContent))
+            {
+                narration = audioFromApi!.TextContent;
+                audioFileUrl = audioFromApi.AudioFileUrl ?? string.Empty;
+                isFallback = audioFromApi.IsFallback;
+            }
+
+            if (string.IsNullOrWhiteSpace(narration))
+            {
+                narration = string.IsNullOrWhiteSpace(poi.Description)
+                    ? poi.Name
+                    : $"{poi.Name}. {poi.Description}";
+            }
+
+            Initialize(
+                poi.Id,
+                poi.Name ?? string.Empty,
+                poi.CategoryName ?? string.Empty,
+                poi.ImageUrl ?? string.Empty,
+                narration,
+                lang,
+                poi.Address ?? string.Empty,
+                string.Empty,
+                audioFileUrl: audioFileUrl,
+                isFallback: isFallback);
+
+            if (_shouldAutoplayFromQuery && !_hasAutoStartedFromQuery && !string.IsNullOrWhiteSpace(AudioText))
+            {
+                _hasAutoStartedFromQuery = true;
+                await StartPlayingAsync();
+            }
+        }
+        catch
+        {
+            // Keep screen alive even if remote load fails; caller can retry by reopening QR.
+        }
     }
 
     private static string FormatWalk(double? km) => km switch
