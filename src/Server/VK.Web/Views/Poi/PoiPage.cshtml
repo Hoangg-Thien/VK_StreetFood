@@ -98,6 +98,7 @@ List<VK.Core.Entities.PointOfInterest>();
                         var qrTargetUrl = $"vkstreetfood://poi/{poi.Id}?autoplay=1";
                         var qrImageUrl = "https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=" +
                 Uri.EscapeDataString(qrTargetUrl);
+                        var qrFileName = $"poi-{poi.Id}-qr.png";
                         <tr>
                             <td>
                                 <div class="item-info">
@@ -142,6 +143,13 @@ List<VK.Core.Entities.PointOfInterest>();
                                 <div style="display:flex;flex-direction:column;align-items:center;gap:6px;">
                                     <img src="@qrImageUrl" alt="QR @poi.Name" title="Quét để mở app vào POI này"
                                          style="width:68px;height:68px;padding:4px;border-radius:8px;border:1px solid var(--border);background:#fff;object-fit:contain;" />
+                                    <a href="@qrImageUrl"
+                                       download="@qrFileName"
+                                       target="_blank"
+                                       rel="noopener noreferrer"
+                                       style="font-size:11px;color:var(--accent-orange);text-decoration:none;font-weight:600;">
+                                        <i class="fa-solid fa-download"></i> Tải QR
+                                    </a>
                                     <span style="font-size:11px;color:var(--text-muted);">POI #@poi.Id</span>
                                 </div>
                             </td>
