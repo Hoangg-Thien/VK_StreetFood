@@ -33,9 +33,11 @@ public class PointOfInterest : BaseEntity
     // Navigation properties
     public virtual Category? Category { get; set; }
     public virtual ICollection<AudioContent> AudioContents { get; set; } = new List<AudioContent>();
+    public virtual ICollection<PointOfInterestTranslation> Translations { get; set; } = new List<PointOfInterestTranslation>();
     public virtual ICollection<Vendor> Vendors { get; set; } = new List<Vendor>();
     public virtual ICollection<Tag> Tags { get; set; } = new List<Tag>();
     public virtual ICollection<Analytics> Analytics { get; set; } = new List<Analytics>();
     public virtual ICollection<Rating> Ratings { get; set; } = new List<Rating>();
     public virtual ICollection<Favorite> Favorites { get; set; } = new List<Favorite>();
+    public virtual ICollection<TourPointOfInterest> TourPoints { get; set; } = new List<TourPointOfInterest>();
 }

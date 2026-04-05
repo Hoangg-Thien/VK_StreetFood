@@ -89,7 +89,7 @@ public class OfflineContentService : IOfflineContentService
         try
         {
             var lang = NormalizeLanguage(languageCode);
-            var pois = await _apiService.GetAllPOIsAsync();
+            var pois = await _apiService.GetAllPOIsAsync(languageCode: lang);
 
             if (pois.Count == 0)
             {
@@ -101,7 +101,7 @@ public class OfflineContentService : IOfflineContentService
                     0);
             }
 
-            await _localDb.SavePOIsAsync(pois);
+            await _localDb.SavePOIsAsync(pois, lang);
 
             var scriptCount = 0;
             var audioFileCount = 0;

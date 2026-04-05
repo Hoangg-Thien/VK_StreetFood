@@ -11,6 +11,7 @@ public class VKStreetFoodDbContext : DbContext
     }
 
     public DbSet<PointOfInterest> PointsOfInterest { get; set; }
+    public DbSet<PointOfInterestTranslation> PointOfInterestTranslations { get; set; }
     public DbSet<AudioContent> AudioContents { get; set; }
     public DbSet<Vendor> Vendors { get; set; }
     public DbSet<Product> Products { get; set; }
@@ -25,6 +26,9 @@ public class VKStreetFoodDbContext : DbContext
     public DbSet<PoiContentChangeRequest> PoiContentChangeRequests { get; set; }
     public DbSet<Favorite> Favorites { get; set; }
     public DbSet<OpeningHours> OpeningHours { get; set; }
+    public DbSet<Tour> Tours { get; set; }
+    public DbSet<TourTranslation> TourTranslations { get; set; }
+    public DbSet<TourPointOfInterest> TourPointsOfInterest { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -35,6 +39,7 @@ public class VKStreetFoodDbContext : DbContext
 
         // Global query filters for soft delete
         modelBuilder.Entity<PointOfInterest>().HasQueryFilter(p => !p.IsDeleted);
+        modelBuilder.Entity<PointOfInterestTranslation>().HasQueryFilter(t => !t.IsDeleted);
         modelBuilder.Entity<AudioContent>().HasQueryFilter(a => !a.IsDeleted);
         modelBuilder.Entity<Vendor>().HasQueryFilter(v => !v.IsDeleted);
         modelBuilder.Entity<Product>().HasQueryFilter(p => !p.IsDeleted);
@@ -49,6 +54,9 @@ public class VKStreetFoodDbContext : DbContext
         modelBuilder.Entity<PoiContentChangeRequest>().HasQueryFilter(r => !r.IsDeleted);
         modelBuilder.Entity<Favorite>().HasQueryFilter(f => !f.IsDeleted);
         modelBuilder.Entity<OpeningHours>().HasQueryFilter(o => !o.IsDeleted);
+        modelBuilder.Entity<Tour>().HasQueryFilter(t => !t.IsDeleted);
+        modelBuilder.Entity<TourTranslation>().HasQueryFilter(t => !t.IsDeleted);
+        modelBuilder.Entity<TourPointOfInterest>().HasQueryFilter(tp => !tp.IsDeleted);
 
         modelBuilder.Entity<PoiOwnerRegistration>()
             .HasOne(r => r.User)
@@ -91,6 +99,12 @@ public class VKStreetFoodDbContext : DbContext
             }
             else if (entry.State == EntityState.Deleted)
             {
+                if (entry.Entity is AudioContent)
+                {
+                    // AudioContent must be physically deleted so language rows and generated files stay in sync.
+                    continue;
+                }
+
                 entry.State = EntityState.Modified;
                 entry.Entity.IsDeleted = true;
                 entry.Entity.DeletedAt = DateTime.UtcNow;

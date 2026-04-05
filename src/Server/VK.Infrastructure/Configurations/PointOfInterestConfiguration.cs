@@ -38,6 +38,11 @@ public class PointOfInterestConfiguration : IEntityTypeConfiguration<PointOfInte
             .HasForeignKey(a => a.PointOfInterestId)
             .OnDelete(DeleteBehavior.Cascade);
 
+        builder.HasMany(p => p.Translations)
+            .WithOne(t => t.PointOfInterest)
+            .HasForeignKey(t => t.PointOfInterestId)
+            .OnDelete(DeleteBehavior.Cascade);
+
         builder.HasMany(p => p.Vendors)
             .WithOne(v => v.PointOfInterest)
             .HasForeignKey(v => v.PointOfInterestId)

@@ -4,6 +4,8 @@ using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
 using VK.Infrastructure.Data;
 using VK.Core.Entities;
+using VK.Shared.Constants;
+using VK.Web.Services;
 
 namespace VK.Web.Controllers;
 
@@ -11,11 +13,19 @@ public class PoiController : Controller
 {
     private readonly VKStreetFoodDbContext _context;
     private readonly ILogger<PoiController> _logger;
+    private readonly ITextTranslationService _textTranslationService;
+    private readonly IWebHostEnvironment _environment;
 
-    public PoiController(VKStreetFoodDbContext context, ILogger<PoiController> logger)
+    public PoiController(
+        VKStreetFoodDbContext context,
+        ILogger<PoiController> logger,
+        ITextTranslationService textTranslationService,
+        IWebHostEnvironment environment)
     {
         _context = context;
         _logger = logger;
+        _textTranslationService = textTranslationService;
+        _environment = environment;
     }
 
     public override void OnActionExecuting(ActionExecutingContext context)
@@ -135,6 +145,16 @@ public class PoiController : Controller
 
             _context.PointsOfInterest.Add(model);
             await _context.SaveChangesAsync();
+
+            await EnsureDefaultTranslationsAsync(
+                model.Id,
+                model.Name,
+                model.Description,
+                model.Address,
+                updateVietnamese: true);
+
+            await _context.SaveChangesAsync();
+
             TempData["Success"] = "Thêm địa điểm thành công!";
         }
         catch (Exception ex)
@@ -244,6 +264,13 @@ public class PoiController : Controller
             existing.CategoryId = model.CategoryId;
             existing.ImageUrl = model.ImageUrl;
 
+            await EnsureDefaultTranslationsAsync(
+                existing.Id,
+                model.Name,
+                model.Description,
+                model.Address,
+                updateVietnamese: true);
+
             await _context.SaveChangesAsync();
             TempData["Success"] = "Cập nhật địa điểm thành công!";
         }
@@ -279,13 +306,59 @@ public class PoiController : Controller
 
         try
         {
-            var poi = await _context.PointsOfInterest.FindAsync(id);
-            if (poi != null)
+            await _context.VisitLogs
+                .IgnoreQueryFilters()
+                .Where(v => v.PointOfInterestId == id)
+                .ExecuteDeleteAsync();
+
+            await _context.Analytics
+                .IgnoreQueryFilters()
+                .Where(a => a.PointOfInterestId == id)
+                .ExecuteDeleteAsync();
+
+            await _context.Ratings
+                .IgnoreQueryFilters()
+                .Where(r => r.PointOfInterestId == id)
+                .ExecuteDeleteAsync();
+
+            await _context.Favorites
+                .IgnoreQueryFilters()
+                .Where(f => f.PointOfInterestId == id)
+                .ExecuteDeleteAsync();
+
+            await _context.TourPointsOfInterest
+                .IgnoreQueryFilters()
+                .Where(tp => tp.PointOfInterestId == id)
+                .ExecuteDeleteAsync();
+
+            await _context.PoiContentChangeRequests
+                .IgnoreQueryFilters()
+                .Where(r => r.PointOfInterestId == id)
+                .ExecuteDeleteAsync();
+
+            await _context.AudioContents
+                .IgnoreQueryFilters()
+                .Where(a => a.PointOfInterestId == id)
+                .ExecuteDeleteAsync();
+
+            // Hard delete translations first, then POI itself.
+            await _context.PointOfInterestTranslations
+                .IgnoreQueryFilters()
+                .Where(t => t.PointOfInterestId == id)
+                .ExecuteDeleteAsync();
+
+            var deletedPoiCount = await _context.PointsOfInterest
+                .IgnoreQueryFilters()
+                .Where(p => p.Id == id)
+                .ExecuteDeleteAsync();
+
+            if (deletedPoiCount == 0)
             {
-                poi.IsDeleted = true;
-                await _context.SaveChangesAsync();
-                TempData["Success"] = "Xóa địa điểm thành công!";
+                TempData["Error"] = "Không tìm thấy địa điểm.";
+                return RedirectToAction(nameof(Index));
             }
+
+            TempData["Success"] = "Xóa địa điểm thành công!";
         }
         catch (Exception ex)
         {
@@ -328,20 +401,123 @@ public class PoiController : Controller
         if (file.Length > 5 * 1024 * 1024)
             return BadRequest(new { error = "File too large (max 5MB)" });
 
-        // Also copy to VK.API wwwroot so the mobile app can load it
-        var apiWwwroot = Path.Combine(Directory.GetCurrentDirectory(),
-            "..", "VK.API", "wwwroot", "images", "poi");
-        Directory.CreateDirectory(apiWwwroot);
+        try
+        {
+            // Use ContentRootPath to avoid wrong relative paths when app is launched from solution root.
+            var apiImageRoot = Path.GetFullPath(Path.Combine(
+                _environment.ContentRootPath,
+                "..", "VK.API", "wwwroot", "images", "poi"));
 
-        var safeName = Path.GetFileNameWithoutExtension(file.FileName)
-            .ToLowerInvariant()
-            .Replace(" ", "-");
-        var fileName = $"{safeName}{ext}";
-        var destPath = Path.Combine(apiWwwroot, fileName);
+            Directory.CreateDirectory(apiImageRoot);
 
-        await using (var stream = new FileStream(destPath, FileMode.Create))
-            await file.CopyToAsync(stream);
+            var safeName = Path.GetFileNameWithoutExtension(file.FileName)
+                .ToLowerInvariant()
+                .Replace(" ", "-");
+            if (string.IsNullOrWhiteSpace(safeName))
+            {
+                safeName = $"poi-{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}";
+            }
 
-        return Ok(new { url = $"/images/poi/{fileName}" });
+            var fileName = $"{safeName}{ext}";
+            var destPath = Path.Combine(apiImageRoot, fileName);
+
+            await using (var stream = new FileStream(destPath, FileMode.Create))
+                await file.CopyToAsync(stream);
+
+            return Ok(new { url = $"/images/poi/{fileName}" });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "POI image upload failed for file {FileName}", file.FileName);
+            return StatusCode(500, new { error = "Upload failed" });
+        }
+    }
+
+    private async Task EnsureDefaultTranslationsAsync(
+        int poiId,
+        string name,
+        string description,
+        string address,
+        bool updateVietnamese)
+    {
+        var translatedValues = await BuildTranslatedValuesAsync(description, address);
+
+        var translations = await _context.PointOfInterestTranslations
+            .Where(t => t.PointOfInterestId == poiId)
+            .ToListAsync();
+
+        var byLang = translations
+            .ToDictionary(t => t.LanguageCode, StringComparer.OrdinalIgnoreCase);
+
+        foreach (var lang in LanguageConstants.SupportedLanguages)
+        {
+            var translated = translatedValues.TryGetValue(lang, out var value)
+                ? value
+                : (Description: description, Address: address);
+
+            if (byLang.TryGetValue(lang, out var existingTranslation))
+            {
+                if (updateVietnamese && string.Equals(lang, LanguageConstants.Vietnamese, StringComparison.OrdinalIgnoreCase))
+                {
+                    existingTranslation.Name = name;
+                    existingTranslation.Description = description;
+                    existingTranslation.Address = address;
+                }
+
+                continue;
+            }
+
+            _context.PointOfInterestTranslations.Add(new PointOfInterestTranslation
+            {
+                PointOfInterestId = poiId,
+                LanguageCode = lang,
+                Name = name,
+                Description = translated.Description,
+                Address = translated.Address
+            });
+        }
+    }
+
+    private async Task<Dictionary<string, (string Description, string Address)>> BuildTranslatedValuesAsync(
+        string vietnameseDescription,
+        string vietnameseAddress)
+    {
+        var results = new Dictionary<string, (string Description, string Address)>(StringComparer.OrdinalIgnoreCase)
+        {
+            [LanguageConstants.Vietnamese] = (vietnameseDescription, vietnameseAddress)
+        };
+
+        var targetLanguages = LanguageConstants.SupportedLanguages
+            .Where(lang => !string.Equals(lang, LanguageConstants.Vietnamese, StringComparison.OrdinalIgnoreCase))
+            .ToList();
+
+        var tasks = targetLanguages
+            .Select(lang => BuildLanguageTranslationAsync(lang, vietnameseDescription, vietnameseAddress));
+
+        var translated = await Task.WhenAll(tasks);
+        foreach (var item in translated)
+        {
+            results[item.LanguageCode] = (item.Description, item.Address);
+        }
+
+        return results;
+    }
+
+    private async Task<(string LanguageCode, string Description, string Address)> BuildLanguageTranslationAsync(
+        string languageCode,
+        string vietnameseDescription,
+        string vietnameseAddress)
+    {
+        var translatedDescription = await _textTranslationService.TranslateAsync(
+            vietnameseDescription,
+            LanguageConstants.Vietnamese,
+            languageCode);
+
+        var translatedAddress = await _textTranslationService.TranslateAsync(
+            vietnameseAddress,
+            LanguageConstants.Vietnamese,
+            languageCode);
+
+        return (languageCode, translatedDescription, translatedAddress);
     }
 }

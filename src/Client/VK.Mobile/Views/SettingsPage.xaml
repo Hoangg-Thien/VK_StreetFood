@@ -32,7 +32,7 @@
                                                 Command="{Binding SaveLanguageCommand}"
                                                 BackgroundColor="{StaticResource Primary}"
                                                 TextColor="White"
-                                                HeightRequest="44"
+                                                HeightRequest="60"
                                                 CornerRadius="8"/>
                                 </VerticalStackLayout>
                         </Frame>
@@ -98,7 +98,7 @@
                                                         Command="{Binding SaveSelectedTtsVoiceCommand}"
                                                         BackgroundColor="{StaticResource Primary}"
                                                         TextColor="White"
-                                                        HeightRequest="44"
+                                                        HeightRequest="60"
                                                         CornerRadius="8"
                                                         IsEnabled="{Binding HasAvailableTtsVoices}"/>
 
@@ -107,7 +107,7 @@
                                                         Command="{Binding RefreshTtsVoicesCommand}"
                                                         BackgroundColor="{StaticResource PageBackground}"
                                                         TextColor="{StaticResource TextPrimary}"
-                                                        HeightRequest="44"
+                                                        HeightRequest="60"
                                                         CornerRadius="8"/>
                                         </Grid>
 
@@ -167,7 +167,7 @@
                                                 Command="{Binding SaveLocationSettingsCommand}"
                                                 BackgroundColor="{StaticResource Primary}"
                                                 TextColor="White"
-                                                HeightRequest="44"
+                                                HeightRequest="60"
                                                 CornerRadius="8"/>
                                 </VerticalStackLayout>
                         </Frame>
@@ -184,33 +184,18 @@
                                                FontAttributes="Bold"
                                                TextColor="{StaticResource TextPrimary}"/>
 
-                                        <Label Text="{Binding OfflinePackageStatus}"
-                                               FontSize="13"
-                                               TextColor="{StaticResource TextSecondary}"/>
-
                                         <Button Text="{Binding Source={x:Static loc:LocalizationResourceManager.Instance}, Path=[SettingsDownloadOfflinePackage]}"
                                                 Command="{Binding DownloadOfflinePackageCommand}"
                                                 BackgroundColor="{StaticResource Primary}"
                                                 TextColor="White"
-                                                HeightRequest="44"
-                                                CornerRadius="8"/>
-
-                                        <ActivityIndicator IsRunning="{Binding IsDownloadingOfflinePackage}"
-                                                           IsVisible="{Binding IsDownloadingOfflinePackage}"
-                                                           Color="{StaticResource Primary}"/>
-
-                                        <Button Text="{Binding Source={x:Static loc:LocalizationResourceManager.Instance}, Path=[SettingsRefreshOfflineStatus]}"
-                                                Command="{Binding RefreshOfflineStatusCommand}"
-                                                BackgroundColor="{StaticResource PageBackground}"
-                                                TextColor="{StaticResource TextPrimary}"
-                                                HeightRequest="44"
+                                                HeightRequest="60"
                                                 CornerRadius="8"/>
 
                                         <Button Text="{Binding Source={x:Static loc:LocalizationResourceManager.Instance}, Path=[SettingsClearCache]}"
                                                 Command="{Binding ClearCacheCommand}"
                                                 BackgroundColor="{StaticResource Warning}"
                                                 TextColor="White"
-                                                HeightRequest="44"
+                                                HeightRequest="60"
                                                 CornerRadius="8"/>
                                 </VerticalStackLayout>
                         </Frame>
@@ -230,7 +215,7 @@
                                                 Command="{Binding LogoutCommand}"
                                                 BackgroundColor="{StaticResource Error}"
                                                 TextColor="White"
-                                                HeightRequest="44"
+                                                HeightRequest="60"
                                                 CornerRadius="8"/>
                                 </VerticalStackLayout>
                         </Frame>

@@ -16,6 +16,9 @@ public static class DatabaseSeeder
 
         if (context.PointsOfInterest.Any())
         {
+            await EnsurePoiTranslationsAsync(context);
+            await EnsureBaselineToursAsync(context);
+            await EnsureTourTranslationsAsync(context);
             await EnsureBaselineVendorsAsync(context);
             await EnsureBaselineOwnerUsersAsync(context);
             return; // Database has been seeded
@@ -230,6 +233,7 @@ public static class DatabaseSeeder
 
         context.PointsOfInterest.AddRange(pois);
         await context.SaveChangesAsync();
+        await EnsurePoiTranslationsAsync(context);
 
         // Link tags to POIs (after IDs are generated)
         pois[4].Tags.Add(tags[0]); // Ốc Oanh - Michelin
@@ -414,6 +418,8 @@ public static class DatabaseSeeder
         }
         await context.SaveChangesAsync();
 
+        await EnsureBaselineToursAsync(context);
+        await EnsureTourTranslationsAsync(context);
         await EnsureBaselineVendorsAsync(context);
         await EnsureBaselineOwnerUsersAsync(context);
     }
@@ -433,6 +439,135 @@ public static class DatabaseSeeder
 
         if (poisToFix.Count > 0)
             await context.SaveChangesAsync();
+    }
+
+    /// <summary>
+    /// Backfill default translation rows for existing POIs.
+    /// Vietnamese row is canonical source; missing en/ko rows are created from vi/base text.
+    /// </summary>
+    private static async Task EnsurePoiTranslationsAsync(VKStreetFoodDbContext context)
+    {
+        var existingTranslations = await context.PointOfInterestTranslations
+            .Where(t => !t.IsDeleted)
+            .ToListAsync();
+
+        var pois = await context.PointsOfInterest
+            .Where(p => !p.IsDeleted)
+            .ToListAsync();
+
+        foreach (var poi in pois)
+        {
+            var poiTranslations = existingTranslations
+                .Where(t => t.PointOfInterestId == poi.Id)
+                .ToList();
+
+            var viTranslation = poiTranslations.FirstOrDefault(t =>
+                string.Equals(t.LanguageCode, LanguageConstants.Vietnamese, StringComparison.OrdinalIgnoreCase));
+
+            if (viTranslation == null)
+            {
+                viTranslation = new PointOfInterestTranslation
+                {
+                    PointOfInterestId = poi.Id,
+                    LanguageCode = LanguageConstants.Vietnamese,
+                    Name = poi.Name,
+                    Description = poi.Description,
+                    Address = poi.Address
+                };
+
+                context.PointOfInterestTranslations.Add(viTranslation);
+                poiTranslations.Add(viTranslation);
+                existingTranslations.Add(viTranslation);
+            }
+
+            foreach (var lang in LanguageConstants.SupportedLanguages)
+            {
+                if (poiTranslations.Any(t => string.Equals(t.LanguageCode, lang, StringComparison.OrdinalIgnoreCase)))
+                    continue;
+
+                var defaultName = !string.IsNullOrWhiteSpace(viTranslation.Name) ? viTranslation.Name : poi.Name;
+                var defaultDescription = !string.IsNullOrWhiteSpace(viTranslation.Description) ? viTranslation.Description : poi.Description;
+                var defaultAddress = !string.IsNullOrWhiteSpace(viTranslation.Address) ? viTranslation.Address : poi.Address;
+
+                var newTranslation = new PointOfInterestTranslation
+                {
+                    PointOfInterestId = poi.Id,
+                    LanguageCode = lang,
+                    Name = defaultName,
+                    Description = defaultDescription,
+                    Address = defaultAddress
+                };
+
+                context.PointOfInterestTranslations.Add(newTranslation);
+                poiTranslations.Add(newTranslation);
+                existingTranslations.Add(newTranslation);
+            }
+        }
+
+        await context.SaveChangesAsync();
+    }
+
+    /// <summary>
+    /// Backfill default translation rows for existing tours.
+    /// Vietnamese row is canonical source; missing en/ko rows are created from vi/base text.
+    /// </summary>
+    private static async Task EnsureTourTranslationsAsync(VKStreetFoodDbContext context)
+    {
+        var existingTranslations = await context.TourTranslations
+            .Where(t => !t.IsDeleted)
+            .ToListAsync();
+
+        var tours = await context.Tours
+            .Where(t => !t.IsDeleted)
+            .ToListAsync();
+
+        foreach (var tour in tours)
+        {
+            var tourTranslations = existingTranslations
+                .Where(t => t.TourId == tour.Id)
+                .ToList();
+
+            var viTranslation = tourTranslations.FirstOrDefault(t =>
+                string.Equals(t.LanguageCode, LanguageConstants.Vietnamese, StringComparison.OrdinalIgnoreCase));
+
+            if (viTranslation == null)
+            {
+                viTranslation = new TourTranslation
+                {
+                    TourId = tour.Id,
+                    LanguageCode = LanguageConstants.Vietnamese,
+                    Name = tour.Name,
+                    Description = tour.Description
+                };
+
+                context.TourTranslations.Add(viTranslation);
+                tourTranslations.Add(viTranslation);
+                existingTranslations.Add(viTranslation);
+            }
+
+            foreach (var lang in LanguageConstants.SupportedLanguages)
+            {
+                if (tourTranslations.Any(t => string.Equals(t.LanguageCode, lang, StringComparison.OrdinalIgnoreCase)))
+                    continue;
+
+                var defaultName = !string.IsNullOrWhiteSpace(viTranslation.Name) ? viTranslation.Name : tour.Name;
+                var defaultDescription = !string.IsNullOrWhiteSpace(viTranslation.Description) ? viTranslation.Description : tour.Description;
+
+                var newTranslation = new TourTranslation
+                {
+                    TourId = tour.Id,
+                    LanguageCode = lang,
+                    Name = defaultName,
+                    Description = defaultDescription
+                };
+
+                context.TourTranslations.Add(newTranslation);
+                tourTranslations.Add(newTranslation);
+                existingTranslations.Add(newTranslation);
+            }
+        }
+
+        await context.SaveChangesAsync();
     }
 
     /// <summary>
@@ -574,6 +709,131 @@ public static class DatabaseSeeder
         }
 
         await context.SaveChangesAsync();
+    }
+
+    /// <summary>
+    /// Ensure baseline tours always exist for admin tour management page.
+    /// Idempotent by tour name (case-insensitive), does not duplicate records.
+    /// </summary>
+    private static async Task EnsureBaselineToursAsync(VKStreetFoodDbContext context)
+    {
+        var pois = await context.PointsOfInterest
+            .Where(p => !p.IsDeleted && p.IsActive)
+            .ToListAsync();
+
+        if (pois.Count == 0)
+            return;
+
+        var poiByName = pois
+            .GroupBy(p => p.Name.Trim(), StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(g => g.Key, g => g.First(), StringComparer.OrdinalIgnoreCase);
+
+        var baselineTours = new[]
+        {
+            new
+            {
+                Name = "Tour ẩm thực buổi sáng",
+                Description = "Khám phá các món ăn sáng đặc trưng tại khu Vĩnh Khánh.",
+                Emoji = "🌅",
+                EstimatedDurationMinutes = 120,
+                Status = "active",
+                PoiNames = new[]
+                {
+                    "Cổng chào Phố Ẩm thực Vĩnh Khánh",
+                    "Bún Cá Châu Đốc Dì Tư",
+                    "Ốc Vũ",
+                    "Ốc Thảo"
+                }
+            },
+            new
+            {
+                Name = "Tour đường phố ban đêm",
+                Description = "Trải nghiệm ẩm thực phố đêm sôi động và đặc sắc.",
+                Emoji = "🌙",
+                EstimatedDurationMinutes = 180,
+                Status = "active",
+                PoiNames = new[]
+                {
+                    "Cổng chào Phố Ẩm thực Vĩnh Khánh",
+                    "Ốc Oanh",
+                    "A Fat Hot Pot",
+                    "Alo Quán – Seafood & Beer",
+                    "Lãng Quán",
+                    "Ớt Xiêm Quán"
+                }
+            },
+            new
+            {
+                Name = "Tour hải sản tươi sống",
+                Description = "Thưởng thức hải sản tươi ngon tại các quán nổi bật.",
+                Emoji = "🦞",
+                EstimatedDurationMinutes = 90,
+                Status = "draft",
+                PoiNames = new[]
+                {
+                    "Ốc Vũ",
+                    "Ốc Oanh",
+                    "Ốc Đào 2",
+                    "Alo Quán – Seafood & Beer"
+                }
+            },
+            new
+            {
+                Name = "Tour lẩu & nướng",
+                Description = "Hành trình cho tín đồ lẩu và nướng tại Vĩnh Khánh.",
+                Emoji = "🍲",
+                EstimatedDurationMinutes = 150,
+                Status = "draft",
+                PoiNames = new[]
+                {
+                    "A Fat Hot Pot",
+                    "Chilli Lẩu Nướng Tự Chọn",
+                    "Lãng Quán",
+                    "Ớt Xiêm Quán"
+                }
+            }
+        };
+
+        var existingTours = await context.Tours
+            .Select(t => new { t.Id, t.Name })
+            .ToListAsync();
+
+        foreach (var template in baselineTours)
+        {
+            var existed = existingTours.Any(t =>
+                string.Equals(t.Name?.Trim(), template.Name, StringComparison.OrdinalIgnoreCase));
+
+            if (existed)
+                continue;
+
+            var tour = new Tour
+            {
+                Name = template.Name,
+                Description = template.Description,
+                Emoji = template.Emoji,
+                EstimatedDurationMinutes = template.EstimatedDurationMinutes,
+                Status = template.Status
+            };
+
+            context.Tours.Add(tour);
+            await context.SaveChangesAsync();
+
+            var sortOrder = 1;
+            foreach (var poiName in template.PoiNames)
+            {
+                if (!poiByName.TryGetValue(poiName, out var poi))
+                    continue;
+
+                context.TourPointsOfInterest.Add(new TourPointOfInterest
+                {
+                    TourId = tour.Id,
+                    PointOfInterestId = poi.Id,
+                    SortOrder = sortOrder++
+                });
+            }
+
+            await context.SaveChangesAsync();
+        }
     }
 
     private static string HashPassword(string plainText)

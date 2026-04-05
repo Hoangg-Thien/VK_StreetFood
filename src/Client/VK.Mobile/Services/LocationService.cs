@@ -158,7 +158,8 @@ public class LocationService : ILocationService
                             var nearbyPOIs = await _apiService.GetNearbyPOIsAsync(
                                 location.Latitude,
                                 location.Longitude,
-                                radiusMeters / 1000.0);
+                                radiusMeters / 1000.0,
+                                LocalizationResourceManager.Instance.CurrentLanguage);
 
                             LocationChanged?.Invoke(this, new LocationChangedEventArgs
                             {

@@ -43,7 +43,8 @@ public partial class FavoritesViewModel : ObservableObject
                 return;
             }
 
-            var favorites = await _apiService.GetFavoritesAsync(touristId.Value);
+            var language = await _storageService.GetPreferredLanguageAsync() ?? "vi";
+            var favorites = await _apiService.GetFavoritesAsync(touristId.Value, language);
             Favorites = new ObservableCollection<POIModel>(favorites);
             IsEmpty = !Favorites.Any();
         }

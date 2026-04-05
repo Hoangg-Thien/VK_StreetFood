@@ -22,4 +22,8 @@
     <ProjectReference Include="..\..\Shared\VK.Contracts\VK.Contracts.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Content Remove="wwwroot\audio\**" />
+  </ItemGroup>
+
 </Project>

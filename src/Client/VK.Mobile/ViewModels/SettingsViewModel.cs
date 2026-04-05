@@ -38,11 +38,9 @@ public partial class SettingsViewModel : ObservableObject
         {
             _selectedLanguage = LocalizationResourceManager.Instance.CurrentLanguage;
             OnPropertyChanged(nameof(SelectedLanguageDisplayIndex));
-            _ = RefreshOfflineStatusAsync();
             _ = LoadTtsVoicesAsync();
         };
 
-        _ = RefreshOfflineStatusAsync();
         _ = LoadTtsVoicesAsync();
     }
 
@@ -99,7 +97,7 @@ public partial class SettingsViewModel : ObservableObject
     /// <summary>Index trong LanguageDisplayNames để bind Picker.SelectedIndex</summary>
     public int SelectedLanguageDisplayIndex
     {
-        get => Array.IndexOf(LanguageCodes, LocalizationResourceManager.Instance.CurrentLanguage);
+        get => Array.IndexOf(LanguageCodes, SelectedLanguage);
         set
         {
             if (value >= 0 && value < LanguageCodes.Length)
@@ -120,8 +118,9 @@ public partial class SettingsViewModel : ObservableObject
     }
 
     [RelayCommand]
-    void SaveLanguage()
+    async Task SaveLanguage()
     {
+        await _storageService.SetPreferredLanguageAsync(SelectedLanguage);
         // Gọi LocalizationResourceManager để đổi ngôn ngữ toàn app
         LocalizationResourceManager.Instance.SetLanguage(SelectedLanguage);
     }
@@ -167,22 +166,26 @@ public partial class SettingsViewModel : ObservableObject
         try
         {
             IsDownloadingOfflinePackage = true;
-            OfflinePackageStatus = L["SettingsOfflineDownloading"];
 
             var result = await _offlineContentService.DownloadOfflinePackageAsync(
                 SelectedLanguage,
                 IncludeAudioFilesInOfflinePackage);
 
-            OfflinePackageStatus = result.Message;
             await Application.Current!.MainPage!.DisplayAlert(
                 result.Success ? L["SettingsOfflineTitle"] : L["Error"],
                 result.Message,
                 L["OK"]);
         }
+        catch (Exception ex)
+        {
+            await Application.Current!.MainPage!.DisplayAlert(
+                L["Error"],
+                ex.Message,
+                L["OK"]);
+        }
         finally
         {
             IsDownloadingOfflinePackage = false;
-            await RefreshOfflineStatusAsync();
         }
     }
 
@@ -194,12 +197,6 @@ public partial class SettingsViewModel : ObservableObject
             var status = await _offlineContentService.GetStatusAsync();
             var last = status.LastSyncUtc?.ToLocalTime().ToString("dd/MM HH:mm") ?? L["SettingsOfflineNeverSynced"];
 
-            OfflinePackageStatus = string.Format(
-                CultureInfo.CurrentCulture,
-                L["SettingsOfflineStatusSummaryFormat"],
-                status.PoiCount,
-                status.ScriptCount,
-                last);
         }
         catch
         {

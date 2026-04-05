@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Security;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using VK.Infrastructure.Data;
 
 namespace VK.API.Services;
@@ -34,17 +35,20 @@ file static class EdgeVoices
 public class TtsGenerationService : ITtsGenerationService
 {
     private readonly VKStreetFoodDbContext _db;
-    private readonly IWebHostEnvironment _env;
+    private readonly string _audioRootPath;
     private readonly ILogger<TtsGenerationService> _logger;
 
     public TtsGenerationService(
         VKStreetFoodDbContext db,
-        IWebHostEnvironment env,
+        IOptions<AudioStorageOptions> audioStorageOptions,
         ILogger<TtsGenerationService> logger)
     {
-        _db     = db;
-        _env    = env;
+        _db = db;
+        _audioRootPath = audioStorageOptions.Value.RootPath;
         _logger = logger;
+
+        if (string.IsNullOrWhiteSpace(_audioRootPath))
+            throw new InvalidOperationException("Audio storage root path is not configured.");
     }
 
     // ─── Public API ───────────────────────────────────────────────────────────
@@ -109,7 +113,7 @@ public class TtsGenerationService : ITtsGenerationService
             // Đường dẫn output
             var relativePath = $"/audio/{audio.LanguageCode}/poi_{audio.PointOfInterestId}.mp3";
             var fullPath = Path.Combine(
-                _env.WebRootPath, "audio", audio.LanguageCode,
+                _audioRootPath, audio.LanguageCode,
                 $"poi_{audio.PointOfInterestId}.mp3");
 
             Directory.CreateDirectory(Path.GetDirectoryName(fullPath)!);
@@ -125,8 +129,8 @@ public class TtsGenerationService : ITtsGenerationService
             var durationSec = (int)Math.Ceiling(fileInfo.Length / 6000.0);
 
             // Cập nhật DB
-            audio.AudioFileUrl    = relativePath;
-            audio.IsGenerated     = true;
+            audio.AudioFileUrl = relativePath;
+            audio.IsGenerated = true;
             audio.DurationSeconds = durationSec;
             await _db.SaveChangesAsync(ct);
 
@@ -161,12 +165,12 @@ public class TtsGenerationService : ITtsGenerationService
 
         var psi = new ProcessStartInfo
         {
-            FileName               = "python",
-            Arguments              = $"-m edge_tts --voice \"{voice}\" --text \"{safeText}\" --write-media \"{outputPath}\"",
+            FileName = "python",
+            Arguments = $"-m edge_tts --voice \"{voice}\" --text \"{safeText}\" --write-media \"{outputPath}\"",
             RedirectStandardOutput = true,
-            RedirectStandardError  = true,
-            UseShellExecute        = false,
-            CreateNoWindow         = true,
+            RedirectStandardError = true,
+            UseShellExecute = false,
+            CreateNoWindow = true,
         };
 
         using var process = new Process { StartInfo = psi };

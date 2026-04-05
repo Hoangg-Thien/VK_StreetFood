@@ -117,6 +117,22 @@
                             Padding="0"
                             Clicked="OnClearRouteClicked"/>
                 </Border>
+
+                <Border BackgroundColor="#D9DE0000"
+                        StrokeShape="RoundRectangle 10"
+                        Stroke="Transparent"
+                        WidthRequest="92"
+                        HeightRequest="36"
+                        Margin="0,8,0,0"
+                        IsVisible="{Binding HasRunningTour}">
+                    <Button Text="Thoát"
+                            FontSize="12"
+                            FontAttributes="Bold"
+                            TextColor="White"
+                            BackgroundColor="Transparent"
+                            Padding="8,0"
+                            Command="{Binding ExitActiveTourCommand}"/>
+                </Border>
             </VerticalStackLayout>
 
             <!-- API Error Banner (top of map) -->
@@ -156,7 +172,7 @@
                    CornerRadius="12"
                    BackgroundColor="White"
                    HasShadow="True"
-                   MaximumHeightRequest="200"
+                   MaximumHeightRequest="150"
                    IsVisible="{Binding HasPOIs}">
                 <VerticalStackLayout>
                     <Label Text="{Binding Source={x:Static loc:LocalizationResourceManager.Instance}, Path=[POIListTitle]}"
@@ -340,13 +356,13 @@
                           RowSpacing="8">
                         <!-- Nghe thuyết minh: nút chính toàn chiều rộng -->
                         <Button Grid.Row="0"
-                            Text="{Binding Source={x:Static loc:LocalizationResourceManager.Instance}, Path=[MainMapButtonListen]}"
+                                Text="{Binding Source={x:Static loc:LocalizationResourceManager.Instance}, Path=[MainMapButtonListen]}"
                                 FontSize="14"
                                 FontAttributes="Bold"
                                 BackgroundColor="#FF5722"
                                 TextColor="White"
                                 CornerRadius="10"
-                                HeightRequest="44"
+                                HeightRequest="52"
                                 Clicked="OnPOIListenClicked"/>
                         <!-- Xem chi tiết + Chỉ đường -->
                         <Grid Grid.Row="1"
@@ -358,7 +374,7 @@
                                     BackgroundColor="#FFF3E0"
                                     TextColor="#FF5722"
                                     CornerRadius="10"
-                                    HeightRequest="40"
+                                    HeightRequest="48"
                                     Clicked="OnPOIDetailClicked"/>
                             <Button Grid.Column="1"
                                     Text="{Binding Source={x:Static loc:LocalizationResourceManager.Instance}, Path=[MainMapButtonDirections]}"
@@ -366,7 +382,7 @@
                                     BackgroundColor="#E3F2FD"
                                     TextColor="#1565C0"
                                     CornerRadius="10"
-                                    HeightRequest="40"
+                                    HeightRequest="48"
                                     Clicked="OnPOIDirectionsClicked"/>
                         </Grid>
                     </Grid>

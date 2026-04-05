@@ -13,6 +13,7 @@ public partial class MenuViewModel : ObservableObject
     private readonly LocalPOIDatabase _localDb;
     private readonly ILogger<MenuViewModel> _logger;
     private static LocalizationResourceManager L => LocalizationResourceManager.Instance;
+    private string _lastLoadedLanguage = "vi";
 
     private List<POIModel> _allPois = new();
 
@@ -30,6 +31,9 @@ public partial class MenuViewModel : ObservableObject
 
     partial void OnSearchTextChanged(string value) => FilterPOIs(value);
 
+    public bool NeedsLanguageReload =>
+        !string.Equals(_lastLoadedLanguage, LocalizationResourceManager.Instance.CurrentLanguage, StringComparison.OrdinalIgnoreCase);
+
     public MenuViewModel(IApiService apiService, LocalPOIDatabase localDb, ILogger<MenuViewModel> logger)
     {
         _apiService = apiService;
@@ -46,26 +50,28 @@ public partial class MenuViewModel : ObservableObject
             ErrorMessage = null;
 
             List<POIModel> poiList;
+            var language = LocalizationResourceManager.Instance.CurrentLanguage;
             if (Connectivity.NetworkAccess != NetworkAccess.Internet)
             {
-                poiList = await _localDb.GetCachedPOIsAsync();
+                poiList = await _localDb.GetCachedPOIsAsync(language);
                 _logger.LogInformation("Offline mode: loaded {Count} POIs from SQLite cache", poiList.Count);
             }
             else
             {
-                poiList = await _apiService.GetAllPOIsAsync();
+                poiList = await _apiService.GetAllPOIsAsync(languageCode: language);
                 if (poiList.Count > 0)
                 {
-                    await _localDb.SavePOIsAsync(poiList);
+                    await _localDb.SavePOIsAsync(poiList, language);
                 }
                 else
                 {
                     _logger.LogWarning("API returned empty POI list for menu, trying SQLite cache fallback");
-                    poiList = await _localDb.GetCachedPOIsAsync();
+                    poiList = await _localDb.GetCachedPOIsAsync(language);
                 }
             }
 
             _allPois = poiList;
+            _lastLoadedLanguage = language;
             FilterPOIs(SearchText);
 
             if (_allPois.Count == 0)
@@ -77,7 +83,7 @@ public partial class MenuViewModel : ObservableObject
 
             try
             {
-                _allPois = await _localDb.GetCachedPOIsAsync();
+                _allPois = await _localDb.GetCachedPOIsAsync(LocalizationResourceManager.Instance.CurrentLanguage);
                 FilterPOIs(SearchText);
                 ErrorMessage = _allPois.Count > 0
                     ? null
