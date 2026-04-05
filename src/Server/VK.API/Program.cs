@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.FileProviders;
 using VK.Infrastructure.Data;
 using VK.API.Extensions;
 using VK.API.Services;
@@ -15,8 +16,16 @@ builder.Services.AddDbContext<VKStreetFoodDbContext>(options =>
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 
+builder.Services.Configure<AudioStorageOptions>(options =>
+{
+    options.RootPath = Path.Combine(builder.Environment.ContentRootPath, "App_Data", "audio");
+});
+
 // TTS generation service (Edge TTS — Microsoft Edge Read Aloud, miễn phí, không cần API key)
 builder.Services.AddScoped<ITtsGenerationService, TtsGenerationService>();
+
+// AudioTaskManager: singleton — deduplicates concurrent on-demand TTS requests
+builder.Services.AddSingleton<IAudioTaskManager, AudioTaskManager>();
 
 // Add Swagger
 builder.Services.AddSwaggerGen(c =>
@@ -31,6 +40,13 @@ builder.Services.AddSwaggerGen(c =>
 
 var app = builder.Build();
 
+var audioRootPath = app.Services
+    .GetRequiredService<Microsoft.Extensions.Options.IOptions<AudioStorageOptions>>()
+    .Value.RootPath;
+Directory.CreateDirectory(audioRootPath);
+
+await app.EnsureOwnerAuthSchemaAsync();
+
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
@@ -42,10 +58,21 @@ if (app.Environment.IsDevelopment())
     });
 }
 
-// Serve static files (audio files)
+// Serve runtime-generated audio files from a writable folder outside wwwroot.
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new PhysicalFileProvider(audioRootPath),
+    RequestPath = "/audio"
+});
+
+// Serve static files from wwwroot.
 app.UseStaticFiles();
 
-app.UseHttpsRedirection();
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
+
 app.MapControllers();
 
 // Seed database in background — don't block startup

@@ -17,8 +17,11 @@ public abstract class AdminBaseController : Controller
         Response.Headers["Pragma"] = "no-cache";
         Response.Headers["Expires"] = "0";
 
-        // Redirect to login if not authenticated
-        if (HttpContext.Session.GetString("AdminLoggedIn") != "true")
+        // Redirect to login if not authenticated as admin
+        var isLoggedIn = HttpContext.Session.GetString("UserLoggedIn") == "true";
+        var role = HttpContext.Session.GetString("UserRole");
+
+        if (!isLoggedIn || !string.Equals(role, "admin", StringComparison.OrdinalIgnoreCase))
         {
             context.Result = new RedirectToActionResult("Index", "Home", null);
             return;

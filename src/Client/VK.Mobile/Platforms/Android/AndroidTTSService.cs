@@ -12,6 +12,7 @@ using AndroidUtteranceProgressListener = Android.Speech.Tts.UtteranceProgressLis
 using LanguageAvailableResult = Android.Speech.Tts.LanguageAvailableResult;
 using OperationResult = Android.Speech.Tts.OperationResult;
 using QueueMode = Android.Speech.Tts.QueueMode;
+using AndroidVoice = Android.Speech.Tts.Voice;
 
 namespace VK.Mobile.Platforms.Android;
 
@@ -22,6 +23,7 @@ namespace VK.Mobile.Platforms.Android;
 /// </summary>
 public class AndroidTTSService : Java.Lang.Object, AndroidTTS.IOnInitListener, ITTSService
 {
+    private const string VoicePreferenceKeyPrefix = "TTSVoice";
     private AndroidTTS? _tts;
     private readonly TaskCompletionSource<bool> _readyTcs =
         new(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -128,6 +130,14 @@ public class AndroidTTSService : Java.Lang.Object, AndroidTTS.IOnInitListener, I
                 _tts.SetLanguage(Java.Util.Locale.Default);
             }
 
+            var preferredVoiceId = GetPreferredVoiceId(languageCode);
+            if (!string.IsNullOrWhiteSpace(preferredVoiceId))
+            {
+                var preferredVoiceApplied = TryApplyVoice(preferredVoiceId);
+                if (!preferredVoiceApplied)
+                    _logger.LogDebug("[TTS] Preferred voice not available: {VoiceId}", preferredVoiceId);
+            }
+
             _tts.SetSpeechRate(1.0f);
             _tts.SetPitch(1.0f);
 
@@ -139,6 +149,89 @@ public class AndroidTTSService : Java.Lang.Object, AndroidTTS.IOnInitListener, I
             var result = _tts.Speak(text, QueueMode.Flush, bundle, "vk_utterance");
             _logger.LogDebug("[TTS] Speak() => {Result}", result);
         });
+    }
+
+    public async Task<IReadOnlyList<TtsVoiceOption>> GetAvailableVoicesAsync(string languageCode, CancellationToken ct = default)
+    {
+        bool ready;
+        try
+        {
+            ready = await _readyTcs.Task.WaitAsync(TimeSpan.FromSeconds(8), ct);
+        }
+        catch
+        {
+            return Array.Empty<TtsVoiceOption>();
+        }
+
+        if (!ready || _tts == null)
+            return Array.Empty<TtsVoiceOption>();
+
+        try
+        {
+            return await MainThread.InvokeOnMainThreadAsync(() =>
+            {
+                if (_tts?.Voices == null)
+                    return (IReadOnlyList<TtsVoiceOption>)Array.Empty<TtsVoiceOption>();
+
+                var normalizedLang = NormalizeLanguage(languageCode);
+                var voices = _tts.Voices
+                    .Where(v => v != null)
+                    .Where(v => IsVoiceMatchingLanguage(v!, normalizedLang))
+                    .Select(v => new TtsVoiceOption(v!.Name, BuildVoiceDisplayName(v)))
+                    .GroupBy(v => v.Id)
+                    .Select(g => g.First())
+                    .OrderBy(v => v.DisplayName)
+                    .ToList();
+
+                return (IReadOnlyList<TtsVoiceOption>)voices;
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogDebug(ex, "[TTS] GetAvailableVoicesAsync failed");
+            return Array.Empty<TtsVoiceOption>();
+        }
+    }
+
+    public async Task<bool> SetPreferredVoiceAsync(string voiceId, string languageCode, CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(voiceId))
+            return false;
+
+        bool ready;
+        try
+        {
+            ready = await _readyTcs.Task.WaitAsync(TimeSpan.FromSeconds(8), ct);
+        }
+        catch
+        {
+            return false;
+        }
+
+        if (!ready || _tts == null)
+            return false;
+
+        try
+        {
+            var applied = await MainThread.InvokeOnMainThreadAsync(() => TryApplyVoice(voiceId));
+            if (!applied)
+                return false;
+
+            Preferences.Set(GetVoicePreferenceKey(languageCode), voiceId);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogDebug(ex, "[TTS] SetPreferredVoiceAsync failed");
+            return false;
+        }
+    }
+
+    public string? GetPreferredVoiceId(string languageCode)
+    {
+        var key = GetVoicePreferenceKey(languageCode);
+        var value = Preferences.Get(key, string.Empty);
+        return string.IsNullOrWhiteSpace(value) ? null : value;
     }
 
     public async Task SpeakPOIAsync(POIModel poi, string languageCode, CancellationToken ct = default)
@@ -238,6 +331,54 @@ public class AndroidTTSService : Java.Lang.Object, AndroidTTS.IOnInitListener, I
             });
         }
     }
+
+    private bool TryApplyVoice(string voiceId)
+    {
+        if (_tts?.Voices == null)
+            return false;
+
+        var targetVoice = _tts.Voices
+            .FirstOrDefault(v => v != null && string.Equals(v.Name, voiceId, StringComparison.Ordinal));
+
+        if (targetVoice == null)
+            return false;
+
+        var result = _tts.SetVoice(targetVoice);
+        return result == OperationResult.Success;
+    }
+
+    private static bool IsVoiceMatchingLanguage(AndroidVoice voice, string normalizedLang)
+    {
+        var locale = voice.Locale;
+        if (locale == null)
+            return false;
+
+        var voiceLanguage = (locale.Language ?? string.Empty).ToLowerInvariant();
+        if (string.IsNullOrWhiteSpace(voiceLanguage))
+            return false;
+
+        return voiceLanguage == normalizedLang;
+    }
+
+    private static string BuildVoiceDisplayName(AndroidVoice voice)
+    {
+        var locale = voice.Locale;
+        var localeText = locale == null
+            ? string.Empty
+            : $" ({locale.DisplayLanguage}-{locale.Country})";
+
+        return string.IsNullOrWhiteSpace(localeText)
+            ? voice.Name
+            : $"{voice.Name}{localeText}";
+    }
+
+    private static string NormalizeLanguage(string languageCode)
+        => string.IsNullOrWhiteSpace(languageCode)
+            ? "vi"
+            : languageCode.Trim().ToLowerInvariant();
+
+    private static string GetVoicePreferenceKey(string languageCode)
+        => $"{VoicePreferenceKeyPrefix}.{NormalizeLanguage(languageCode)}";
 
     private sealed class AudioFocusListener(Action<AndroidAudioFocus> onFocusChanged)
         : Java.Lang.Object, AndroidAudioManager.IOnAudioFocusChangeListener

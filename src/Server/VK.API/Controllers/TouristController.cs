@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using VK.Infrastructure.Data;
 using VK.Core.Entities;
+using VK.Shared.Constants;
 using VK.Shared.DTOs;
 
 namespace VK.API.Controllers;
@@ -108,6 +109,10 @@ public class TouristController : ControllerBase
     [HttpPost("{touristId}/visits")]
     public async Task<ActionResult> LogVisit(int touristId, [FromBody] LogVisitRequest request)
     {
+        var poiId = request.EffectivePoiId;
+        if (poiId <= 0)
+            return BadRequest(new { message = "Thiếu poiId hợp lệ" });
+
         var tourist = await _context.Tourists
             .FirstOrDefaultAsync(t => t.Id == touristId && !t.IsDeleted);
 
@@ -117,28 +122,34 @@ public class TouristController : ControllerBase
         }
 
         var poi = await _context.PointsOfInterest
-            .FirstOrDefaultAsync(p => p.Id == request.PoiId && !p.IsDeleted);
+            .FirstOrDefaultAsync(p => p.Id == poiId && !p.IsDeleted);
 
         if (poi == null)
         {
             return NotFound(new { message = "POI không tồn tại" });
         }
 
-        // Check if already visited today
-        var today = DateTime.UtcNow.Date;
+        // Dedupe only within a short cooldown window to keep heatmap/routes meaningful.
+        var nowUtc = DateTime.UtcNow;
+        var dedupeSinceUtc = nowUtc.AddMinutes(-5);
         var existingVisit = await _context.VisitLogs
             .FirstOrDefaultAsync(v =>
                 v.TouristId == touristId &&
-                v.PointOfInterestId == request.PoiId &&
-                v.VisitedAt.Date == today);
+                v.PointOfInterestId == poiId &&
+            v.VisitedAt >= dedupeSinceUtc);
 
         if (existingVisit == null)
         {
             var visitLog = new VisitLog
             {
                 TouristId = touristId,
-                PointOfInterestId = request.PoiId,
-                VisitedAt = DateTime.UtcNow
+                PointOfInterestId = poiId,
+                VisitedAt = nowUtc,
+                VisitorLatitude = request.Latitude ?? tourist.LastLatitude ?? 0,
+                VisitorLongitude = request.Longitude ?? tourist.LastLongitude ?? 0,
+                LanguageUsed = string.IsNullOrWhiteSpace(request.LanguageCode)
+                    ? (tourist.PreferredLanguage ?? "vi")
+                    : request.LanguageCode
             };
 
             _context.VisitLogs.Add(visitLog);
@@ -146,7 +157,11 @@ public class TouristController : ControllerBase
 
             await _context.SaveChangesAsync();
 
-            _logger.LogInformation("Tourist {TouristId} visited POI {PoiId}", touristId, request.PoiId);
+            _logger.LogInformation(
+                "Tourist {TouristId} visited POI {PoiId} via {TriggerMethod}",
+                touristId,
+                poiId,
+                request.TriggerMethod ?? "unknown");
         }
 
         return Ok(new { success = true, message = "Visit logged successfully" });
@@ -255,29 +270,44 @@ public class TouristController : ControllerBase
     /// Get tourist favorites
     /// </summary>
     [HttpGet("{touristId}/favorites")]
-    public async Task<ActionResult<List<POIListItemDto>>> GetFavorites(int touristId)
+    public async Task<ActionResult<List<POIListItemDto>>> GetFavorites(
+        int touristId,
+        [FromQuery] string languageCode = LanguageConstants.Vietnamese)
     {
-        var favorites = await _context.Set<Favorite>()
+        var normalizedLanguageCode = NormalizeLanguageCode(languageCode);
+
+        var favoriteEntities = await _context.Set<Favorite>()
             .Where(f => f.TouristId == touristId)
             .Include(f => f.PointOfInterest)
                 .ThenInclude(p => p.Category)
             .Include(f => f.PointOfInterest)
                 .ThenInclude(p => p.Tags)
-            .Select(f => new POIListItemDto
-            {
-                PoiId = f.PointOfInterest.Id,
-                Name = f.PointOfInterest.Name,
-                Description = f.PointOfInterest.Description,
-                Latitude = f.PointOfInterest.Latitude,
-                Longitude = f.PointOfInterest.Longitude,
-                Address = f.PointOfInterest.Address,
-                ImageUrl = f.PointOfInterest.ImageUrl,
-                AverageRating = f.PointOfInterest.AverageRating,
-                TotalRatings = f.PointOfInterest.TotalRatings,
-                Category = f.PointOfInterest.Category!.Name,
-                Tags = f.PointOfInterest.Tags.Select(t => t.Name).ToList()
-            })
+            .Include(f => f.PointOfInterest)
+                .ThenInclude(p => p.Translations)
             .ToListAsync();
+
+        var favorites = favoriteEntities
+            .Select(f =>
+            {
+                var dto = new POIListItemDto
+                {
+                    PoiId = f.PointOfInterest.Id,
+                    Name = f.PointOfInterest.Name,
+                    Description = f.PointOfInterest.Description,
+                    Latitude = f.PointOfInterest.Latitude,
+                    Longitude = f.PointOfInterest.Longitude,
+                    Address = f.PointOfInterest.Address,
+                    ImageUrl = f.PointOfInterest.ImageUrl,
+                    AverageRating = f.PointOfInterest.AverageRating,
+                    TotalRatings = f.PointOfInterest.TotalRatings,
+                    Category = f.PointOfInterest.Category?.Name ?? string.Empty,
+                    Tags = f.PointOfInterest.Tags.Select(t => t.Name).ToList()
+                };
+
+                ApplyLocalizedFields(dto, f.PointOfInterest, normalizedLanguageCode);
+                return dto;
+            })
+            .ToList();
 
         // Prepend base URL to relative image paths
         foreach (var fav in favorites)
@@ -351,6 +381,65 @@ public class TouristController : ControllerBase
         return Ok(new { success = true, message = "Cảm ơn đánh giá của bạn!" });
     }
 
+    /// <summary>
+    /// Thống kê hoạt động của tourist: số lượt thăm, audio play, ngôn ngữ yêu thích…
+    /// </summary>
+    [HttpGet("{touristId}/stats")]
+    public async Task<ActionResult> GetStats(int touristId)
+    {
+        var tourist = await _context.Tourists
+            .FirstOrDefaultAsync(t => t.Id == touristId && !t.IsDeleted);
+
+        if (tourist == null)
+            return NotFound(new { message = "Tourist không tồn tại" });
+
+        // Lấy tất cả analytics events của tourist này
+        var events = await _context.Analytics
+            .Where(a => a.TouristId == touristId)
+            .ToListAsync();
+
+        // Audio minutes: tổng DurationSeconds của audio_complete events
+        var totalAudioSeconds = events
+            .Where(a => a.EventType == "audio_complete" && a.DurationSeconds > 0)
+            .Sum(a => a.DurationSeconds ?? 0);
+
+        // POI được thăm nhiều nhất
+        var mostVisitedPoiId = await _context.VisitLogs
+            .Where(v => v.TouristId == touristId)
+            .GroupBy(v => v.PointOfInterestId)
+            .OrderByDescending(g => g.Count())
+            .Select(g => (int?)g.Key)
+            .FirstOrDefaultAsync();
+
+        string? mostVisitedPoiName = null;
+        if (mostVisitedPoiId.HasValue)
+        {
+            mostVisitedPoiName = await _context.PointsOfInterest
+                .Where(p => p.Id == mostVisitedPoiId.Value)
+                .Select(p => p.Name)
+                .FirstOrDefaultAsync();
+        }
+
+        // Ngôn ngữ yêu thích (xuất hiện nhiều nhất trong analytics)
+        var favoriteLanguage = events
+            .Where(a => !string.IsNullOrEmpty(a.LanguageCode))
+            .GroupBy(a => a.LanguageCode)
+            .OrderByDescending(g => g.Count())
+            .Select(g => g.Key)
+            .FirstOrDefault() ?? tourist.PreferredLanguage;
+
+        return Ok(new
+        {
+            totalVisits = tourist.TotalVisits,
+            totalAudioPlays = events.Count(a => a.EventType == "audio_play"),
+            totalQRScans = events.Count(a => a.EventType == "qr_scan"),
+            totalGeofenceEnters = events.Count(a => a.EventType == "geofence_enter"),
+            totalAudioMinutes = Math.Round(totalAudioSeconds / 60.0, 1),
+            mostVisitedPOI = mostVisitedPoiName,
+            favoriteLanguage = favoriteLanguage
+        });
+    }
+
     private async Task<List<PointOfInterest>> CheckNearbyPOIs(double? latitude, double? longitude)
     {
         if (!latitude.HasValue || !longitude.HasValue)
@@ -383,4 +472,37 @@ public class TouristController : ControllerBase
     }
 
     private double ToRadians(double degrees) => degrees * Math.PI / 180;
+
+    private static void ApplyLocalizedFields(POIListItemDto dto, PointOfInterest poi, string languageCode)
+    {
+        var translation = ResolveTranslation(poi, languageCode);
+        if (translation == null)
+            return;
+
+        if (!string.IsNullOrWhiteSpace(translation.Name))
+            dto.Name = translation.Name;
+
+        if (!string.IsNullOrWhiteSpace(translation.Description))
+            dto.Description = translation.Description;
+
+        if (!string.IsNullOrWhiteSpace(translation.Address))
+            dto.Address = translation.Address;
+    }
+
+    private static PointOfInterestTranslation? ResolveTranslation(PointOfInterest poi, string languageCode)
+    {
+        var normalized = NormalizeLanguageCode(languageCode);
+        return poi.Translations.FirstOrDefault(t => NormalizeLanguageCode(t.LanguageCode) == normalized)
+            ?? poi.Translations.FirstOrDefault(t => NormalizeLanguageCode(t.LanguageCode) == LanguageConstants.Vietnamese);
+    }
+
+    private static string NormalizeLanguageCode(string? languageCode)
+    {
+        if (string.IsNullOrWhiteSpace(languageCode))
+            return LanguageConstants.Vietnamese;
+
+        var code = languageCode.Trim().ToLowerInvariant();
+        var separatorIndex = code.IndexOfAny(new[] { '-', '_' });
+        return separatorIndex > 0 ? code[..separatorIndex] : code;
+    }
 }

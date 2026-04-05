@@ -1,5 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using System.Globalization;
 using VK.Mobile.Models;
 using VK.Mobile.Services;
 
@@ -14,10 +15,12 @@ public partial class NowPlayingViewModel : ObservableObject
 {
     public static event EventHandler? AutoCloseRequested;
     public static void RequestAutoClose() => AutoCloseRequested?.Invoke(null, EventArgs.Empty);
+    private static LocalizationResourceManager L => LocalizationResourceManager.Instance;
 
     private readonly ITTSService _ttsService;
     private readonly IAudioService _audioService;
     private readonly IApiService _apiService;
+    private readonly StorageService _storageService;
     private readonly IOfflineContentService _offlineContentService;
     private POIModel? _nextPoiModel;
     private List<POIModel> _allPois = new();
@@ -32,7 +35,7 @@ public partial class NowPlayingViewModel : ObservableObject
     [ObservableProperty] private string _poiName = string.Empty;
     [ObservableProperty] private string _poiCategory = string.Empty;
     [ObservableProperty] private string _poiImage = string.Empty;
-    [ObservableProperty] private string _poiAddress = "District 4, HCMC";
+    [ObservableProperty] private string _poiAddress = string.Empty;
     [ObservableProperty] private string _poiDistance = string.Empty;
     [ObservableProperty] private bool _hasDistance;
     [ObservableProperty] private string _audioText = string.Empty;
@@ -49,34 +52,46 @@ public partial class NowPlayingViewModel : ObservableObject
     [ObservableProperty] private string _nextPoiDistance = string.Empty;
     [ObservableProperty] private bool _hasNextPoi;
 
+    /// <summary>True khi server trả về ngôn ngữ fallback thay vì ngôn ngữ yêu cầu.</summary>
+    [ObservableProperty] private bool _isFallback;
+
     private IDispatcherTimer? _timer;
     private int _elapsedSeconds = 0;
     private int _totalSeconds = 0;
     private CancellationTokenSource? _ttsCts;
+    private bool _hasTrackedAudioPlay;
+    private bool _hasTrackedAudioComplete;
+    private DateTime _playbackStartedAtUtc;
 
     public NowPlayingViewModel(
         ITTSService ttsService,
         IAudioService audioService,
         IApiService apiService,
+        StorageService storageService,
         IOfflineContentService offlineContentService)
     {
         _ttsService = ttsService;
         _audioService = audioService;
         _apiService = apiService;
+        _storageService = storageService;
         _offlineContentService = offlineContentService;
         _audioService.PlaybackCompleted += OnAudioServicePlaybackCompleted;
+
+        if (string.IsNullOrWhiteSpace(PoiAddress))
+            PoiAddress = L["NowPlayingDefaultAddress"];
     }
 
     public void Initialize(int poiId, string poiName, string poiCategory, string poiImage,
                            string audioText, string language,
                            string poiAddress = "", string poiDistance = "",
-                           POIModel? nextPoiModel = null, string audioFileUrl = "")
+                           POIModel? nextPoiModel = null, string audioFileUrl = "",
+                           bool isFallback = false)
     {
         PoiId = poiId;
         PoiName = poiName;
         PoiCategory = poiCategory;
         PoiImage = poiImage;
-        PoiAddress = string.IsNullOrEmpty(poiAddress) ? "District 4, HCMC" : poiAddress;
+        PoiAddress = string.IsNullOrEmpty(poiAddress) ? L["NowPlayingDefaultAddress"] : poiAddress;
         PoiDistance = poiDistance;
         HasDistance = !string.IsNullOrEmpty(poiDistance);
         Language = language;
@@ -113,13 +128,20 @@ public partial class NowPlayingViewModel : ObservableObject
         HasNextPoi = _nextPoiModel != null;
         AudioText = audioText;
         _audioFileUrl = audioFileUrl;
+        IsFallback = isFallback;
         _usingAudioService = false; // reset; set to true in StartPlayingAsync if URL available
+        _hasTrackedAudioPlay = false;
+        _hasTrackedAudioComplete = false;
+        _playbackStartedAtUtc = DateTime.UtcNow;
     }
 
     private static string FormatWalk(double? km) => km switch
     {
         null or 0 => "",
-        _ => $"{(int)Math.Ceiling(km.Value * 12)} min walk"
+        _ => string.Format(
+            CultureInfo.CurrentCulture,
+            LocalizationResourceManager.Instance["NowPlayingWalkMinutesFormat"],
+            (int)Math.Ceiling(km.Value * 12))
     };
 
     private static double HaversineKm(double lat1, double lon1, double lat2, double lon2)
@@ -141,7 +163,7 @@ public partial class NowPlayingViewModel : ObservableObject
         TotalText = FormatTime(_totalSeconds);
     }
 
-    public Task StartPlayingAsync()
+    public async Task StartPlayingAsync()
     {
         _ttsCts?.Cancel();
         _ttsCts?.Dispose();
@@ -149,26 +171,26 @@ public partial class NowPlayingViewModel : ObservableObject
         _elapsedSeconds = 0;
         IsPlaying = true;
         UpdateProgress();
-        StartTimer();
+        _playbackStartedAtUtc = DateTime.UtcNow;
+        _ = TrackAudioPlayIfNeededAsync();
 
+        // Tier 1: Pre-generated MP3 → play immediately
         if (!string.IsNullOrWhiteSpace(_audioFileUrl))
         {
-            // Tier 1: phát file MP3 từ server
             _usingAudioService = true;
+            StartTimer();
             _ = _audioService.PlayAudioAsync(_audioFileUrl, PoiId);
-        }
-        else
-        {
-            // Fallback: device TTS — path cũ không thay đổi
-            _usingAudioService = false;
-            _ttsCts = new CancellationTokenSource();
-            var token = _ttsCts.Token;
-            var text = AudioText;
-            var lang = Language;
-            _ = _ttsService.SpeakTextAsync(text, lang, token);
+            return;
         }
 
-        return Task.CompletedTask;
+        // Device TTS fallback (local — works offline)
+        _usingAudioService = false;
+        _ttsCts = new CancellationTokenSource();
+        var token = _ttsCts.Token;
+        var text = AudioText;
+        var lang = Language;
+        StartTimer();
+        _ = _ttsService.SpeakTextAsync(text, lang, token);
     }
 
     // Returns the sub-text starting at the word corresponding to startSeconds
@@ -274,6 +296,7 @@ public partial class NowPlayingViewModel : ObservableObject
         // Lấy audio text cho POI này
         string audioText;
         string nextAudioFileUrl = "";
+        bool nextIsFallback = false;
         try
         {
             var audio = await _apiService.GetAudioForPOIAsync(next.Id, Language);
@@ -281,6 +304,7 @@ public partial class NowPlayingViewModel : ObservableObject
             {
                 audioText = audio!.TextContent!;
                 nextAudioFileUrl = audio.AudioFileUrl ?? "";
+                nextIsFallback = audio.IsFallback;
                 await _offlineContentService.CacheNarrationScriptAsync(
                     next.Id,
                     audio.LanguageCode,
@@ -309,9 +333,18 @@ public partial class NowPlayingViewModel : ObservableObject
                    next.ImageUrl ?? string.Empty, audioText, Language,
                    next.Address ?? string.Empty,
                    next.DistanceKm.HasValue
-                       ? (next.DistanceKm < 0.1 ? $"{next.DistanceKm.Value * 1000:F0}m away" : $"{next.DistanceKm.Value:F1} km away")
+                       ? (next.DistanceKm < 0.1
+                           ? string.Format(
+                               CultureInfo.CurrentCulture,
+                               L["NowPlayingDistanceMetersAwayFormat"],
+                               next.DistanceKm.Value * 1000)
+                           : string.Format(
+                               CultureInfo.CurrentCulture,
+                               L["NowPlayingDistanceKmAwayFormat"],
+                               next.DistanceKm.Value))
                        : string.Empty,
-                   audioFileUrl: nextAudioFileUrl);
+                   audioFileUrl: nextAudioFileUrl,
+                   isFallback: nextIsFallback);
 
         _elapsedSeconds = 0;
         await StartPlayingAsync();
@@ -344,6 +377,7 @@ public partial class NowPlayingViewModel : ObservableObject
                 IsPlaying = false;
                 StopTimer();
                 _ttsCts?.Cancel(); // no-op nếu AudioService path
+                _ = TrackAudioCompleteIfNeededAsync();
             }
         };
         _timer.Start();
@@ -393,6 +427,45 @@ public partial class NowPlayingViewModel : ObservableObject
         {
             IsPlaying = false;
             StopTimer();
+            _ = TrackAudioCompleteIfNeededAsync();
         });
+    }
+
+    private async Task TrackAudioPlayIfNeededAsync()
+    {
+        if (_hasTrackedAudioPlay || PoiId <= 0)
+            return;
+
+        _hasTrackedAudioPlay = true;
+        try
+        {
+            var touristId = await _storageService.GetTouristIdAsync();
+            await _apiService.TrackEventAsync(touristId, PoiId, "audio_play", Language);
+        }
+        catch
+        {
+            // Best effort analytics, never block playback.
+        }
+    }
+
+    private async Task TrackAudioCompleteIfNeededAsync()
+    {
+        if (_hasTrackedAudioComplete || PoiId <= 0)
+            return;
+
+        _hasTrackedAudioComplete = true;
+        try
+        {
+            var touristId = await _storageService.GetTouristIdAsync();
+            var durationSeconds = _elapsedSeconds > 0
+                ? _elapsedSeconds
+                : Math.Max(1, (int)(DateTime.UtcNow - _playbackStartedAtUtc).TotalSeconds);
+
+            await _apiService.TrackEventAsync(touristId, PoiId, "audio_complete", Language, durationSeconds);
+        }
+        catch
+        {
+            // Best effort analytics, never block playback.
+        }
     }
 }

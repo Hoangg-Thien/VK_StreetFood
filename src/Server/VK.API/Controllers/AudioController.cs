@@ -11,15 +11,18 @@ public class AudioController : ControllerBase
 {
     private readonly VKStreetFoodDbContext _context;
     private readonly ITtsGenerationService _tts;
+    private readonly IAudioTaskManager _taskManager;
     private readonly ILogger<AudioController> _logger;
 
     public AudioController(
         VKStreetFoodDbContext context,
         ITtsGenerationService tts,
+        IAudioTaskManager taskManager,
         ILogger<AudioController> logger)
     {
         _context = context;
         _tts = tts;
+        _taskManager = taskManager;
         _logger = logger;
     }
 
@@ -55,19 +58,20 @@ public class AudioController : ControllerBase
 
         return Ok(new
         {
-            audioId         = audio.Id,
-            poiId           = audio.PointOfInterestId,
-            languageCode    = audio.LanguageCode,
-            textContent     = audio.TextContent,
-            audioFileUrl    = audio.AudioFileUrl != null
+            audioId = audio.Id,
+            poiId = audio.PointOfInterestId,
+            languageCode = audio.LanguageCode,
+            textContent = audio.TextContent,
+            audioFileUrl = audio.AudioFileUrl != null
                                 ? $"{Request.Scheme}://{Request.Host}{audio.AudioFileUrl}"
                                 : null,
-            isGenerated     = audio.IsGenerated,
-            durationSeconds = audio.DurationSeconds
+            isGenerated = audio.IsGenerated,
+            durationSeconds = audio.DurationSeconds,
+            isFallback = !audio.LanguageCode.Equals(
+                languageCode.Trim().ToLowerInvariant(), StringComparison.OrdinalIgnoreCase)
         });
     }
 
-    /// <summary>Danh sách ngôn ngữ có sẵn cho POI.</summary>
     [HttpGet("poi/{poiId}/languages")]
     public async Task<ActionResult> GetAvailableLanguages(int poiId)
     {
@@ -80,11 +84,73 @@ public class AudioController : ControllerBase
                              : a.LanguageCode == "en" ? "English"
                              : a.LanguageCode == "ko" ? "한국어"
                              : a.LanguageCode,
-                isGenerated  = a.IsGenerated
+                isGenerated = a.IsGenerated
             })
             .ToListAsync();
 
         return Ok(languages);
+    }
+
+    /// <summary>
+    /// [Tourist] On-demand TTS: trả về audioFileUrl cho POI theo ngôn ngữ.
+    /// Nếu MP3 đã có → trả ngay. Nếu chưa → generate via edge-tts qua AudioTaskManager.
+    /// AudioTaskManager deduplicates: 2 requests cùng POI/lang chỉ chạy 1 subprocess.
+    /// </summary>
+    [HttpPost("tts")]
+    public async Task<ActionResult> GetOrGenerateTts(
+        [FromBody] OnDemandTtsRequest request,
+        CancellationToken ct)
+    {
+        var lang = string.IsNullOrWhiteSpace(request.LanguageCode)
+            ? "vi"
+            : request.LanguageCode.Trim().ToLowerInvariant();
+
+        var audio = await _context.AudioContents
+            .FirstOrDefaultAsync(a =>
+                a.PointOfInterestId == request.PoiId &&
+                a.LanguageCode == lang &&
+                !a.IsDeleted, ct);
+
+        // Fallback về tiếng Việt nếu chưa có bản ngôn ngữ yêu cầu
+        if (audio == null && lang != "vi")
+        {
+            audio = await _context.AudioContents
+                .FirstOrDefaultAsync(a =>
+                    a.PointOfInterestId == request.PoiId &&
+                    a.LanguageCode == "vi" &&
+                    !a.IsDeleted, ct);
+            if (audio != null) lang = "vi";
+        }
+
+        if (audio == null)
+            return NotFound(new { message = "Không có nội dung thuyết minh cho điểm này" });
+
+        // Nếu chưa có file → dùng AudioTaskManager (deduplicates concurrent requests)
+        if (!audio.IsGenerated || string.IsNullOrEmpty(audio.AudioFileUrl))
+        {
+            var generatedUrl = await _taskManager.GetOrGenerateAsync(
+                audio.PointOfInterestId, audio.LanguageCode, ct);
+            if (generatedUrl != null)
+                await _context.Entry(audio).ReloadAsync(ct);
+        }
+
+        _logger.LogInformation(
+            "On-demand TTS: POI {Id} [{Lang}] → generated={Gen}",
+            request.PoiId, audio.LanguageCode, audio.IsGenerated);
+
+        return Ok(new
+        {
+            audioId = audio.Id,
+            poiId = audio.PointOfInterestId,
+            languageCode = audio.LanguageCode,
+            textContent = audio.TextContent,
+            audioFileUrl = audio.AudioFileUrl != null
+                                ? $"{Request.Scheme}://{Request.Host}{audio.AudioFileUrl}"
+                                : null,
+            isGenerated = audio.IsGenerated,
+            durationSeconds = audio.DurationSeconds,
+            isFallback = !audio.LanguageCode.Equals(lang, StringComparison.OrdinalIgnoreCase)
+        });
     }
 
     /// <summary>
@@ -104,9 +170,9 @@ public class AudioController : ControllerBase
         return Ok(new
         {
             poiId,
-            total     = results.Count,
+            total = results.Count,
             succeeded = results.Count(r => r.Success),
-            failed    = results.Count(r => !r.Success),
+            failed = results.Count(r => !r.Success),
             results
         });
     }
@@ -128,10 +194,10 @@ public class AudioController : ControllerBase
 
         return Ok(new
         {
-            total     = results.Count,
+            total = results.Count,
             succeeded = results.Count(r => r.Success),
-            failed    = results.Count(r => !r.Success),
-            errors    = results.Where(r => !r.Success)
+            failed = results.Count(r => !r.Success),
+            errors = results.Where(r => !r.Success)
                                .Select(r => new { r.PoiId, r.LanguageCode, r.Error })
         });
     }
@@ -147,10 +213,10 @@ public class AudioController : ControllerBase
             .GroupBy(a => a.LanguageCode)
             .Select(g => new
             {
-                language  = g.Key,
-                total     = g.Count(),
+                language = g.Key,
+                total = g.Count(),
                 generated = g.Count(a => a.IsGenerated),
-                missing   = g.Count(a => !a.IsGenerated)
+                missing = g.Count(a => !a.IsGenerated)
             })
             .ToListAsync();
 
@@ -158,7 +224,9 @@ public class AudioController : ControllerBase
         {
             summary = all,
             totalGenerated = all.Sum(x => x.generated),
-            totalMissing   = all.Sum(x => x.missing)
+            totalMissing = all.Sum(x => x.missing)
         });
     }
 }
+
+public record OnDemandTtsRequest(int PoiId, string LanguageCode = "vi");
