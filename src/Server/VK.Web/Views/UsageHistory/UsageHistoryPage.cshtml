@@ -68,226 +68,162 @@
         </div>
         <div class="stat-value">@audioPlayedCount</div>
         <div class="stat-label">Lượt phát audio</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-card-header">
-                <div class="stat-icon green"><i class="fa-solid fa-globe"></i></div>
-            </div>
-            <div class="stat-value">@distinctLanguageCount</div>
-            <div class="stat-label">Ngôn ngữ sử dụng</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-card-header">
-                <div class="stat-icon purple"><i class="fa-solid fa-map-pin"></i></div>
-            </div>
-            <div class="stat-value">@distinctPoiCount</div>
-            <div class="stat-label">Địa điểm được ghé thăm</div>
-        </div>
     </div>
-
-    <!-- ANALYTICS (REST API) -->
-    <div class="grid-2-1" style="margin-bottom:24px;grid-template-columns:repeat(2,1fr);">
-        <div class="admin-card">
-            <div class="admin-card-header">
-                <div class="admin-card-title">Top địa điểm được nghe nhiều nhất</div>
-            </div>
-            <div class="admin-card-body" style="padding-top:0;">
-                <div class="admin-table-wrap">
-                    <table class="admin-table">
-                        <thead>
-                            <tr>
-                                <th>POI</th>
-                                <th>Lượt nghe</th>
-                                <th>Khách nghe</th>
-                                <th>Hoàn tất</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @if (topListened.Any())
-                            {
-                                @foreach (var item in topListened)
-                                {
-                                    <tr>
-                                        <td>@item.PoiName</td>
-                                        <td>@item.AudioPlayCount</td>
-                                        <td>@item.UniqueListeners</td>
-                                        <td>@item.AudioCompleteCount</td>
-                                    </tr>
-                                }
-                            }
-                            else
-                            {
-                                <tr>
-                                    <td colspan="5" style="text-align:center;color:var(--text-muted);">Chưa có dữ liệu</td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+    <div class="stat-card">
+        <div class="stat-card-header">
+            <div class="stat-icon green"><i class="fa-solid fa-globe"></i></div>
         </div>
-
-        <div class="admin-card">
-            <div class="admin-card-header">
-                <div class="admin-card-title">Thời gian trung bình nghe 1 POI</div>
-            </div>
-            <div class="admin-card-body" style="padding-top:0;">
-                <div class="admin-table-wrap">
-                    <table class="admin-table">
-                        <thead>
-                            <tr>
-                                <th>POI</th>
-                                <th>Trung bình</th>
-                                <th>Mẫu</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @if (avgListen.Any())
-                            {
-                                @foreach (var item in avgListen)
-                                {
-                                    <tr>
-                                        <td>@item.PoiName</td>
-                                        <td>@TimeSpan.FromSeconds(item.AverageDurationSeconds).ToString("mm\\:ss")</td>
-                                        <td>@item.SampleCount</td>
-                                    </tr>
-                                }
-                            }
-                            else
-                            {
-                                <tr>
-                                    <td colspan="3" style="text-align:center;color:var(--text-muted);">Chưa có dữ liệu</td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
+        <div class="stat-value">@distinctLanguageCount</div>
+        <div class="stat-label">Ngôn ngữ sử dụng</div>
     </div>
+    <div class="stat-card">
+        <div class="stat-card-header">
+            <div class="stat-icon purple"><i class="fa-solid fa-map-pin"></i></div>
+        </div>
+        <div class="stat-value">@distinctPoiCount</div>
+        <div class="stat-label">Địa điểm được ghé thăm</div>
+    </div>
+</div>
 
-    <div class="grid-2-1" style="margin-bottom:24px;grid-template-columns:repeat(2,1fr);">
-        <div class="admin-card">
-            <div class="admin-card-header">
-                <div>
-                    <div class="admin-card-title">Heatmap vị trí người dùng</div>
-                </div>
-            </div>
-            <div class="admin-card-body" style="padding-top:0;">
-                <div class="admin-table-wrap">
-                    <table class="admin-table">
-                        <thead>
-                            <tr>
-                                <th>Lat</th>
-                                <th>Lng</th>
-                                <th>Mật độ</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @if (heatmap.Any())
-                            {
-                                @foreach (var point in heatmap.Take(15))
-                                {
-                                    <tr>
-                                        <td>@point.Latitude</td>
-                                        <td>@point.Longitude</td>
-                                        <td>@point.Weight</td>
-                                    </tr>
-                                }
-                            }
-                            else
+<!-- ANALYTICS (REST API) -->
+<div class="grid-2-1" style="margin-bottom:24px;grid-template-columns:repeat(2,1fr);">
+    <div class="admin-card">
+        <div class="admin-card-header">
+            <div class="admin-card-title">Top địa điểm được nghe nhiều nhất</div>
+        </div>
+        <div class="admin-card-body" style="padding-top:0;">
+            <div class="admin-table-wrap">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>POI</th>
+                            <th>Lượt nghe</th>
+                            <th>Khách nghe</th>
+                            <th>Hoàn tất</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (topListened.Any())
+                        {
+                            @foreach (var item in topListened)
                             {
                                 <tr>
-                                    <td colspan="3" style="text-align:center;color:var(--text-muted);">Chưa có dữ liệu</td>
+                                    <td>@item.PoiName</td>
+                                    <td>@item.AudioPlayCount</td>
+                                    <td>@item.UniqueListeners</td>
+                                    <td>@item.AudioCompleteCount</td>
                                 </tr>
                             }
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-
-        <div class="admin-card">
-            <div class="admin-card-header">
-                <div>
-                    <div class="admin-card-title">Lưu tuyến di chuyển (ẩn danh)</div>
-                </div>
-            </div>
-            <div class="admin-card-body" style="padding-top:0;">
-                <div class="admin-table-wrap">
-                    <table class="admin-table">
-                        <thead>
-                            <tr>
-                                <th>Visitor</th>
-                                <th>Số điểm</th>
-                                <th>Khoảng thời gian</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @if (anonymousRoutes.Any())
-                            {
-                                @foreach (var route in anonymousRoutes.Take(15))
-                                {
-                                    <tr>
-                                        <td><span style="font-family:monospace;">@route.AnonymousVisitorId</span></td>
-                                        <td>@route.PointCount</td>
-                                        <td>@route.FirstSeenAt.ToLocalTime().ToString("dd/MM HH:mm") -
-                                            @route.LastSeenAt.ToLocalTime().ToString("dd/MM HH:mm")</td>
-                                        </tr>
-                                    }
-                                }
+                        }
                         else
-                                {
-                                    <tr>
-                                        <td colspan="3" style="text-align:center;color:var(--text-muted);">Chưa có dữ liệu</td>
-                                    </tr>
-                                }
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+                        {
+                            <tr>
+                                <td colspan="4" style="text-align:center;color:var(--text-muted);">Chưa có dữ liệu</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
             </div>
         </div>
+    </div>
 
-        <!-- CHART + LANG DIST -->
-        <div class="grid-2-1" style="margin-bottom:24px;">
-            <div class="admin-card">
-                <div class="admin-card-header">
-                    <div>
-                        <div class="admin-card-title">Lượt tham quan 7 ngày qua</div>
-                        <div class="admin-card-subtitle">Biểu đồ theo ngày</div>
-                    </div>
-                </div>
-                <div class="admin-card-body">
-                    <div class="chart-container"><canvas id="visitsChart7d"></canvas></div>
-                </div>
-            </div>
-            <div class="admin-card">
-                <div class="admin-card-header">
-                    <div class="admin-card-title">Phân bổ ngôn ngữ</div>
-                </div>
-                <div class="admin-card-body">
-                    <div style="height:120px;display:flex;align-items:center;justify-content:center;">
-                        <canvas id="langChart" style="max-height:120px;"></canvas>
-                    </div>
-                    @if (ViewBag.LangStats != null)
-                    {
-                        <div style="margin-top:16px;">
-                            @foreach (var stat in (IEnumerable<dynamic>)ViewBag.LangStats)
+    <div class="admin-card">
+        <div class="admin-card-header">
+            <div class="admin-card-title">Thời gian trung bình nghe 1 POI</div>
+        </div>
+        <div class="admin-card-body" style="padding-top:0;">
+            <div class="admin-table-wrap">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>POI</th>
+                            <th>Trung bình</th>
+                            <th>Mẫu</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (avgListen.Any())
+                        {
+                            @foreach (var item in avgListen)
                             {
-                                var lCode = (string)stat.Language ?? "vi";
-                                var (flag, css) = langMap.ContainsKey(lCode) ? langMap[lCode] : ("🌐", "lang-en");
-                                <div
-                                    style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border-color);">
-                                    <span class="lang-badge @css" style="font-size:12px;">@flag @lCode.ToUpper()</span>
-                                    <span style="font-size:13px;font-weight:600;">@stat.Count</span>
-                                </div>
+                                <tr>
+                                    <td>@item.PoiName</td>
+                                    <td>@TimeSpan.FromSeconds(item.AverageDurationSeconds).ToString("mm\\:ss")</td>
+                                    <td>@item.SampleCount</td>
+                                </tr>
                             }
-                        </div>
-                    }
-                </div>
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="3" style="text-align:center;color:var(--text-muted);">Chưa có dữ liệu</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
             </div>
         </div>
+    </div>
+</div>
+
+<!-- Heatmap vị trí người dùng -->
+<div class="admin-card" style="margin-bottom:24px;">
+    <div class="admin-card-header">
+        <div>
+            <div class="admin-card-title">Heatmap vị trí người dùng</div>
+            <div class="admin-card-subtitle">Bản đồ nhiệt hiển thị mật độ tập trung người dùng</div>
+        </div>
+    </div>
+    <div class="admin-card-body" style="padding:0;">
+        @if (heatmap.Any())
+        {
+            <div id="heatmapContainer" style="height:400px;width:100%;"></div>
+        }
+        else
+        {
+            <div style="padding:60px;text-align:center;color:#9CA3AF;">
+                <i class="fa-solid fa-map-location-dot" style="font-size:48px;opacity:0.3;"></i>
+                <p style="margin-top:12px;">Chưa có dữ liệu vị trí</p>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Lưu tuyến di chuyển (ẩn danh) -->
+<div class="admin-card" style="margin-bottom:24px;">
+    <div class="admin-card-header">
+        <div style="flex:1;">
+            <div class="admin-card-title">Lưu tuyến di chuyển (ẩn danh)</div>
+            <div class="admin-card-subtitle">Hiển thị hành trình di chuyển của du khách</div>
+        </div>
+        @if (anonymousRoutes.Any())
+        {
+            <div style="display:flex;gap:8px;align-items:center;">
+                <label style="font-size:13px;color:#6B7280;">Chọn tuyến:</label>
+                <select id="routeSelector" style="padding:6px 12px;border-radius:6px;border:1px solid #E5E7EB;background:white;font-size:13px;">
+                    @for (int i = 0; i < anonymousRoutes.Take(10).Count(); i++)
+                    {
+                        var route = anonymousRoutes.Skip(i).First();
+                        <option value="@i">Route #@(i + 1) - @route.AnonymousVisitorId (@route.PointCount POI)</option>
+                    }
+                </select>
+            </div>
+        }
+    </div>
+    <div class="admin-card-body" style="padding:0;">
+        @if (anonymousRoutes.Any())
+        {
+            <div id="routesMapContainer" style="height:400px;width:100%;"></div>
+        }
+        else
+        {
+            <div style="padding:60px;text-align:center;color:#9CA3AF;">
+                <i class="fa-solid fa-route" style="font-size:48px;opacity:0.3;"></i>
+                <p style="margin-top:12px;">Chưa có dữ liệu lưu tuyến</p>
+            </div>
+        }
+    </div>
+</div>
 
         <!-- LOGS TABLE -->
         <div class="admin-card">
@@ -386,72 +322,119 @@
                     </div>
                 </div>
 
-                @section Scripts {
-                    <script>
-                        // 7-day visits chart
-                        const ctx7 = document.getElementById('visitsChart7d').getContext('2d');
-                        const g7 = ctx7.createLinearGradient(0, 0, 0, 200);
-                        g7.addColorStop(0, 'rgba(232,93,4,0.3)');
-                        g7.addColorStop(1, 'rgba(232,93,4,0.02)');
+@section Scripts {
+    <!-- Leaflet CSS & JS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
 
-                        const dailyData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
-                                                                                                                                                                                                            (ViewBag.DailyVisits as IEnumerable<dynamic> ?? new List<dynamic>())
-                                                                                                                                                                                                                                            .Select(d => (int)d.Count).ToList()
-                                    ));
-                        const dailyLabels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
-                                                                                                                                                                                                            (ViewBag.DailyVisits as IEnumerable<dynamic> ?? new List<dynamic>())
-                                                                                                                                                                                                                                            .Select(d => ((DateTime)d.Date).ToString("dd/MM")).ToList()
-                                    ));
+    <script>
+        const heatmapData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
+            heatmap.Select(h => new { lat = h.Latitude, lng = h.Longitude, weight = h.Weight }).ToList()
+        ));
 
-                        new Chart(ctx7, {
-                            type: 'bar',
-                            data: {
-                                labels: dailyLabels,
-                                datasets: [{
-                                    label: 'Lượt tham quan',
-                                    data: dailyData,
-                                    backgroundColor: 'rgba(232,93,4,0.3)',
-                                    borderColor: '#E85D04',
-                                    borderWidth: 2,
-                                    borderRadius: 6,
-                                }]
-                            },
-                            options: {
-                                responsive: true, maintainAspectRatio: false,
-                                plugins: { legend: { display: false } },
-                                scales: {
-                                    x: { grid: { color: '#252840' }, ticks: { color: '#8B8FA8', font: { size: 11 } } },
-                                    y: { grid: { color: '#252840' }, ticks: { color: '#8B8FA8', font: { size: 11 } }, beginAtZero: true }
-                                }
-                            }
-                        });
+        if (heatmapData.length > 0) {
+            const avgLat = heatmapData.reduce((sum, p) => sum + p.lat, 0) / heatmapData.length;
+            const avgLng = heatmapData.reduce((sum, p) => sum + p.lng, 0) / heatmapData.length;
 
-                        // Lang donut chart
-                        const ctxLang = document.getElementById('langChart').getContext('2d');
-                        const langData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
-                                                                                                                                                                                                            (ViewBag.LangStats as IEnumerable<dynamic> ?? new List<dynamic>())
-                                                                                                                                                                                                                                            .Select(s => (int)s.Count).ToList()
-                                    ));
-                        const langLabels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
-                                                                                                                                                                                                            (ViewBag.LangStats as IEnumerable<dynamic> ?? new List<dynamic>())
-                                                                                                                                                                                                                                            .Select(s => (string)s.Language ?? "vi").ToList()
-                                    ));
+            const map = L.map('heatmapContainer').setView([avgLat, avgLng], 13);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; OpenStreetMap contributors',
+                maxZoom: 19
+            }).addTo(map);
 
-                        new Chart(ctxLang, {
-                            type: 'doughnut',
-                            data: {
-                                labels: langLabels,
-                                datasets: [{
-                                    data: langData,
-                                    backgroundColor: ['#E85D04', '#3B82F6', '#8B5CF6', '#22C55E'],
-                                    borderWidth: 0,
-                                }]
-                            },
-                            options: {
-                                responsive: true, maintainAspectRatio: false,
-                                plugins: { legend: { display: false } },
-                                cutout: '70%'
-                            }
-                        });
-                    </script>
+            const heatData = heatmapData.map(d => [d.lat, d.lng, d.weight]);
+            L.heatLayer(heatData, {
+                radius: 25,
+                blur: 15,
+                maxZoom: 17,
+                max: 1.0,
+                gradient: {
+                    0.0: 'rgba(59, 130, 246, 0.1)',
+                    0.3: 'rgba(139, 92, 246, 0.5)',
+                    0.5: 'rgba(232, 93, 4, 0.7)',
+                    0.7: 'rgba(239, 68, 68, 0.8)',
+                    1.0: 'rgba(220, 38, 38, 1)'
                 }
+            }).addTo(map);
+        }
+
+        const routesData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
+            anonymousRoutes.Take(10).Select(r => new {
+                id = r.AnonymousVisitorId,
+                pointCount = r.PointCount,
+                firstSeen = r.FirstSeenAt.ToLocalTime().ToString("dd/MM HH:mm"),
+                lastSeen = r.LastSeenAt.ToLocalTime().ToString("HH:mm"),
+                points = r.Points.Select(p => new { lat = p.Latitude, lng = p.Longitude }).ToList()
+            }).ToList()
+        ));
+
+        if (routesData.length > 0) {
+            const firstRoute = routesData[0];
+            const avgRouteLat = firstRoute.points.reduce((sum, p) => sum + p.lat, 0) / firstRoute.points.length;
+            const avgRouteLng = firstRoute.points.reduce((sum, p) => sum + p.lng, 0) / firstRoute.points.length;
+
+            const routesMap = L.map('routesMapContainer').setView([avgRouteLat, avgRouteLng], 14);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; OpenStreetMap contributors',
+                maxZoom: 19
+            }).addTo(routesMap);
+
+            let currentPolyline = null;
+            let currentMarkers = [];
+
+            function displayRoute(routeIndex) {
+                if (currentPolyline) {
+                    routesMap.removeLayer(currentPolyline);
+                }
+                currentMarkers.forEach(m => routesMap.removeLayer(m));
+                currentMarkers = [];
+
+                const route = routesData[routeIndex];
+                const coords = route.points.map(p => [p.lat, p.lng]);
+
+                currentPolyline = L.polyline(coords, {
+                    color: '#E85D04',
+                    weight: 4,
+                    opacity: 0.8,
+                    smoothFactor: 1
+                }).addTo(routesMap);
+
+                route.points.forEach((point, idx) => {
+                    const isStart = idx === 0;
+                    const isEnd = idx === route.points.length - 1;
+
+                    const marker = L.circleMarker([point.lat, point.lng], {
+                        radius: isStart || isEnd ? 8 : 6,
+                        fillColor: isStart ? '#22C55E' : (isEnd ? '#DC2626' : '#3B82F6'),
+                        color: '#fff',
+                        weight: 2,
+                        opacity: 1,
+                        fillOpacity: 0.9
+                    }).addTo(routesMap);
+
+                    marker.bindPopup(`
+                        <div style="font-size:12px;">
+                            <strong>${isStart ? '🟢 Điểm bắt đầu' : (isEnd ? '🔴 Điểm kết thúc' : '📍 Điểm ' + (idx + 1))}</strong><br>
+                            Visitor: ${route.id}<br>
+                            Thời gian: ${route.firstSeen} - ${route.lastSeen}
+                        </div>
+                    `);
+
+                    currentMarkers.push(marker);
+                });
+
+                routesMap.fitBounds(currentPolyline.getBounds(), { padding: [30, 30] });
+            }
+
+            displayRoute(0);
+
+            const routeSelector = document.getElementById('routeSelector');
+            if (routeSelector) {
+                routeSelector.addEventListener('change', function (e) {
+                    displayRoute(parseInt(e.target.value));
+                });
+            }
+        }
+    </script>
+}

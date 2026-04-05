@@ -80,6 +80,7 @@ List<VK.Core.Entities.PointOfInterest>();
                     <th>Danh mục</th>
                     <th>Tọa độ</th>
                     <th>Audio</th>
+                    <th>QR</th>
                     <th>Trạng thái</th>
                     <th>Hành động</th>
                 </tr>
@@ -94,6 +95,9 @@ List<VK.Core.Entities.PointOfInterest>();
                         var bgColors = new[] { "#E85D04", "#3B82F6", "#8B5CF6", "#22C55E", "#F59E0B" };
                         var bg = bgColors[Math.Abs(poi.Id.GetHashCode()) % bgColors.Length];
                         var apiBase = "http://localhost:5089";
+                        var qrTargetUrl = $"vkstreetfood://poi/{poi.Id}?autoplay=1";
+                        var qrImageUrl = "https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=" +
+                Uri.EscapeDataString(qrTargetUrl);
                         <tr>
                             <td>
                                 <div class="item-info">
@@ -133,6 +137,13 @@ List<VK.Core.Entities.PointOfInterest>();
                                     <i class="fa-solid fa-headphones"></i>
                                     @poi.AudioContents.Count
                                 </span>
+                            </td>
+                            <td>
+                                <div style="display:flex;flex-direction:column;align-items:center;gap:6px;">
+                                    <img src="@qrImageUrl" alt="QR @poi.Name" title="Quét để mở app vào POI này"
+                                         style="width:68px;height:68px;padding:4px;border-radius:8px;border:1px solid var(--border);background:#fff;object-fit:contain;" />
+                                    <span style="font-size:11px;color:var(--text-muted);">POI #@poi.Id</span>
+                                </div>
                             </td>
                             <td>
                                 @if (poi.IsActive)
@@ -176,7 +187,7 @@ List<VK.Core.Entities.PointOfInterest>();
                 else
                 {
                     <tr>
-                        <td colspan="8">
+                        <td colspan="7">
                             <div class="empty-state">
                                 <i class="fa-solid fa-map-location-dot"></i>
                                 <p>Chưa có địa điểm nào. Hãy thêm địa điểm đầu tiên!</p>
