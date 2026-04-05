@@ -146,13 +146,23 @@ public partial class App : Application
 			return false;
 		}
 
-		if (!uri.Host.Equals("poi", StringComparison.OrdinalIgnoreCase)
+		var trimmed = uri.AbsolutePath.Trim('/');
+		if (uri.Host.Equals(".", StringComparison.OrdinalIgnoreCase))
+		{
+			var segments = trimmed.Split('/', StringSplitOptions.RemoveEmptyEntries);
+			if (segments.Length < 2 || !segments[0].Equals("poi", StringComparison.OrdinalIgnoreCase))
+			{
+				return false;
+			}
+
+			trimmed = segments[1];
+		}
+		else if (!uri.Host.Equals("poi", StringComparison.OrdinalIgnoreCase)
 			&& !uri.Host.Equals("open", StringComparison.OrdinalIgnoreCase))
 		{
 			return false;
 		}
 
-		var trimmed = uri.AbsolutePath.Trim('/');
 		if (!int.TryParse(trimmed, out poiId) || poiId <= 0)
 		{
 			var poiIdRaw = GetQueryValue(uri.Query, "poiId") ?? GetQueryValue(uri.Query, "id");
