@@ -4,6 +4,7 @@ using VK.Infrastructure.Data;
 using VK.Core.Entities;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json.Serialization;
 
 namespace VK.API.Controllers;
 
@@ -33,7 +34,7 @@ public class AnalyticsController : ControllerBase
             var analyticsEvent = new Analytics
             {
                 TouristId = request.TouristId,
-                PointOfInterestId = request.PoiId,
+                PointOfInterestId = request.POIId,
                 EventType = normalizedEventType,
                 LanguageCode = request.LanguageCode ?? "vi",
                 DurationSeconds = request.DurationSeconds
@@ -47,7 +48,7 @@ public class AnalyticsController : ControllerBase
                 var lookbackUtc = DateTime.UtcNow.AddDays(-1);
                 var latestVisit = await _context.VisitLogs
                     .Where(v => v.TouristId == request.TouristId.Value)
-                    .Where(v => v.PointOfInterestId == request.PoiId)
+                    .Where(v => v.PointOfInterestId == request.POIId)
                     .Where(v => v.VisitedAt >= lookbackUtc)
                     .OrderByDescending(v => v.VisitedAt)
                     .FirstOrDefaultAsync();
@@ -64,7 +65,7 @@ public class AnalyticsController : ControllerBase
 
             _logger.LogInformation(
                 "Analytics event recorded: {EventType} for POI {PoiId} by Tourist {TouristId}",
-                request.EventType, request.PoiId, request.TouristId);
+                request.EventType, request.POIId, request.TouristId);
 
             return Ok(new { success = true, eventId = analyticsEvent.Id });
         }
@@ -484,7 +485,8 @@ public class AnalyticsController : ControllerBase
 public class RecordEventRequest
 {
     public int? TouristId { get; set; }
-    public int PoiId { get; set; }
+    [JsonPropertyName("poiId")]
+    public int POIId { get; set; }
     public string EventType { get; set; } = string.Empty; // view, qr_scan, audio_play, audio_complete
     public string? LanguageCode { get; set; }
     public int? DurationSeconds { get; set; }

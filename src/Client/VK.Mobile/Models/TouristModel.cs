@@ -17,7 +17,7 @@ public class VisitLogModel
 {
     public int Id { get; set; }
     public int PointOfInterestId { get; set; }
-    public string PoiName { get; set; } = string.Empty;
+    public string POIName { get; set; } = string.Empty;
     public DateTime VisitedAt { get; set; }
     public string? TriggerMethod { get; set; } // "qr_scan" or "geofence"
 }
@@ -26,7 +26,7 @@ public class FavoriteModel
 {
     public int Id { get; set; }
     public int PointOfInterestId { get; set; }
-    public POIModel? Poi { get; set; }
+    public POIModel? POI { get; set; }
     public DateTime CreatedAt { get; set; }
 }
 

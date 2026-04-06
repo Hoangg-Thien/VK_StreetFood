@@ -19,7 +19,7 @@ public class TourModel
 
     public int StopsCount { get; set; }
 
-    public int? FirstPoiId { get; set; }
+    public int? FirstPOIId { get; set; }
 
     public string? CoverImageUrl { get; set; }
 
@@ -29,7 +29,7 @@ public class TourModel
 public class TourPointModel
 {
     [JsonPropertyName("poiId")]
-    public int PoiId { get; set; }
+    public int POIId { get; set; }
 
     public string Name { get; set; } = string.Empty;
 

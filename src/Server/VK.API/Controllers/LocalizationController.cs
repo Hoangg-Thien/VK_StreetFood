@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json.Serialization;
 using VK.API.Services;
 using VK.Infrastructure.Data;
 
@@ -37,13 +38,13 @@ public class LocalizationController : ControllerBase
     [HttpPost("prepare-hotset")]
     public async Task<ActionResult> PrepareHotset([FromBody] HotsetRequest request, CancellationToken ct)
     {
-        if (request.PoiIds == null || request.PoiIds.Count == 0)
+        if (request.POIIds == null || request.POIIds.Count == 0)
             return BadRequest(new { message = "poiIds không được để trống" });
 
         var lang = NormalizeLang(request.LanguageCode);
 
         // Giới hạn batch để tránh DDoS ngay cả từ app
-        var poiIds = request.PoiIds.Distinct().Take(10).ToList();
+        var poiIds = request.POIIds.Distinct().Take(10).ToList();
 
         // Tìm AudioContent chưa generate cho những POI này
         var missing = await _context.AudioContents
@@ -121,7 +122,8 @@ public class LocalizationController : ControllerBase
 
 public class HotsetRequest
 {
-    public List<int> PoiIds { get; set; } = new();
+    [JsonPropertyName("poiIds")]
+    public List<int> POIIds { get; set; } = new();
     public string LanguageCode { get; set; } = "vi";
 }
 

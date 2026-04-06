@@ -26,7 +26,7 @@ public class TourSessionService : ITourSessionService
         ActiveTour = tour;
         _activePoiIds.Clear();
 
-        foreach (var poiId in tour.Points.Select(p => p.PoiId).Where(id => id > 0))
+        foreach (var poiId in tour.Points.Select(p => p.POIId).Where(id => id > 0))
             _activePoiIds.Add(poiId);
 
         ActiveTourChanged?.Invoke(this, EventArgs.Empty);

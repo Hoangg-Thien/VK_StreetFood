@@ -52,7 +52,7 @@ public class TourController : ControllerBase
                 EstimatedDurationMinutes = t.EstimatedDurationMinutes,
                 Status = t.Status,
                 StopsCount = orderedPoints.Count,
-                FirstPoiId = firstPoi?.Id,
+                FirstPOIId = firstPoi?.Id,
                 CoverImageUrl = PrependBase(baseUrl, firstPoi?.ImageUrl)
             };
 
@@ -87,7 +87,7 @@ public class TourController : ControllerBase
             {
                 var point = new TourPointDto
                 {
-                    PoiId = tp.PointOfInterest.Id,
+                    POIId = tp.PointOfInterest.Id,
                     Name = tp.PointOfInterest.Name,
                     Address = tp.PointOfInterest.Address,
                     ImageUrl = PrependBase(baseUrl, tp.PointOfInterest.ImageUrl),
@@ -110,7 +110,7 @@ public class TourController : ControllerBase
             EstimatedDurationMinutes = tour.EstimatedDurationMinutes,
             Status = tour.Status,
             StopsCount = points.Count,
-            FirstPoiId = points.FirstOrDefault()?.PoiId,
+            FirstPOIId = points.FirstOrDefault()?.POIId,
             CoverImageUrl = points.FirstOrDefault()?.ImageUrl,
             Points = points
         };

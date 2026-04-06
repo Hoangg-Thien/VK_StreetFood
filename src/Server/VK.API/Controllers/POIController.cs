@@ -71,7 +71,7 @@ public class POIController : ControllerBase
             {
                 var dto = new POIListItemDto
                 {
-                    PoiId = p.Id,
+                    POIId = p.Id,
                     Name = p.Name,
                     Description = p.Description,
                     Latitude = p.Latitude,
@@ -102,7 +102,7 @@ public class POIController : ControllerBase
         foreach (var poi in pois)
         {
             poi.ImageUrl = PrependBase(baseUrl, poi.ImageUrl);
-            var profile = GetTriggerProfile(poi.PoiId);
+            var profile = GetTriggerProfile(poi.POIId);
             poi.Priority = profile.Priority;
             poi.TriggerRadiusMeters = profile.TriggerRadiusMeters;
         }
@@ -140,7 +140,7 @@ public class POIController : ControllerBase
             .OrderBy(x => x.Distance)
             .Select(x => new POIListItemDto
             {
-                PoiId = x.Poi.Id,
+                POIId = x.Poi.Id,
                 Name = x.Poi.Name,
                 Description = x.Poi.Description,
                 Latitude = x.Poi.Latitude,
@@ -159,7 +159,7 @@ public class POIController : ControllerBase
 
         foreach (var item in nearbyPois)
         {
-            var source = pois.First(p => p.Id == item.PoiId);
+            var source = pois.First(p => p.Id == item.POIId);
             ApplyLocalizedFields(item, source, normalizedLanguageCode);
         }
 
@@ -199,7 +199,7 @@ public class POIController : ControllerBase
 
         var response = new POIDetailDto
         {
-            PoiId = poi.Id,
+            POIId = poi.Id,
             Name = poi.Name,
             Description = poi.Description,
             Latitude = poi.Latitude,

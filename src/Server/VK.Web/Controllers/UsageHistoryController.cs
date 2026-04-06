@@ -219,8 +219,8 @@ public class UsageHistoryController : AdminBaseController
 
     public class TopListenedPoiVm
     {
-        public int PoiId { get; set; }
-        public string PoiName { get; set; } = string.Empty;
+        public int POIId { get; set; }
+        public string POIName { get; set; } = string.Empty;
         public int AudioPlayCount { get; set; }
         public int AudioCompleteCount { get; set; }
         public int UniqueListeners { get; set; }
@@ -229,8 +229,8 @@ public class UsageHistoryController : AdminBaseController
 
     public class AverageListenPoiVm
     {
-        public int PoiId { get; set; }
-        public string PoiName { get; set; } = string.Empty;
+        public int POIId { get; set; }
+        public string POIName { get; set; } = string.Empty;
         public double AverageDurationSeconds { get; set; }
         public int SampleCount { get; set; }
     }

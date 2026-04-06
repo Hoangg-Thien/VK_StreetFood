@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json.Serialization;
 using VK.Core.Entities;
 using VK.Infrastructure.Data;
 using VK.Shared.Constants;
@@ -102,7 +103,7 @@ public class TourController : AdminBaseController
                 tour.Name,
                 tour.Description,
                 updateVietnamese: true);
-            await SyncTourPointsAsync(tour.Id, input.PoiIds);
+            await SyncTourPointsAsync(tour.Id, input.POIIds);
 
             TempData["Success"] = "Tạo tour thành công!";
         }
@@ -154,7 +155,7 @@ public class TourController : AdminBaseController
                 tour.Description,
                 updateVietnamese: true);
 
-            await SyncTourPointsAsync(tour.Id, input.PoiIds);
+            await SyncTourPointsAsync(tour.Id, input.POIIds);
 
             TempData["Success"] = "Cập nhật tour thành công!";
         }
@@ -356,6 +357,7 @@ public class TourController : AdminBaseController
         public string? Emoji { get; set; }
         public int? EstimatedDurationMinutes { get; set; }
         public string? Status { get; set; }
-        public List<int>? PoiIds { get; set; }
+        [JsonPropertyName("poiIds")]
+        public List<int>? POIIds { get; set; }
     }
 }

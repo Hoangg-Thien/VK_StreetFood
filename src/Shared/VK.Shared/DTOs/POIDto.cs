@@ -2,7 +2,7 @@ namespace VK.Shared.DTOs;
 
 public class POIListItemDto
 {
-    public int PoiId { get; set; }
+    public int POIId { get; set; }
     public string Name { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
     public double Latitude { get; set; }

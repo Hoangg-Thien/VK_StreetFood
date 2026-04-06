@@ -9,7 +9,7 @@ public class TourListItemDto
     public int? EstimatedDurationMinutes { get; set; }
     public string Status { get; set; } = "draft";
     public int StopsCount { get; set; }
-    public int? FirstPoiId { get; set; }
+    public int? FirstPOIId { get; set; }
     public string? CoverImageUrl { get; set; }
 }
 
@@ -20,7 +20,7 @@ public class TourDetailDto : TourListItemDto
 
 public class TourPointDto
 {
-    public int PoiId { get; set; }
+    public int POIId { get; set; }
     public string Name { get; set; } = string.Empty;
     public string Address { get; set; } = string.Empty;
     public string? ImageUrl { get; set; }

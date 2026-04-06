@@ -109,7 +109,7 @@ public class TouristController : ControllerBase
     [HttpPost("{touristId}/visits")]
     public async Task<ActionResult> LogVisit(int touristId, [FromBody] LogVisitRequest request)
     {
-        var poiId = request.EffectivePoiId;
+        var poiId = request.EffectivePOIId;
         if (poiId <= 0)
             return BadRequest(new { message = "Thiếu poiId hợp lệ" });
 
@@ -181,17 +181,17 @@ public class TouristController : ControllerBase
             .Select(v => new VisitHistoryDto
             {
                 VisitId = v.Id,
-                PoiId = v.PointOfInterestId,
-                PoiName = v.PointOfInterest.Name,
-                PoiImageUrl = v.PointOfInterest.ImageUrl,
+                POIId = v.PointOfInterestId,
+                POIName = v.PointOfInterest.Name,
+                POIImageUrl = v.PointOfInterest.ImageUrl,
                 VisitedAt = v.VisitedAt
             })
             .ToListAsync();
 
         // Prepend base URL to relative image paths
         foreach (var v in visits)
-            if (!string.IsNullOrEmpty(v.PoiImageUrl) && !v.PoiImageUrl.StartsWith("http"))
-                v.PoiImageUrl = $"{Request.Scheme}://{Request.Host}{v.PoiImageUrl}";
+            if (!string.IsNullOrEmpty(v.POIImageUrl) && !v.POIImageUrl.StartsWith("http"))
+                v.POIImageUrl = $"{Request.Scheme}://{Request.Host}{v.POIImageUrl}";
 
         return Ok(visits);
     }
@@ -213,7 +213,7 @@ public class TouristController : ControllerBase
         // Include soft-deleted records to prevent unique-index violation on re-add
         var existingFavorite = await _context.Set<Favorite>()
             .IgnoreQueryFilters()
-            .FirstOrDefaultAsync(f => f.TouristId == touristId && f.PointOfInterestId == request.PoiId);
+            .FirstOrDefaultAsync(f => f.TouristId == touristId && f.PointOfInterestId == request.POIId);
 
         if (existingFavorite != null)
         {
@@ -233,7 +233,7 @@ public class TouristController : ControllerBase
         var favorite = new Favorite
         {
             TouristId = touristId,
-            PointOfInterestId = request.PoiId,
+            PointOfInterestId = request.POIId,
             Note = request.Note
         };
 
@@ -291,7 +291,7 @@ public class TouristController : ControllerBase
             {
                 var dto = new POIListItemDto
                 {
-                    PoiId = f.PointOfInterest.Id,
+                    POIId = f.PointOfInterest.Id,
                     Name = f.PointOfInterest.Name,
                     Description = f.PointOfInterest.Description,
                     Latitude = f.PointOfInterest.Latitude,
@@ -332,7 +332,7 @@ public class TouristController : ControllerBase
         }
 
         var poi = await _context.PointsOfInterest
-            .FirstOrDefaultAsync(p => p.Id == request.PoiId && !p.IsDeleted);
+            .FirstOrDefaultAsync(p => p.Id == request.POIId && !p.IsDeleted);
 
         if (poi == null)
         {
@@ -341,7 +341,7 @@ public class TouristController : ControllerBase
 
         // Check if already rated
         var existingRating = await _context.Set<Rating>()
-            .FirstOrDefaultAsync(r => r.TouristId == touristId && r.PointOfInterestId == request.PoiId);
+            .FirstOrDefaultAsync(r => r.TouristId == touristId && r.PointOfInterestId == request.POIId);
 
         if (existingRating != null)
         {
@@ -356,7 +356,7 @@ public class TouristController : ControllerBase
             var rating = new Rating
             {
                 TouristId = touristId,
-                PointOfInterestId = request.PoiId,
+                PointOfInterestId = request.POIId,
                 Score = request.Score,
                 Comment = request.Comment,
                 LanguageCode = request.LanguageCode ?? "vi"
@@ -368,7 +368,7 @@ public class TouristController : ControllerBase
 
         // Recalculate average rating
         var allRatings = await _context.Set<Rating>()
-            .Where(r => r.PointOfInterestId == request.PoiId)
+            .Where(r => r.PointOfInterestId == request.POIId)
             .ToListAsync();
 
         if (allRatings.Any())
