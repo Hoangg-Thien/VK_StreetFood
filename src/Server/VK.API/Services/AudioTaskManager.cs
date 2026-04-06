@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using Microsoft.EntityFrameworkCore;
-using VK.Infrastructure.Data;
+using VK.Core.Entities;
+using VK.Core.Interfaces;
 
 namespace VK.API.Services;
 
@@ -55,10 +56,10 @@ public class AudioTaskManager : IAudioTaskManager
     private async Task<string?> GenerateAsync(int poiId, string languageCode)
     {
         using var scope = _scopeFactory.CreateScope();
-        var db = scope.ServiceProvider.GetRequiredService<VKStreetFoodDbContext>();
+        var audioRepository = scope.ServiceProvider.GetRequiredService<IRepository<AudioContent>>();
         var tts = scope.ServiceProvider.GetRequiredService<ITtsGenerationService>();
 
-        var audio = await db.AudioContents.FirstOrDefaultAsync(a =>
+        var audio = await audioRepository.Query().FirstOrDefaultAsync(a =>
             a.PointOfInterestId == poiId &&
             a.LanguageCode == languageCode &&
             !a.IsDeleted);

@@ -1,7 +1,7 @@
 using System.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using VK.Infrastructure.Data;
+using VK.Core.Interfaces;
 using VK.Web.Models;
 using VK.Web.Services;
 using VK.Core.Entities;
@@ -10,13 +10,28 @@ namespace VK.Web.Controllers;
 
 public class HomeController : Controller
 {
-    private readonly VKStreetFoodDbContext _context;
+    private readonly IRepository<User> _userRepository;
+    private readonly IRepository<PointOfInterest> _poiRepository;
+    private readonly IRepository<Vendor> _vendorRepository;
+    private readonly IRepository<PoiOwnerRegistration> _ownerRegistrationRepository;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly IConfiguration _config;
     private readonly ILogger<HomeController> _logger;
 
-    public HomeController(VKStreetFoodDbContext context, IConfiguration config, ILogger<HomeController> logger)
+    public HomeController(
+        IRepository<User> userRepository,
+        IRepository<PointOfInterest> poiRepository,
+        IRepository<Vendor> vendorRepository,
+        IRepository<PoiOwnerRegistration> ownerRegistrationRepository,
+        IUnitOfWork unitOfWork,
+        IConfiguration config,
+        ILogger<HomeController> logger)
     {
-        _context = context;
+        _userRepository = userRepository;
+        _poiRepository = poiRepository;
+        _vendorRepository = vendorRepository;
+        _ownerRegistrationRepository = ownerRegistrationRepository;
+        _unitOfWork = unitOfWork;
         _config = config;
         _logger = logger;
     }
@@ -51,7 +66,7 @@ public class HomeController : Controller
             if (email == adminEmail && password == adminPassword)
             {
                 // Look up the user record in the DB (for display info)
-                var user = await _context.Users
+                var user = await _userRepository.Query()
                     .FirstOrDefaultAsync(u => u.Email == adminEmail && u.Role == "Admin");
 
                 HttpContext.Session.SetString("UserLoggedIn", "true");
@@ -64,7 +79,7 @@ public class HomeController : Controller
                 return RedirectToAction("Index", "Dashboard");
             }
 
-            var owner = await _context.Users
+            var owner = await _userRepository.Query()
                 .Include(u => u.Vendor)
                 .FirstOrDefaultAsync(u =>
                     !u.IsDeleted &&
@@ -80,7 +95,7 @@ public class HomeController : Controller
                 }
 
                 owner.LastLoginAt = DateTime.UtcNow;
-                await _context.SaveChangesAsync();
+                await _unitOfWork.SaveChangesAsync();
 
                 HttpContext.Session.SetString("UserLoggedIn", "true");
                 HttpContext.Session.SetString("UserRole", "poi_owner");
@@ -144,7 +159,7 @@ public class HomeController : Controller
     [HttpGet]
     public async Task<IActionResult> OwnerRegister()
     {
-        ViewBag.Pois = await _context.PointsOfInterest
+        ViewBag.Pois = await _poiRepository.Query()
             .Where(p => p.IsActive && !p.IsDeleted && p.Id != 1)
             .OrderBy(p => p.Name)
             .ToListAsync();
@@ -173,7 +188,7 @@ public class HomeController : Controller
                 return RedirectToAction(nameof(OwnerRegister));
             }
 
-            var existed = await _context.Users
+            var existed = await _userRepository.Query()
                 .AnyAsync(u => !u.IsDeleted && u.Email == email);
 
             if (existed)
@@ -182,7 +197,7 @@ public class HomeController : Controller
                 return RedirectToAction(nameof(OwnerRegister));
             }
 
-            var poi = await _context.PointsOfInterest
+            var poi = await _poiRepository.Query()
                 .FirstOrDefaultAsync(p => p.Id == pointOfInterestId && p.IsActive && !p.IsDeleted);
 
             if (poi == null)
@@ -191,7 +206,7 @@ public class HomeController : Controller
                 return RedirectToAction(nameof(OwnerRegister));
             }
 
-            var vendor = await _context.Vendors
+            var vendor = await _vendorRepository.Query()
                 .FirstOrDefaultAsync(v => v.PointOfInterestId == poi.Id && !v.IsDeleted);
 
             if (vendor == null)
@@ -207,8 +222,8 @@ public class HomeController : Controller
                     ImageUrl = poi.ImageUrl,
                     IsActive = false
                 };
-                _context.Vendors.Add(vendor);
-                await _context.SaveChangesAsync();
+                await _vendorRepository.AddAsync(vendor);
+                await _unitOfWork.SaveChangesAsync();
             }
 
             var user = new User
@@ -220,10 +235,10 @@ public class HomeController : Controller
                 IsVerified = false,
                 VendorId = vendor.Id
             };
-            _context.Users.Add(user);
-            await _context.SaveChangesAsync();
+            await _userRepository.AddAsync(user);
+            await _unitOfWork.SaveChangesAsync();
 
-            _context.PoiOwnerRegistrations.Add(new PoiOwnerRegistration
+            await _ownerRegistrationRepository.AddAsync(new PoiOwnerRegistration
             {
                 UserId = user.Id,
                 PointOfInterestId = poi.Id,
@@ -235,7 +250,7 @@ public class HomeController : Controller
                 Status = "pending"
             });
 
-            await _context.SaveChangesAsync();
+            await _unitOfWork.SaveChangesAsync();
 
             TempData["OwnerRegisterSuccess"] = "Đăng ký thành công. Vui lòng chờ admin duyệt tài khoản chủ quán.";
             return RedirectToAction(nameof(OwnerRegister));

@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using VK.Core.Entities;
-using VK.Infrastructure.Data;
+using VK.Core.Interfaces;
 using VK.Shared.Constants;
 using VK.Shared.DTOs;
 
@@ -9,12 +9,12 @@ namespace VK.API.Services.AppServices;
 
 public class TourAppService : ITourAppService
 {
-    private readonly VKStreetFoodDbContext _context;
+    private readonly IRepository<Tour> _tourRepository;
     private readonly IHttpContextAccessor _httpContextAccessor;
 
-    public TourAppService(VKStreetFoodDbContext context, IHttpContextAccessor httpContextAccessor)
+    public TourAppService(IRepository<Tour> tourRepository, IHttpContextAccessor httpContextAccessor)
     {
-        _context = context;
+        _tourRepository = tourRepository;
         _httpContextAccessor = httpContextAccessor;
     }
 
@@ -22,7 +22,7 @@ public class TourAppService : ITourAppService
     {
         var normalizedLanguageCode = NormalizeLanguageCode(languageCode);
 
-        var tours = await _context.Tours
+        var tours = await _tourRepository.Query()
             .Include(t => t.Translations)
             .Include(t => t.TourPoints.OrderBy(tp => tp.SortOrder))
             .ThenInclude(tp => tp.PointOfInterest)
@@ -66,7 +66,7 @@ public class TourAppService : ITourAppService
     {
         var normalizedLanguageCode = NormalizeLanguageCode(languageCode);
 
-        var tour = await _context.Tours
+        var tour = await _tourRepository.Query()
             .Include(t => t.Translations)
             .Include(t => t.TourPoints.OrderBy(tp => tp.SortOrder))
             .ThenInclude(tp => tp.PointOfInterest)

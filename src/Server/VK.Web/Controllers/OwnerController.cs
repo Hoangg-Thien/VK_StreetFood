@@ -1,18 +1,32 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using VK.Core.Entities;
-using VK.Infrastructure.Data;
+using VK.Core.Interfaces;
 
 namespace VK.Web.Controllers;
 
 public class OwnerController : OwnerBaseController
 {
-    private readonly VKStreetFoodDbContext _context;
+    private readonly IRepository<AudioContent> _audioRepository;
+    private readonly IRepository<PoiContentChangeRequest> _changeRequestRepository;
+    private readonly IRepository<User> _userRepository;
+    private readonly IRepository<Vendor> _vendorRepository;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<OwnerController> _logger;
 
-    public OwnerController(VKStreetFoodDbContext context, ILogger<OwnerController> logger)
+    public OwnerController(
+        IRepository<AudioContent> audioRepository,
+        IRepository<PoiContentChangeRequest> changeRequestRepository,
+        IRepository<User> userRepository,
+        IRepository<Vendor> vendorRepository,
+        IUnitOfWork unitOfWork,
+        ILogger<OwnerController> logger)
     {
-        _context = context;
+        _audioRepository = audioRepository;
+        _changeRequestRepository = changeRequestRepository;
+        _userRepository = userRepository;
+        _vendorRepository = vendorRepository;
+        _unitOfWork = unitOfWork;
         _logger = logger;
     }
 
@@ -22,13 +36,13 @@ public class OwnerController : OwnerBaseController
         if (ownerCtx == null)
             return RedirectToAction("Index", "Home");
 
-        var audios = await _context.AudioContents
+        var audios = await _audioRepository.Query()
             .Where(a => a.PointOfInterestId == ownerCtx.PointOfInterest.Id)
             .OrderBy(a => a.LanguageCode)
             .ThenByDescending(a => a.CreatedAt)
             .ToListAsync();
 
-        var requests = await _context.PoiContentChangeRequests
+        var requests = await _changeRequestRepository.Query()
             .Include(r => r.AudioContent)
             .Where(r => r.VendorId == ownerCtx.Vendor.Id)
             .OrderByDescending(r => r.CreatedAt)
@@ -93,7 +107,7 @@ public class OwnerController : OwnerBaseController
             AudioContent? targetAudio = null;
             if (audioContentId.HasValue && audioContentId.Value > 0)
             {
-                targetAudio = await _context.AudioContents
+                targetAudio = await _audioRepository.Query()
                     .FirstOrDefaultAsync(a => a.Id == audioContentId.Value && a.PointOfInterestId == ownerCtx.PointOfInterest.Id);
 
                 if (targetAudio == null)
@@ -116,8 +130,8 @@ public class OwnerController : OwnerBaseController
                 Status = "pending"
             };
 
-            _context.PoiContentChangeRequests.Add(request);
-            await _context.SaveChangesAsync();
+            await _changeRequestRepository.AddAsync(request);
+            await _unitOfWork.SaveChangesAsync();
 
             TempData["Success"] = "Đã gửi yêu cầu chỉnh sửa. Admin sẽ duyệt trước khi áp dụng.";
         }
@@ -138,13 +152,13 @@ public class OwnerController : OwnerBaseController
         if (!vendorId.HasValue || string.IsNullOrWhiteSpace(email))
             return null;
 
-        var user = await _context.Users
+        var user = await _userRepository.Query()
             .FirstOrDefaultAsync(u => !u.IsDeleted && u.Email == email && u.Role == "poi_owner");
 
         if (user == null)
             return null;
 
-        var vendor = await _context.Vendors
+        var vendor = await _vendorRepository.Query()
             .Include(v => v.PointOfInterest)
             .FirstOrDefaultAsync(v => v.Id == vendorId.Value && !v.IsDeleted);
 

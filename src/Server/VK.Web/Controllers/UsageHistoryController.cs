@@ -1,13 +1,16 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
-using VK.Infrastructure.Data;
+using VK.Core.Entities;
+using VK.Core.Interfaces;
 
 namespace VK.Web.Controllers;
 
 public class UsageHistoryController : AdminBaseController
 {
-    private readonly VKStreetFoodDbContext _context;
+    private readonly IRepository<VisitLog> _visitLogRepository;
+    private readonly IRepository<Analytics> _analyticsRepository;
+    private readonly IRepository<PointOfInterest> _poiRepository;
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly ILogger<UsageHistoryController> _logger;
 
@@ -17,11 +20,15 @@ public class UsageHistoryController : AdminBaseController
     };
 
     public UsageHistoryController(
-        VKStreetFoodDbContext context,
+        IRepository<VisitLog> visitLogRepository,
+        IRepository<Analytics> analyticsRepository,
+        IRepository<PointOfInterest> poiRepository,
         IHttpClientFactory httpClientFactory,
         ILogger<UsageHistoryController> logger)
     {
-        _context = context;
+        _visitLogRepository = visitLogRepository;
+        _analyticsRepository = analyticsRepository;
+        _poiRepository = poiRepository;
         _httpClientFactory = httpClientFactory;
         _logger = logger;
     }
@@ -34,7 +41,7 @@ public class UsageHistoryController : AdminBaseController
             var fromUtc = fromDate?.ToUniversalTime();
             var toExclusiveUtc = toDate?.ToUniversalTime().AddDays(1);
 
-            var filteredQuery = _context.VisitLogs
+            var filteredQuery = _visitLogRepository.Query()
                 .AsNoTracking()
                 .AsQueryable();
 
@@ -63,7 +70,7 @@ public class UsageHistoryController : AdminBaseController
                 .Take(pageSize)
                 .ToListAsync();
 
-            var analyticsQuery = _context.Analytics
+            var analyticsQuery = _analyticsRepository.Query()
                 .AsNoTracking()
                 .Where(a => a.EventType == "audio_play");
 
@@ -90,7 +97,7 @@ public class UsageHistoryController : AdminBaseController
                 .Distinct()
                 .CountAsync();
 
-            var pois = await _context.PointsOfInterest.Select(p => new { p.Id, p.Name }).ToListAsync();
+            var pois = await _poiRepository.Query().Select(p => new { p.Id, p.Name }).ToListAsync();
 
             // Analytics for chart
             var chartFromUtc = fromUtc ?? DateTime.UtcNow.Date.AddDays(-6);

@@ -2,18 +2,29 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
 using VK.Core.Entities;
-using VK.Infrastructure.Data;
+using VK.Core.Interfaces;
 
 namespace VK.Web.Controllers;
 
 public class OwnerContentApprovalController : AdminBaseController
 {
-    private readonly VKStreetFoodDbContext _context;
+    private readonly IRepository<PoiContentChangeRequest> _changeRequestRepository;
+    private readonly IRepository<AudioContent> _audioRepository;
+    private readonly IRepository<PointOfInterest> _poiRepository;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<OwnerContentApprovalController> _logger;
 
-    public OwnerContentApprovalController(VKStreetFoodDbContext context, ILogger<OwnerContentApprovalController> logger)
+    public OwnerContentApprovalController(
+        IRepository<PoiContentChangeRequest> changeRequestRepository,
+        IRepository<AudioContent> audioRepository,
+        IRepository<PointOfInterest> poiRepository,
+        IUnitOfWork unitOfWork,
+        ILogger<OwnerContentApprovalController> logger)
     {
-        _context = context;
+        _changeRequestRepository = changeRequestRepository;
+        _audioRepository = audioRepository;
+        _poiRepository = poiRepository;
+        _unitOfWork = unitOfWork;
         _logger = logger;
     }
 
@@ -21,7 +32,7 @@ public class OwnerContentApprovalController : AdminBaseController
     {
         var normalizedStatus = string.IsNullOrWhiteSpace(status) ? "pending" : status.Trim().ToLowerInvariant();
 
-        var requests = await _context.PoiContentChangeRequests
+        var requests = await _changeRequestRepository.Query()
             .Include(r => r.OwnerUser)
             .Include(r => r.Vendor)
             .Include(r => r.PointOfInterest)
@@ -41,7 +52,7 @@ public class OwnerContentApprovalController : AdminBaseController
     {
         try
         {
-            var request = await _context.PoiContentChangeRequests
+            var request = await _changeRequestRepository.Query()
                 .Include(r => r.AudioContent)
                 .FirstOrDefaultAsync(r => r.Id == id);
 
@@ -63,7 +74,7 @@ public class OwnerContentApprovalController : AdminBaseController
             request.ReviewedAt = DateTime.UtcNow;
             request.ReviewNote = reviewNote;
 
-            await _context.SaveChangesAsync();
+            await _unitOfWork.SaveChangesAsync();
             TempData["Success"] = "Đã duyệt và áp dụng thay đổi nội dung.";
         }
         catch (Exception ex)
@@ -81,7 +92,7 @@ public class OwnerContentApprovalController : AdminBaseController
     {
         try
         {
-            var request = await _context.PoiContentChangeRequests.FirstOrDefaultAsync(r => r.Id == id);
+            var request = await _changeRequestRepository.Query().FirstOrDefaultAsync(r => r.Id == id);
             if (request == null)
             {
                 TempData["Error"] = "Không tìm thấy yêu cầu.";
@@ -92,7 +103,7 @@ public class OwnerContentApprovalController : AdminBaseController
             request.ReviewedAt = DateTime.UtcNow;
             request.ReviewNote = reviewNote;
 
-            await _context.SaveChangesAsync();
+            await _unitOfWork.SaveChangesAsync();
             TempData["Success"] = "Đã từ chối yêu cầu.";
         }
         catch (Exception ex)
@@ -116,13 +127,13 @@ public class OwnerContentApprovalController : AdminBaseController
 
         if (normalizedAction == "delete" && request.AudioContentId.HasValue)
         {
-            var toDelete = await _context.AudioContents
+            var toDelete = await _audioRepository.Query()
                 .FirstOrDefaultAsync(a => a.Id == request.AudioContentId.Value && a.PointOfInterestId == request.PointOfInterestId);
 
             if (toDelete != null)
             {
                 DeleteAudioFileIfExists(toDelete.AudioFileUrl);
-                _context.AudioContents.Remove(toDelete);
+                _audioRepository.Remove(toDelete);
             }
 
             return;
@@ -130,7 +141,7 @@ public class OwnerContentApprovalController : AdminBaseController
 
         if (normalizedAction == "update" && request.AudioContentId.HasValue)
         {
-            var audio = await _context.AudioContents
+            var audio = await _audioRepository.Query()
                 .FirstOrDefaultAsync(a => a.Id == request.AudioContentId.Value && a.PointOfInterestId == request.PointOfInterestId);
 
             if (audio != null)
@@ -145,7 +156,7 @@ public class OwnerContentApprovalController : AdminBaseController
         {
             var normalizedLanguageCode = request.LanguageCode.Trim().ToLowerInvariant();
 
-            var existingByLang = await _context.AudioContents
+            var existingByLang = await _audioRepository.Query()
                 .IgnoreQueryFilters()
                 .FirstOrDefaultAsync(a =>
                     a.PointOfInterestId == request.PointOfInterestId &&
@@ -174,8 +185,8 @@ public class OwnerContentApprovalController : AdminBaseController
                 DurationSeconds = null
             };
 
-            _context.AudioContents.Add(audio);
-            await _context.SaveChangesAsync();
+            await _audioRepository.AddAsync(audio);
+            await _unitOfWork.SaveChangesAsync();
             request.AudioContentId = audio.Id;
         }
     }
@@ -195,7 +206,7 @@ public class OwnerContentApprovalController : AdminBaseController
         if (payload == null)
             throw new InvalidOperationException("Không đọc được dữ liệu POI từ yêu cầu.");
 
-        var poi = await _context.PointsOfInterest
+        var poi = await _poiRepository.Query()
             .FirstOrDefaultAsync(p => p.Id == request.PointOfInterestId);
 
         if (poi == null)

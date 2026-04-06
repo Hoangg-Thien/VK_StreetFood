@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using VK.Core.Entities;
-using VK.Infrastructure.Data;
+using VK.Core.Interfaces;
 using VK.Shared.Constants;
 using VK.Shared.DTOs;
 
@@ -9,23 +9,41 @@ namespace VK.API.Services.AppServices;
 
 public class TouristAppService : ITouristAppService
 {
-    private readonly VKStreetFoodDbContext _context;
+    private readonly IRepository<Tourist> _touristRepository;
+    private readonly IRepository<PointOfInterest> _poiRepository;
+    private readonly IRepository<VisitLog> _visitLogRepository;
+    private readonly IRepository<Favorite> _favoriteRepository;
+    private readonly IRepository<Rating> _ratingRepository;
+    private readonly IRepository<Analytics> _analyticsRepository;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<TouristAppService> _logger;
     private readonly IHttpContextAccessor _httpContextAccessor;
 
     public TouristAppService(
-        VKStreetFoodDbContext context,
+        IRepository<Tourist> touristRepository,
+        IRepository<PointOfInterest> poiRepository,
+        IRepository<VisitLog> visitLogRepository,
+        IRepository<Favorite> favoriteRepository,
+        IRepository<Rating> ratingRepository,
+        IRepository<Analytics> analyticsRepository,
+        IUnitOfWork unitOfWork,
         ILogger<TouristAppService> logger,
         IHttpContextAccessor httpContextAccessor)
     {
-        _context = context;
+        _touristRepository = touristRepository;
+        _poiRepository = poiRepository;
+        _visitLogRepository = visitLogRepository;
+        _favoriteRepository = favoriteRepository;
+        _ratingRepository = ratingRepository;
+        _analyticsRepository = analyticsRepository;
+        _unitOfWork = unitOfWork;
         _logger = logger;
         _httpContextAccessor = httpContextAccessor;
     }
 
     public async Task<IActionResult> RegisterTouristAsync(RegisterTouristRequest request)
     {
-        var tourist = await _context.Tourists
+        var tourist = await _touristRepository.Query()
             .FirstOrDefaultAsync(t => t.DeviceId == request.DeviceId && !t.IsDeleted);
 
         if (tourist == null)
@@ -38,8 +56,8 @@ public class TouristAppService : ITouristAppService
                 LastLongitude = request.Longitude
             };
 
-            _context.Tourists.Add(tourist);
-            await _context.SaveChangesAsync();
+            await _touristRepository.AddAsync(tourist);
+            await _unitOfWork.SaveChangesAsync();
             _logger.LogInformation("New tourist registered with DeviceId: {DeviceId}", request.DeviceId);
         }
         else
@@ -47,7 +65,7 @@ public class TouristAppService : ITouristAppService
             tourist.PreferredLanguage = request.PreferredLanguage ?? tourist.PreferredLanguage;
             tourist.LastLatitude = request.Latitude ?? tourist.LastLatitude;
             tourist.LastLongitude = request.Longitude ?? tourist.LastLongitude;
-            await _context.SaveChangesAsync();
+            await _unitOfWork.SaveChangesAsync();
         }
 
         return new OkObjectResult(new TouristDto
@@ -61,7 +79,7 @@ public class TouristAppService : ITouristAppService
 
     public async Task<IActionResult> UpdateLocationAsync(int touristId, UpdateLocationRequest request)
     {
-        var tourist = await _context.Tourists
+        var tourist = await _touristRepository.Query()
             .FirstOrDefaultAsync(t => t.Id == touristId && !t.IsDeleted);
 
         if (tourist == null)
@@ -69,7 +87,7 @@ public class TouristAppService : ITouristAppService
 
         tourist.LastLatitude = request.Latitude;
         tourist.LastLongitude = request.Longitude;
-        await _context.SaveChangesAsync();
+        await _unitOfWork.SaveChangesAsync();
 
         var nearbyPOIs = await CheckNearbyPOIs(request.Latitude, request.Longitude);
 
@@ -96,13 +114,13 @@ public class TouristAppService : ITouristAppService
         if (poiId <= 0)
             return new BadRequestObjectResult(new { message = "Thiếu poiId hợp lệ" });
 
-        var tourist = await _context.Tourists
+        var tourist = await _touristRepository.Query()
             .FirstOrDefaultAsync(t => t.Id == touristId && !t.IsDeleted);
 
         if (tourist == null)
             return new NotFoundObjectResult(new { message = "Tourist không tồn tại" });
 
-        var poi = await _context.PointsOfInterest
+        var poi = await _poiRepository.Query()
             .FirstOrDefaultAsync(p => p.Id == poiId && !p.IsDeleted);
 
         if (poi == null)
@@ -110,7 +128,7 @@ public class TouristAppService : ITouristAppService
 
         var nowUtc = DateTime.UtcNow;
         var dedupeSinceUtc = nowUtc.AddMinutes(-5);
-        var existingVisit = await _context.VisitLogs
+        var existingVisit = await _visitLogRepository.Query()
             .FirstOrDefaultAsync(v =>
                 v.TouristId == touristId &&
                 v.PointOfInterestId == poiId &&
@@ -130,9 +148,9 @@ public class TouristAppService : ITouristAppService
                     : request.LanguageCode
             };
 
-            _context.VisitLogs.Add(visitLog);
+            await _visitLogRepository.AddAsync(visitLog);
             tourist.TotalVisits++;
-            await _context.SaveChangesAsync();
+            await _unitOfWork.SaveChangesAsync();
 
             _logger.LogInformation(
                 "Tourist {TouristId} visited POI {PoiId} via {TriggerMethod}",
@@ -146,7 +164,7 @@ public class TouristAppService : ITouristAppService
 
     public async Task<IActionResult> GetVisitHistoryAsync(int touristId)
     {
-        var visits = await _context.VisitLogs
+        var visits = await _visitLogRepository.Query()
             .Where(v => v.TouristId == touristId)
             .Include(v => v.PointOfInterest)
             .OrderByDescending(v => v.VisitedAt)
@@ -171,13 +189,13 @@ public class TouristAppService : ITouristAppService
 
     public async Task<IActionResult> AddFavoriteAsync(int touristId, AddFavoriteRequest request)
     {
-        var tourist = await _context.Tourists
+        var tourist = await _touristRepository.Query()
             .FirstOrDefaultAsync(t => t.Id == touristId && !t.IsDeleted);
 
         if (tourist == null)
             return new NotFoundObjectResult(new { message = "Tourist không tồn tại" });
 
-        var existingFavorite = await _context.Set<Favorite>()
+        var existingFavorite = await _favoriteRepository.Query()
             .IgnoreQueryFilters()
             .FirstOrDefaultAsync(f => f.TouristId == touristId && f.PointOfInterestId == request.POIId);
 
@@ -188,7 +206,7 @@ public class TouristAppService : ITouristAppService
 
             existingFavorite.IsDeleted = false;
             existingFavorite.DeletedAt = null;
-            await _context.SaveChangesAsync();
+            await _unitOfWork.SaveChangesAsync();
             return new OkObjectResult(new { success = true, message = "Đã thêm vào yêu thích" });
         }
 
@@ -199,23 +217,23 @@ public class TouristAppService : ITouristAppService
             Note = request.Note
         };
 
-        _context.Set<Favorite>().Add(favorite);
-        await _context.SaveChangesAsync();
+        await _favoriteRepository.AddAsync(favorite);
+        await _unitOfWork.SaveChangesAsync();
 
         return new OkObjectResult(new { success = true, message = "Đã thêm vào yêu thích" });
     }
 
     public async Task<IActionResult> RemoveFavoriteAsync(int touristId, int poiId)
     {
-        var favorite = await _context.Set<Favorite>()
+        var favorite = await _favoriteRepository.Query()
             .IgnoreQueryFilters()
             .FirstOrDefaultAsync(f => f.TouristId == touristId && f.PointOfInterestId == poiId);
 
         if (favorite == null || favorite.IsDeleted)
             return new OkObjectResult(new { success = true, message = "Yêu thích đã được xóa" });
 
-        _context.Set<Favorite>().Remove(favorite);
-        await _context.SaveChangesAsync();
+        _favoriteRepository.Remove(favorite);
+        await _unitOfWork.SaveChangesAsync();
 
         return new OkObjectResult(new { success = true, message = "Đã xóa khỏi yêu thích" });
     }
@@ -224,7 +242,7 @@ public class TouristAppService : ITouristAppService
     {
         var normalizedLanguageCode = NormalizeLanguageCode(languageCode);
 
-        var favoriteEntities = await _context.Set<Favorite>()
+        var favoriteEntities = await _favoriteRepository.Query()
             .Where(f => f.TouristId == touristId)
             .Include(f => f.PointOfInterest)
                 .ThenInclude(p => p.Category)
@@ -267,19 +285,19 @@ public class TouristAppService : ITouristAppService
 
     public async Task<IActionResult> SubmitRatingAsync(int touristId, SubmitRatingRequest request)
     {
-        var tourist = await _context.Tourists
+        var tourist = await _touristRepository.Query()
             .FirstOrDefaultAsync(t => t.Id == touristId && !t.IsDeleted);
 
         if (tourist == null)
             return new NotFoundObjectResult(new { message = "Tourist không tồn tại" });
 
-        var poi = await _context.PointsOfInterest
+        var poi = await _poiRepository.Query()
             .FirstOrDefaultAsync(p => p.Id == request.POIId && !p.IsDeleted);
 
         if (poi == null)
             return new NotFoundObjectResult(new { message = "POI không tồn tại" });
 
-        var existingRating = await _context.Set<Rating>()
+        var existingRating = await _ratingRepository.Query()
             .FirstOrDefaultAsync(r => r.TouristId == touristId && r.PointOfInterestId == request.POIId);
 
         if (existingRating != null)
@@ -299,30 +317,30 @@ public class TouristAppService : ITouristAppService
                 LanguageCode = request.LanguageCode ?? "vi"
             };
 
-            _context.Set<Rating>().Add(rating);
+            await _ratingRepository.AddAsync(rating);
             poi.TotalRatings++;
         }
 
-        var allRatings = await _context.Set<Rating>()
+        var allRatings = await _ratingRepository.Query()
             .Where(r => r.PointOfInterestId == request.POIId)
             .ToListAsync();
 
         if (allRatings.Any())
             poi.AverageRating = (decimal)allRatings.Average(r => r.Score);
 
-        await _context.SaveChangesAsync();
+        await _unitOfWork.SaveChangesAsync();
         return new OkObjectResult(new { success = true, message = "Cảm ơn đánh giá của bạn!" });
     }
 
     public async Task<IActionResult> GetStatsAsync(int touristId)
     {
-        var tourist = await _context.Tourists
+        var tourist = await _touristRepository.Query()
             .FirstOrDefaultAsync(t => t.Id == touristId && !t.IsDeleted);
 
         if (tourist == null)
             return new NotFoundObjectResult(new { message = "Tourist không tồn tại" });
 
-        var events = await _context.Analytics
+        var events = await _analyticsRepository.Query()
             .Where(a => a.TouristId == touristId)
             .ToListAsync();
 
@@ -330,7 +348,7 @@ public class TouristAppService : ITouristAppService
             .Where(a => a.EventType == "audio_complete" && a.DurationSeconds > 0)
             .Sum(a => a.DurationSeconds ?? 0);
 
-        var mostVisitedPoiId = await _context.VisitLogs
+        var mostVisitedPoiId = await _visitLogRepository.Query()
             .Where(v => v.TouristId == touristId)
             .GroupBy(v => v.PointOfInterestId)
             .OrderByDescending(g => g.Count())
@@ -340,7 +358,7 @@ public class TouristAppService : ITouristAppService
         string? mostVisitedPoiName = null;
         if (mostVisitedPoiId.HasValue)
         {
-            mostVisitedPoiName = await _context.PointsOfInterest
+            mostVisitedPoiName = await _poiRepository.Query()
                 .Where(p => p.Id == mostVisitedPoiId.Value)
                 .Select(p => p.Name)
                 .FirstOrDefaultAsync();
@@ -379,7 +397,7 @@ public class TouristAppService : ITouristAppService
         if (!latitude.HasValue || !longitude.HasValue)
             return new List<PointOfInterest>();
 
-        var allPOIs = await _context.PointsOfInterest
+        var allPOIs = await _poiRepository.Query()
             .Where(p => !p.IsDeleted && p.IsActive)
             .ToListAsync();
 

@@ -1,19 +1,36 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.EntityFrameworkCore;
-using VK.Infrastructure.Data;
 using VK.Core.Entities;
+using VK.Core.Interfaces;
 
 namespace VK.Web.Controllers;
 
 public class AudioController : Controller
 {
-    private readonly VKStreetFoodDbContext _context;
+    private readonly IRepository<AudioContent> _audioRepository;
+    private readonly IRepository<PointOfInterest> _poiRepository;
+    private readonly IRepository<Vendor> _vendorRepository;
+    private readonly IRepository<User> _userRepository;
+    private readonly IRepository<PoiContentChangeRequest> _changeRequestRepository;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<AudioController> _logger;
 
-    public AudioController(VKStreetFoodDbContext context, ILogger<AudioController> logger)
+    public AudioController(
+        IRepository<AudioContent> audioRepository,
+        IRepository<PointOfInterest> poiRepository,
+        IRepository<Vendor> vendorRepository,
+        IRepository<User> userRepository,
+        IRepository<PoiContentChangeRequest> changeRequestRepository,
+        IUnitOfWork unitOfWork,
+        ILogger<AudioController> logger)
     {
-        _context = context;
+        _audioRepository = audioRepository;
+        _poiRepository = poiRepository;
+        _vendorRepository = vendorRepository;
+        _userRepository = userRepository;
+        _changeRequestRepository = changeRequestRepository;
+        _unitOfWork = unitOfWork;
         _logger = logger;
     }
 
@@ -49,7 +66,7 @@ public class AudioController : Controller
                 return RedirectToAction("Index", "Owner");
             }
 
-            var query = _context.AudioContents
+            var query = _audioRepository.Query()
                 .Include(a => a.PointOfInterest)
                 .AsQueryable();
 
@@ -73,7 +90,7 @@ public class AudioController : Controller
                 .Take(pageSize)
                 .ToListAsync();
 
-            var poisQuery = _context.PointsOfInterest.AsQueryable();
+            var poisQuery = _poiRepository.Query().AsQueryable();
             if (isOwner && ownerPoiId.HasValue)
                 poisQuery = poisQuery.Where(p => p.Id == ownerPoiId.Value);
 
@@ -121,7 +138,7 @@ public class AudioController : Controller
 
                 var owner = ownerData.Value;
 
-                _context.PoiContentChangeRequests.Add(new PoiContentChangeRequest
+                await _changeRequestRepository.AddAsync(new PoiContentChangeRequest
                 {
                     OwnerUserId = owner.UserId,
                     VendorId = owner.VendorId,
@@ -134,12 +151,12 @@ public class AudioController : Controller
                     Status = "pending"
                 });
 
-                await _context.SaveChangesAsync();
+                await _unitOfWork.SaveChangesAsync();
                 TempData["Success"] = "Đã gửi yêu cầu thêm audio. Chờ admin duyệt.";
                 return RedirectToAction(nameof(Index));
             }
 
-            var existingAny = await _context.AudioContents
+            var existingAny = await _audioRepository.Query()
                 .IgnoreQueryFilters()
                 .FirstOrDefaultAsync(a =>
                     a.PointOfInterestId == model.PointOfInterestId &&
@@ -154,13 +171,13 @@ public class AudioController : Controller
                 existingAny.AudioFileUrl = null;
                 existingAny.DurationSeconds = null;
 
-                await _context.SaveChangesAsync();
+                await _unitOfWork.SaveChangesAsync();
                 TempData["Success"] = "Đã khôi phục audio cũ và cập nhật nội dung!";
                 return RedirectToAction(nameof(Index));
             }
 
-            _context.AudioContents.Add(model);
-            await _context.SaveChangesAsync();
+            await _audioRepository.AddAsync(model);
+            await _unitOfWork.SaveChangesAsync();
             TempData["Success"] = "Thêm audio thành công!";
         }
         catch (Exception ex)
@@ -177,7 +194,7 @@ public class AudioController : Controller
         var isOwner = string.Equals(HttpContext.Session.GetString("UserRole"), "poi_owner", StringComparison.OrdinalIgnoreCase);
         try
         {
-            var existing = await _context.AudioContents.FindAsync(model.Id);
+            var existing = await _audioRepository.Query().FirstOrDefaultAsync(a => a.Id == model.Id);
             if (existing == null)
             {
                 TempData["Error"] = "Không tìm thấy audio.";
@@ -195,7 +212,7 @@ public class AudioController : Controller
 
                 var owner = ownerData.Value;
 
-                _context.PoiContentChangeRequests.Add(new PoiContentChangeRequest
+                await _changeRequestRepository.AddAsync(new PoiContentChangeRequest
                 {
                     OwnerUserId = owner.UserId,
                     VendorId = owner.VendorId,
@@ -208,7 +225,7 @@ public class AudioController : Controller
                     Status = "pending"
                 });
 
-                await _context.SaveChangesAsync();
+                await _unitOfWork.SaveChangesAsync();
                 TempData["Success"] = "Đã gửi yêu cầu cập nhật audio. Chờ admin duyệt.";
                 return RedirectToAction(nameof(Index));
             }
@@ -216,7 +233,7 @@ public class AudioController : Controller
             existing.LanguageCode = model.LanguageCode;
             existing.TextContent = model.TextContent;
             existing.PointOfInterestId = model.PointOfInterestId;
-            await _context.SaveChangesAsync();
+            await _unitOfWork.SaveChangesAsync();
             TempData["Success"] = "Cập nhật audio thành công!";
         }
         catch (Exception ex)
@@ -233,7 +250,7 @@ public class AudioController : Controller
         var isOwner = string.Equals(HttpContext.Session.GetString("UserRole"), "poi_owner", StringComparison.OrdinalIgnoreCase);
         try
         {
-            var audio = await _context.AudioContents.FindAsync(id);
+            var audio = await _audioRepository.Query().FirstOrDefaultAsync(a => a.Id == id);
             if (audio != null)
             {
                 if (isOwner)
@@ -247,7 +264,7 @@ public class AudioController : Controller
 
                     var owner = ownerData.Value;
 
-                    _context.PoiContentChangeRequests.Add(new PoiContentChangeRequest
+                    await _changeRequestRepository.AddAsync(new PoiContentChangeRequest
                     {
                         OwnerUserId = owner.UserId,
                         VendorId = owner.VendorId,
@@ -260,14 +277,14 @@ public class AudioController : Controller
                         Status = "pending"
                     });
 
-                    await _context.SaveChangesAsync();
+                    await _unitOfWork.SaveChangesAsync();
                     TempData["Success"] = "Đã gửi yêu cầu xóa audio. Chờ admin duyệt.";
                     return RedirectToAction(nameof(Index));
                 }
 
                 DeleteAudioFileIfExists(audio.AudioFileUrl);
-                _context.AudioContents.Remove(audio);
-                await _context.SaveChangesAsync();
+                _audioRepository.Remove(audio);
+                await _unitOfWork.SaveChangesAsync();
                 TempData["Success"] = "Xóa audio thành công!";
             }
         }
@@ -285,7 +302,7 @@ public class AudioController : Controller
         if (!vendorId.HasValue)
             return null;
 
-        return await _context.Vendors
+        return await _vendorRepository.Query()
             .Where(v => v.Id == vendorId.Value && !v.IsDeleted)
             .Select(v => (int?)v.PointOfInterestId)
             .FirstOrDefaultAsync();
@@ -298,12 +315,12 @@ public class AudioController : Controller
         if (string.IsNullOrWhiteSpace(email) || !vendorId.HasValue)
             return null;
 
-        var userId = await _context.Users
+        var userId = await _userRepository.Query()
             .Where(u => !u.IsDeleted && u.Email == email && u.Role == "poi_owner")
             .Select(u => (int?)u.Id)
             .FirstOrDefaultAsync();
 
-        var poiId = await _context.Vendors
+        var poiId = await _vendorRepository.Query()
             .Where(v => !v.IsDeleted && v.Id == vendorId.Value)
             .Select(v => (int?)v.PointOfInterestId)
             .FirstOrDefaultAsync();

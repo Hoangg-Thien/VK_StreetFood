@@ -1,17 +1,23 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using VK.Infrastructure.Data;
+using VK.Core.Entities;
+using VK.Core.Interfaces;
 
 namespace VK.Web.Controllers;
 
 public class OwnerRegistrationController : AdminBaseController
 {
-    private readonly VKStreetFoodDbContext _context;
+    private readonly IRepository<PoiOwnerRegistration> _ownerRegistrationRepository;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<OwnerRegistrationController> _logger;
 
-    public OwnerRegistrationController(VKStreetFoodDbContext context, ILogger<OwnerRegistrationController> logger)
+    public OwnerRegistrationController(
+        IRepository<PoiOwnerRegistration> ownerRegistrationRepository,
+        IUnitOfWork unitOfWork,
+        ILogger<OwnerRegistrationController> logger)
     {
-        _context = context;
+        _ownerRegistrationRepository = ownerRegistrationRepository;
+        _unitOfWork = unitOfWork;
         _logger = logger;
     }
 
@@ -19,7 +25,7 @@ public class OwnerRegistrationController : AdminBaseController
     {
         var normalizedStatus = string.IsNullOrWhiteSpace(status) ? "pending" : status.Trim().ToLowerInvariant();
 
-        var registrations = await _context.PoiOwnerRegistrations
+        var registrations = await _ownerRegistrationRepository.Query()
             .Include(r => r.User)
             .Include(r => r.PointOfInterest)
             .Include(r => r.Vendor)
@@ -38,7 +44,7 @@ public class OwnerRegistrationController : AdminBaseController
     {
         try
         {
-            var registration = await _context.PoiOwnerRegistrations
+            var registration = await _ownerRegistrationRepository.Query()
                 .Include(r => r.User)
                 .Include(r => r.Vendor)
                 .FirstOrDefaultAsync(r => r.Id == id);
@@ -61,7 +67,7 @@ public class OwnerRegistrationController : AdminBaseController
                 registration.Vendor.IsActive = true;
             }
 
-            await _context.SaveChangesAsync();
+            await _unitOfWork.SaveChangesAsync();
             TempData["Success"] = "Duyệt chủ quán thành công.";
         }
         catch (Exception ex)
@@ -79,7 +85,7 @@ public class OwnerRegistrationController : AdminBaseController
     {
         try
         {
-            var registration = await _context.PoiOwnerRegistrations
+            var registration = await _ownerRegistrationRepository.Query()
                 .Include(r => r.User)
                 .FirstOrDefaultAsync(r => r.Id == id);
 
@@ -94,7 +100,7 @@ public class OwnerRegistrationController : AdminBaseController
             registration.ReviewNote = reviewNote;
             registration.User.IsVerified = false;
 
-            await _context.SaveChangesAsync();
+            await _unitOfWork.SaveChangesAsync();
             TempData["Success"] = "Đã từ chối đăng ký.";
         }
         catch (Exception ex)

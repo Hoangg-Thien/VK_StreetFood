@@ -1,6 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
+using VK.Core.Interfaces;
 using VK.Infrastructure.Data;
+using VK.Infrastructure.Repositories;
 using VK.API.Extensions;
 using VK.API.Services;
 using VK.API.Services.AppServices;
@@ -13,6 +15,9 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddDbContext<VKStreetFoodDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
+builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();

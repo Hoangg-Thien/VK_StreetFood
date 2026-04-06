@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using VK.Core.Entities;
-using VK.Infrastructure.Data;
+using VK.Core.Interfaces;
 using VK.Shared.Constants;
 using VK.Shared.DTOs;
 
@@ -9,7 +9,8 @@ namespace VK.API.Services.AppServices;
 
 public class POIAppService : IPOIAppService
 {
-    private readonly VKStreetFoodDbContext _context;
+    private readonly IRepository<PointOfInterest> _poiRepository;
+    private readonly IRepository<Category> _categoryRepository;
     private readonly ILogger<POIAppService> _logger;
     private readonly IHttpContextAccessor _httpContextAccessor;
 
@@ -31,11 +32,13 @@ public class POIAppService : IPOIAppService
         };
 
     public POIAppService(
-        VKStreetFoodDbContext context,
+        IRepository<PointOfInterest> poiRepository,
+        IRepository<Category> categoryRepository,
         ILogger<POIAppService> logger,
         IHttpContextAccessor httpContextAccessor)
     {
-        _context = context;
+        _poiRepository = poiRepository;
+        _categoryRepository = categoryRepository;
         _logger = logger;
         _httpContextAccessor = httpContextAccessor;
     }
@@ -44,7 +47,7 @@ public class POIAppService : IPOIAppService
     {
         var normalizedLanguageCode = NormalizeLanguageCode(languageCode);
 
-        var query = _context.PointsOfInterest
+        var query = _poiRepository.Query()
             .Where(p => !p.IsDeleted && p.IsActive)
             .Include(p => p.Category)
             .Include(p => p.Tags)
@@ -102,7 +105,7 @@ public class POIAppService : IPOIAppService
     {
         var normalizedLanguageCode = NormalizeLanguageCode(languageCode);
 
-        var pois = await _context.PointsOfInterest
+        var pois = await _poiRepository.Query()
             .Where(p => !p.IsDeleted && p.IsActive)
             .Include(p => p.Category)
             .Include(p => p.Tags)
@@ -152,7 +155,7 @@ public class POIAppService : IPOIAppService
     {
         var normalizedLanguageCode = NormalizeLanguageCode(languageCode);
 
-        var poi = await _context.PointsOfInterest
+        var poi = await _poiRepository.Query()
             .Include(p => p.Category)
             .Include(p => p.AudioContents)
             .Include(p => p.Translations)
@@ -238,7 +241,7 @@ public class POIAppService : IPOIAppService
 
     public async Task<IActionResult> GetCategoriesAsync()
     {
-        var categories = await _context.Categories
+        var categories = await _categoryRepository.Query()
             .Where(c => !c.IsDeleted && c.IsActive)
             .OrderBy(c => c.DisplayOrder)
             .Select(c => new CategoryDto

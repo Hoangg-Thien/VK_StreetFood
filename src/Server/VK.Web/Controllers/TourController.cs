@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json.Serialization;
 using VK.Core.Entities;
-using VK.Infrastructure.Data;
+using VK.Core.Interfaces;
 using VK.Shared.Constants;
 using VK.Web.Services;
 
@@ -10,16 +10,31 @@ namespace VK.Web.Controllers;
 
 public class TourController : AdminBaseController
 {
-    private readonly VKStreetFoodDbContext _context;
+    private readonly IRepository<Tour> _tourRepository;
+    private readonly IRepository<TourPointOfInterest> _tourPointRepository;
+    private readonly IRepository<TourTranslation> _tourTranslationRepository;
+    private readonly IRepository<PointOfInterest> _poiRepository;
+    private readonly IRepository<Category> _categoryRepository;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<TourController> _logger;
     private readonly ITextTranslationService _textTranslationService;
 
     public TourController(
-        VKStreetFoodDbContext context,
+        IRepository<Tour> tourRepository,
+        IRepository<TourPointOfInterest> tourPointRepository,
+        IRepository<TourTranslation> tourTranslationRepository,
+        IRepository<PointOfInterest> poiRepository,
+        IRepository<Category> categoryRepository,
+        IUnitOfWork unitOfWork,
         ILogger<TourController> logger,
         ITextTranslationService textTranslationService)
     {
-        _context = context;
+        _tourRepository = tourRepository;
+        _tourPointRepository = tourPointRepository;
+        _tourTranslationRepository = tourTranslationRepository;
+        _poiRepository = poiRepository;
+        _categoryRepository = categoryRepository;
+        _unitOfWork = unitOfWork;
         _logger = logger;
         _textTranslationService = textTranslationService;
     }
@@ -30,7 +45,7 @@ public class TourController : AdminBaseController
         {
             var status = (Request.Query["status"].ToString() ?? string.Empty).Trim().ToLowerInvariant();
 
-            var toursQuery = _context.Tours
+            var toursQuery = _tourRepository.Query()
                 .Include(t => t.TourPoints.OrderBy(tp => tp.SortOrder))
                 .ThenInclude(tp => tp.PointOfInterest)
                 .AsQueryable();
@@ -45,13 +60,13 @@ public class TourController : AdminBaseController
                 .ToListAsync();
 
             // Load POIs to build tours from
-            var pois = await _context.PointsOfInterest
+            var pois = await _poiRepository.Query()
                 .Include(p => p.Category)
                 .Include(p => p.AudioContents)
                 .OrderBy(p => p.Name)
                 .ToListAsync();
 
-            var categories = await _context.Categories.ToListAsync();
+            var categories = await _categoryRepository.Query().ToListAsync();
 
             ViewBag.Tours = tours;
             ViewBag.POIs = pois;
@@ -96,8 +111,8 @@ public class TourController : AdminBaseController
                 Status = NormalizeStatus(input.Status)
             };
 
-            _context.Tours.Add(tour);
-            await _context.SaveChangesAsync();
+            await _tourRepository.AddAsync(tour);
+            await _unitOfWork.SaveChangesAsync();
             await EnsureDefaultTranslationsAsync(
                 tour.Id,
                 tour.Name,
@@ -133,7 +148,7 @@ public class TourController : AdminBaseController
                 return RedirectToAction(nameof(Index));
             }
 
-            var tour = await _context.Tours
+            var tour = await _tourRepository.Query()
                 .Include(t => t.TourPoints)
                 .FirstOrDefaultAsync(t => t.Id == input.Id);
 
@@ -173,17 +188,17 @@ public class TourController : AdminBaseController
     {
         try
         {
-            await _context.TourPointsOfInterest
+            await _tourPointRepository.Query()
                 .IgnoreQueryFilters()
                 .Where(tp => tp.TourId == id)
                 .ExecuteDeleteAsync();
 
-            await _context.TourTranslations
+            await _tourTranslationRepository.Query()
                 .IgnoreQueryFilters()
                 .Where(t => t.TourId == id)
                 .ExecuteDeleteAsync();
 
-            var deletedTourCount = await _context.Tours
+            var deletedTourCount = await _tourRepository.Query()
                 .IgnoreQueryFilters()
                 .Where(t => t.Id == id)
                 .ExecuteDeleteAsync();
@@ -212,7 +227,7 @@ public class TourController : AdminBaseController
             .Distinct()
             .ToList();
 
-        var existing = await _context.TourPointsOfInterest
+        var existing = await _tourPointRepository.Query()
             .Where(tp => tp.TourId == tourId)
             .ToListAsync();
 
@@ -239,7 +254,7 @@ public class TourController : AdminBaseController
                 continue;
             }
 
-            _context.TourPointsOfInterest.Add(new TourPointOfInterest
+            await _tourPointRepository.AddAsync(new TourPointOfInterest
             {
                 TourId = tourId,
                 PointOfInterestId = poiId,
@@ -247,7 +262,7 @@ public class TourController : AdminBaseController
             });
         }
 
-        await _context.SaveChangesAsync();
+        await _unitOfWork.SaveChangesAsync();
     }
 
     private static string NormalizeStatus(string? status)
@@ -264,7 +279,7 @@ public class TourController : AdminBaseController
     {
         var translatedValues = await BuildTranslatedValuesAsync(name, description);
 
-        var translations = await _context.TourTranslations
+        var translations = await _tourTranslationRepository.Query()
             .Where(t => t.TourId == tourId)
             .ToListAsync();
 
@@ -295,7 +310,7 @@ public class TourController : AdminBaseController
                 continue;
             }
 
-            _context.TourTranslations.Add(new TourTranslation
+            await _tourTranslationRepository.AddAsync(new TourTranslation
             {
                 TourId = tourId,
                 LanguageCode = lang,
@@ -304,7 +319,7 @@ public class TourController : AdminBaseController
             });
         }
 
-        await _context.SaveChangesAsync();
+        await _unitOfWork.SaveChangesAsync();
     }
 
     private async Task<Dictionary<string, (string Name, string Description)>> BuildTranslatedValuesAsync(

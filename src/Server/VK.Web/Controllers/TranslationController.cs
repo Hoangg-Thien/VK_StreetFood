@@ -1,19 +1,36 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.EntityFrameworkCore;
-using VK.Infrastructure.Data;
 using VK.Core.Entities;
+using VK.Core.Interfaces;
 
 namespace VK.Web.Controllers;
 
 public class TranslationController : Controller
 {
-    private readonly VKStreetFoodDbContext _context;
+    private readonly IRepository<PointOfInterest> _poiRepository;
+    private readonly IRepository<AudioContent> _audioRepository;
+    private readonly IRepository<PoiContentChangeRequest> _changeRequestRepository;
+    private readonly IRepository<Vendor> _vendorRepository;
+    private readonly IRepository<User> _userRepository;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<TranslationController> _logger;
 
-    public TranslationController(VKStreetFoodDbContext context, ILogger<TranslationController> logger)
+    public TranslationController(
+        IRepository<PointOfInterest> poiRepository,
+        IRepository<AudioContent> audioRepository,
+        IRepository<PoiContentChangeRequest> changeRequestRepository,
+        IRepository<Vendor> vendorRepository,
+        IRepository<User> userRepository,
+        IUnitOfWork unitOfWork,
+        ILogger<TranslationController> logger)
     {
-        _context = context;
+        _poiRepository = poiRepository;
+        _audioRepository = audioRepository;
+        _changeRequestRepository = changeRequestRepository;
+        _vendorRepository = vendorRepository;
+        _userRepository = userRepository;
+        _unitOfWork = unitOfWork;
         _logger = logger;
     }
 
@@ -50,7 +67,7 @@ public class TranslationController : Controller
             }
 
             // Group audio contents by POI to show translation completeness
-            var poisQuery = _context.PointsOfInterest
+            var poisQuery = _poiRepository.Query()
                 .Include(p => p.AudioContents)
                 .AsQueryable();
 
@@ -71,7 +88,7 @@ public class TranslationController : Controller
                 .Take(pageSize)
                 .ToListAsync();
 
-            var allPoisQuery = _context.PointsOfInterest.AsQueryable();
+            var allPoisQuery = _poiRepository.Query().AsQueryable();
             if (isOwner && ownerPoiId.HasValue)
                 allPoisQuery = allPoisQuery.Where(p => p.Id == ownerPoiId.Value);
 
@@ -116,7 +133,7 @@ public class TranslationController : Controller
 
                 var owner = ownerData.Value;
 
-                _context.PoiContentChangeRequests.Add(new PoiContentChangeRequest
+                await _changeRequestRepository.AddAsync(new PoiContentChangeRequest
                 {
                     OwnerUserId = owner.UserId,
                     VendorId = owner.VendorId,
@@ -129,26 +146,26 @@ public class TranslationController : Controller
                     Status = "pending"
                 });
 
-                await _context.SaveChangesAsync();
+                await _unitOfWork.SaveChangesAsync();
                 TempData["Success"] = $"Đã gửi yêu cầu bản dịch [{languageCode.ToUpper()}]. Chờ admin duyệt.";
                 return RedirectToAction(nameof(Index));
             }
 
             if (existingId.HasValue && existingId > 0)
             {
-                var existing = await _context.AudioContents.FindAsync(existingId.Value);
+                var existing = await _audioRepository.Query().FirstOrDefaultAsync(a => a.Id == existingId.Value);
                 if (existing != null)
                 {
                     existing.LanguageCode = languageCode.Trim().ToLowerInvariant();
                     existing.TextContent = textContent;
-                    await _context.SaveChangesAsync();
+                    await _unitOfWork.SaveChangesAsync();
                     TempData["Success"] = $"Cập nhật bản dịch [{languageCode.ToUpper()}] thành công!";
                     return RedirectToAction(nameof(Index));
                 }
             }
 
             var normalizedLanguageCode = languageCode.Trim().ToLowerInvariant();
-            var existingAny = await _context.AudioContents
+            var existingAny = await _audioRepository.Query()
                 .IgnoreQueryFilters()
                 .FirstOrDefaultAsync(a =>
                     a.PointOfInterestId == poiId &&
@@ -164,7 +181,7 @@ public class TranslationController : Controller
                 existingAny.AudioFileUrl = null;
                 existingAny.DurationSeconds = null;
 
-                await _context.SaveChangesAsync();
+                await _unitOfWork.SaveChangesAsync();
                 TempData["Success"] = $"Đã khôi phục bản dịch [{normalizedLanguageCode.ToUpper()}] thành công!";
                 return RedirectToAction(nameof(Index));
             }
@@ -175,8 +192,8 @@ public class TranslationController : Controller
                 LanguageCode = normalizedLanguageCode,
                 TextContent = textContent
             };
-            _context.AudioContents.Add(newAudio);
-            await _context.SaveChangesAsync();
+            await _audioRepository.AddAsync(newAudio);
+            await _unitOfWork.SaveChangesAsync();
             TempData["Success"] = $"Thêm bản dịch [{languageCode.ToUpper()}] thành công!";
         }
         catch (Exception ex)
@@ -194,7 +211,7 @@ public class TranslationController : Controller
         var isOwner = string.Equals(HttpContext.Session.GetString("UserRole"), "poi_owner", StringComparison.OrdinalIgnoreCase);
         try
         {
-            var audio = await _context.AudioContents.FindAsync(id);
+            var audio = await _audioRepository.Query().FirstOrDefaultAsync(a => a.Id == id);
             if (audio != null)
             {
                 if (isOwner)
@@ -208,7 +225,7 @@ public class TranslationController : Controller
 
                     var owner = ownerData.Value;
 
-                    _context.PoiContentChangeRequests.Add(new PoiContentChangeRequest
+                    await _changeRequestRepository.AddAsync(new PoiContentChangeRequest
                     {
                         OwnerUserId = owner.UserId,
                         VendorId = owner.VendorId,
@@ -221,14 +238,14 @@ public class TranslationController : Controller
                         Status = "pending"
                     });
 
-                    await _context.SaveChangesAsync();
+                    await _unitOfWork.SaveChangesAsync();
                     TempData["Success"] = "Đã gửi yêu cầu xóa bản dịch. Chờ admin duyệt.";
                     return RedirectToAction(nameof(Index));
                 }
 
                 DeleteAudioFileIfExists(audio.AudioFileUrl);
-                _context.AudioContents.Remove(audio);
-                await _context.SaveChangesAsync();
+                _audioRepository.Remove(audio);
+                await _unitOfWork.SaveChangesAsync();
                 TempData["Success"] = "Xóa bản dịch thành công!";
             }
         }
@@ -246,7 +263,7 @@ public class TranslationController : Controller
         if (!vendorId.HasValue)
             return null;
 
-        return await _context.Vendors
+        return await _vendorRepository.Query()
             .Where(v => v.Id == vendorId.Value && !v.IsDeleted)
             .Select(v => (int?)v.PointOfInterestId)
             .FirstOrDefaultAsync();
@@ -259,12 +276,12 @@ public class TranslationController : Controller
         if (string.IsNullOrWhiteSpace(email) || !vendorId.HasValue)
             return null;
 
-        var userId = await _context.Users
+        var userId = await _userRepository.Query()
             .Where(u => !u.IsDeleted && u.Email == email && u.Role == "poi_owner")
             .Select(u => (int?)u.Id)
             .FirstOrDefaultAsync();
 
-        var poiId = await _context.Vendors
+        var poiId = await _vendorRepository.Query()
             .Where(v => !v.IsDeleted && v.Id == vendorId.Value)
             .Select(v => (int?)v.PointOfInterestId)
             .FirstOrDefaultAsync();

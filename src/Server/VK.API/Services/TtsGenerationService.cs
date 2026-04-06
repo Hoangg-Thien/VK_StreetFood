@@ -2,7 +2,8 @@ using System.Diagnostics;
 using System.Security;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
-using VK.Infrastructure.Data;
+using VK.Core.Entities;
+using VK.Core.Interfaces;
 
 namespace VK.API.Services;
 
@@ -34,16 +35,19 @@ file static class EdgeVoices
 
 public class TtsGenerationService : ITtsGenerationService
 {
-    private readonly VKStreetFoodDbContext _db;
+    private readonly IRepository<AudioContent> _audioRepository;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly string _audioRootPath;
     private readonly ILogger<TtsGenerationService> _logger;
 
     public TtsGenerationService(
-        VKStreetFoodDbContext db,
+        IRepository<AudioContent> audioRepository,
+        IUnitOfWork unitOfWork,
         IOptions<AudioStorageOptions> audioStorageOptions,
         ILogger<TtsGenerationService> logger)
     {
-        _db = db;
+        _audioRepository = audioRepository;
+        _unitOfWork = unitOfWork;
         _audioRootPath = audioStorageOptions.Value.RootPath;
         _logger = logger;
 
@@ -55,7 +59,7 @@ public class TtsGenerationService : ITtsGenerationService
 
     public async Task<TtsGenerateResult> GenerateAsync(int audioContentId, CancellationToken ct = default)
     {
-        var audio = await _db.AudioContents
+        var audio = await _audioRepository.Query()
             .FirstOrDefaultAsync(a => a.Id == audioContentId && !a.IsDeleted, ct);
 
         if (audio == null)
@@ -66,7 +70,7 @@ public class TtsGenerationService : ITtsGenerationService
 
     public async Task<List<TtsGenerateResult>> GenerateForPoiAsync(int poiId, CancellationToken ct = default)
     {
-        var list = await _db.AudioContents
+        var list = await _audioRepository.Query()
             .Where(a => a.PointOfInterestId == poiId && !a.IsDeleted
                         && EdgeVoices.Map.Keys.Contains(a.LanguageCode))
             .ToListAsync(ct);
@@ -82,7 +86,7 @@ public class TtsGenerationService : ITtsGenerationService
 
     public async Task<List<TtsGenerateResult>> GenerateAllMissingAsync(CancellationToken ct = default)
     {
-        var list = await _db.AudioContents
+        var list = await _audioRepository.Query()
             .Where(a => !a.IsDeleted && !a.IsGenerated
                         && EdgeVoices.Map.Keys.Contains(a.LanguageCode))
             .OrderBy(a => a.PointOfInterestId)
@@ -132,7 +136,7 @@ public class TtsGenerationService : ITtsGenerationService
             audio.AudioFileUrl = relativePath;
             audio.IsGenerated = true;
             audio.DurationSeconds = durationSec;
-            await _db.SaveChangesAsync(ct);
+            await _unitOfWork.SaveChangesAsync(ct);
 
             _logger.LogInformation(
                 "TTS OK: POI {Poi} [{Lang}] → {Path} ({Kb} KB ~{Sec}s)",

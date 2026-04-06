@@ -4,18 +4,32 @@ using System.Security.Cryptography;
 using System.Text;
 using VK.API.Models;
 using VK.Core.Entities;
-using VK.Infrastructure.Data;
+using VK.Core.Interfaces;
 
 namespace VK.API.Services.AppServices;
 
 public class AnalyticsAppService : IAnalyticsAppService
 {
-    private readonly VKStreetFoodDbContext _context;
+    private readonly IRepository<Analytics> _analyticsRepository;
+    private readonly IRepository<VisitLog> _visitLogRepository;
+    private readonly IRepository<Rating> _ratingRepository;
+    private readonly IRepository<PointOfInterest> _poiRepository;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<AnalyticsAppService> _logger;
 
-    public AnalyticsAppService(VKStreetFoodDbContext context, ILogger<AnalyticsAppService> logger)
+    public AnalyticsAppService(
+        IRepository<Analytics> analyticsRepository,
+        IRepository<VisitLog> visitLogRepository,
+        IRepository<Rating> ratingRepository,
+        IRepository<PointOfInterest> poiRepository,
+        IUnitOfWork unitOfWork,
+        ILogger<AnalyticsAppService> logger)
     {
-        _context = context;
+        _analyticsRepository = analyticsRepository;
+        _visitLogRepository = visitLogRepository;
+        _ratingRepository = ratingRepository;
+        _poiRepository = poiRepository;
+        _unitOfWork = unitOfWork;
         _logger = logger;
     }
 
@@ -34,12 +48,12 @@ public class AnalyticsAppService : IAnalyticsAppService
                 DurationSeconds = request.DurationSeconds
             };
 
-            _context.Analytics.Add(analyticsEvent);
+            await _analyticsRepository.AddAsync(analyticsEvent);
 
             if (normalizedEventType == "audio_play" && request.TouristId.HasValue)
             {
                 var lookbackUtc = DateTime.UtcNow.AddDays(-1);
-                var latestVisit = await _context.VisitLogs
+                var latestVisit = await _visitLogRepository.Query()
                     .Where(v => v.TouristId == request.TouristId.Value)
                     .Where(v => v.PointOfInterestId == request.POIId)
                     .Where(v => v.VisitedAt >= lookbackUtc)
@@ -54,7 +68,7 @@ public class AnalyticsAppService : IAnalyticsAppService
                 }
             }
 
-            await _context.SaveChangesAsync();
+            await _unitOfWork.SaveChangesAsync();
 
             _logger.LogInformation(
                 "Analytics event recorded: {EventType} for POI {PoiId} by Tourist {TouristId}",
@@ -74,7 +88,7 @@ public class AnalyticsAppService : IAnalyticsAppService
         var fromDate = from ?? DateTime.UtcNow.AddDays(-30);
         var toDate = to ?? DateTime.UtcNow;
 
-        var events = await _context.Analytics
+        var events = await _analyticsRepository.Query()
             .Where(a => a.PointOfInterestId == poiId && a.CreatedAt >= fromDate && a.CreatedAt <= toDate)
             .ToListAsync();
 
@@ -107,15 +121,15 @@ public class AnalyticsAppService : IAnalyticsAppService
         var fromDate = from ?? DateTime.UtcNow.AddDays(-30);
         var toDate = to ?? DateTime.UtcNow;
 
-        var events = await _context.Analytics
+        var events = await _analyticsRepository.Query()
             .Where(a => a.CreatedAt >= fromDate && a.CreatedAt <= toDate)
             .ToListAsync();
 
-        var visits = await _context.VisitLogs
+        var visits = await _visitLogRepository.Query()
             .Where(v => v.VisitedAt >= fromDate && v.VisitedAt <= toDate)
             .ToListAsync();
 
-        var ratings = await _context.Set<Rating>()
+        var ratings = await _ratingRepository.Query()
             .Where(r => r.CreatedAt >= fromDate && r.CreatedAt <= toDate)
             .ToListAsync();
 
@@ -129,7 +143,7 @@ public class AnalyticsAppService : IAnalyticsAppService
                 uniqueVisitors = events.Select(e => e.TouristId).Distinct().Count(),
                 averageRating = ratings.Any() ? ratings.Average(r => (double)r.Score) : 0
             },
-            topPOIs = await _context.PointsOfInterest
+            topPOIs = await _poiRepository.Query()
                 .Include(p => p.Analytics)
                 .Where(p => !p.IsDeleted && p.IsActive)
                 .Select(p => new
@@ -171,23 +185,23 @@ public class AnalyticsAppService : IAnalyticsAppService
 
     public async Task<IActionResult> GetTopPOIsAsync(int count = 10)
     {
-        var pois = await _context.PointsOfInterest
+        var pois = await _poiRepository.Query()
             .Include(p => p.Category)
             .Where(p => !p.IsDeleted && p.IsActive)
             .ToListAsync();
 
-        var visitCounts = await _context.VisitLogs
+        var visitCounts = await _visitLogRepository.Query()
             .GroupBy(v => v.PointOfInterestId)
             .Select(g => new { PoiId = g.Key, Count = g.Count() })
             .ToDictionaryAsync(x => x.PoiId, x => x.Count);
 
-        var audioCounts = await _context.Analytics
+        var audioCounts = await _analyticsRepository.Query()
             .Where(a => a.EventType == "audio_play")
             .GroupBy(a => a.PointOfInterestId)
             .Select(g => new { PoiId = g.Key, Count = g.Count() })
             .ToDictionaryAsync(x => x.PoiId, x => x.Count);
 
-        var avgListenMinutes = await _context.Analytics
+        var avgListenMinutes = await _analyticsRepository.Query()
             .Where(a => a.EventType == "audio_complete" && a.DurationSeconds > 0)
             .GroupBy(a => a.PointOfInterestId)
             .Select(g => new { PoiId = g.Key, AvgMin = g.Average(a => (double)a.DurationSeconds!.Value) / 60.0 })
@@ -217,7 +231,7 @@ public class AnalyticsAppService : IAnalyticsAppService
         var toDate = to ?? DateTime.UtcNow;
         var safeTake = Math.Clamp(take, 1, 100);
 
-        var query = _context.Analytics
+        var query = _analyticsRepository.Query()
             .Where(a => a.EventTimestamp >= fromDate && a.EventTimestamp <= toDate)
             .Where(a => a.EventType == "audio_play" || a.EventType == "audio_complete");
 
@@ -242,7 +256,7 @@ public class AnalyticsAppService : IAnalyticsAppService
             })
             .Where(x => x.audioPlayCount > 0)
             .Join(
-                _context.PointsOfInterest.Where(p => !p.IsDeleted),
+                _poiRepository.Query().Where(p => !p.IsDeleted),
                 a => a.poiId,
                 p => p.Id,
                 (a, p) => new
@@ -280,7 +294,7 @@ public class AnalyticsAppService : IAnalyticsAppService
         var toDate = to ?? DateTime.UtcNow;
         var safeTake = Math.Clamp(take, 1, 200);
 
-        var query = _context.Analytics
+        var query = _analyticsRepository.Query()
             .Where(a => a.EventTimestamp >= fromDate && a.EventTimestamp <= toDate)
             .Where(a => a.DurationSeconds != null && a.DurationSeconds > 0)
             .Where(a => a.EventType == "audio_complete");
@@ -300,7 +314,7 @@ public class AnalyticsAppService : IAnalyticsAppService
                 sampleCount = g.Count()
             })
             .Join(
-                _context.PointsOfInterest.Where(p => !p.IsDeleted),
+                _poiRepository.Query().Where(p => !p.IsDeleted),
                 a => a.poiId,
                 p => p.Id,
                 (a, p) => new
@@ -330,7 +344,7 @@ public class AnalyticsAppService : IAnalyticsAppService
         var fromDate = from ?? DateTime.UtcNow.AddDays(-30);
         var toDate = to ?? DateTime.UtcNow;
 
-        var query = _context.VisitLogs
+        var query = _visitLogRepository.Query()
             .Where(v => v.VisitedAt >= fromDate && v.VisitedAt <= toDate)
             .Where(v => v.VisitorLatitude != 0 && v.VisitorLongitude != 0);
 
@@ -359,7 +373,7 @@ public class AnalyticsAppService : IAnalyticsAppService
         var toDate = to ?? DateTime.UtcNow;
         var safeTake = Math.Clamp(take, 1, 200);
 
-        var query = _context.VisitLogs
+        var query = _visitLogRepository.Query()
             .Where(v => v.VisitedAt >= fromDate && v.VisitedAt <= toDate)
             .Where(v => v.TouristId > 0)
             .Where(v => v.VisitorLatitude != 0 && v.VisitorLongitude != 0);
