@@ -24,6 +24,8 @@ builder.Services.AddDbContext<VKStreetFoodDbContext>(options =>
 
 builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+builder.Services.AddScoped<IPoiManagementRepository, PoiManagementRepository>();
+builder.Services.AddScoped<ITourManagementRepository, TourManagementRepository>();
 
 // Add HttpClient to call API
 builder.Services.AddHttpClient("VKAPI", client =>
