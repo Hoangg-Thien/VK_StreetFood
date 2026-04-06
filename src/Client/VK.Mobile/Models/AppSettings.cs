@@ -38,14 +38,6 @@ public class AppSettings
     }
 
 #if DEBUG
-    // Tọa độ fake cho emulator (Phố Vĩnh Khánh Q4)
-    public const bool UseMockLocation = true;
-    public const double MockLatitude = 10.75931;
-    public const double MockLongitude = 106.70701;
-#else
-    public const bool UseMockLocation = false;
-    public const double MockLatitude = DefaultLatitude;
-    public const double MockLongitude = DefaultLongitude;
 #endif
 
     // Languages
