@@ -71,6 +71,9 @@
   <data name="TabSettings" xml:space="preserve">
     <value>Settings</value>
   </data>
+  <data name="TabTours" xml:space="preserve">
+    <value>My Tours</value>
+  </data>
 
   <!-- Settings Page -->
   <data name="SettingsLanguageSection" xml:space="preserve">
@@ -110,7 +113,7 @@
     <value>Clear Cache</value>
   </data>
   <data name="SettingsAccount" xml:space="preserve">
-    <value> Account</value>
+    <value>Application</value>
   </data>
   <data name="SettingsLogout" xml:space="preserve">
     <value>Exit</value>
@@ -183,7 +186,7 @@
     <value>Explore</value>
   </data>
   <data name="MenuTitle" xml:space="preserve">
-    <value>🍜 Food Menu</value>
+    <value>🍜 Explore</value>
   </data>
   <data name="MenuSubtitle" xml:space="preserve">
     <value>Vinh Khanh</value>
@@ -199,6 +202,47 @@
   </data>
   <data name="MenuRetry" xml:space="preserve">
     <value>Retry</value>
+  </data>
+
+  <!-- Tours Page -->
+  <data name="ToursTitle" xml:space="preserve">
+    <value>My Food Tours</value>
+  </data>
+  <data name="ToursActiveSection" xml:space="preserve">
+    <value>Active Tour</value>
+  </data>
+  <data name="ToursUpcomingSection" xml:space="preserve">
+    <value>Ready</value>
+  </data>
+  <data name="ToursCompletedSection" xml:space="preserve">
+    <value>Completed</value>
+  </data>
+  <data name="ToursViewAll" xml:space="preserve">
+    <value>View All</value>
+  </data>
+  <data name="ToursLiveNow" xml:space="preserve">
+    <value>LIVE NOW</value>
+  </data>
+  <data name="ToursResume" xml:space="preserve">
+    <value>Resume Tour</value>
+  </data>
+  <data name="ToursStart" xml:space="preserve">
+    <value>Start Tour</value>
+  </data>
+  <data name="ToursSummary" xml:space="preserve">
+    <value>Summary</value>
+  </data>
+  <data name="ToursStopsUnit" xml:space="preserve">
+    <value>stops</value>
+  </data>
+  <data name="ToursLoadFailed" xml:space="preserve">
+    <value>Unable to load tours.</value>
+  </data>
+  <data name="ToursNoPoiToOpen" xml:space="preserve">
+    <value>This tour has no stop to open yet.</value>
+  </data>
+  <data name="ToursExitActive" xml:space="preserve">
+    <value>Exit current tour</value>
   </data>
 
   <!-- Now Playing Page -->
@@ -250,5 +294,246 @@
   </data>
   <data name="POIActionClose" xml:space="preserve">
     <value>Close</value>
+  </data>
+
+  <!-- Settings / Offline -->
+  <data name="SettingsTtsOfflineButton" xml:space="preserve">
+    <value>TTS Voice / Offline Data</value>
+  </data>
+  <data name="SettingsTtsVoiceLabel" xml:space="preserve">
+    <value>TTS voice in app</value>
+  </data>
+  <data name="SettingsTtsVoiceSaveButton" xml:space="preserve">
+    <value>Save Voice</value>
+  </data>
+  <data name="SettingsTtsVoiceRefreshButton" xml:space="preserve">
+    <value>Refresh List</value>
+  </data>
+  <data name="SettingsTtsVoiceNoVoices" xml:space="preserve">
+    <value>No available TTS voice found for this language.</value>
+  </data>
+  <data name="SettingsTtsVoiceLoadFailed" xml:space="preserve">
+    <value>Failed to load TTS voices.</value>
+  </data>
+  <data name="SettingsTtsVoiceSaveFailed" xml:space="preserve">
+    <value>Failed to save selected TTS voice.</value>
+  </data>
+  <data name="SettingsTtsVoiceReadyFormat" xml:space="preserve">
+    <value>{0} voices found. Selected: {1}</value>
+  </data>
+  <data name="SettingsTtsVoiceSelectedFormat" xml:space="preserve">
+    <value>Saved voice: {0}</value>
+  </data>
+  <data name="SettingsDownloadOfflinePackage" xml:space="preserve">
+    <value>Download Offline Package</value>
+  </data>
+  <data name="SettingsRefreshOfflineStatus" xml:space="preserve">
+    <value>Refresh Offline Status</value>
+  </data>
+  <data name="SettingsOfflineNotDownloaded" xml:space="preserve">
+    <value>Offline package not downloaded.</value>
+  </data>
+  <data name="SettingsOfflineDownloading" xml:space="preserve">
+    <value>Downloading offline package...</value>
+  </data>
+  <data name="SettingsOfflineNeverSynced" xml:space="preserve">
+    <value>never synced</value>
+  </data>
+  <data name="SettingsOfflineStatusReadError" xml:space="preserve">
+    <value>Unable to read offline status.</value>
+  </data>
+  <data name="SettingsOfflineTitle" xml:space="preserve">
+    <value>Offline</value>
+  </data>
+  <data name="SettingsTtsTitle" xml:space="preserve">
+    <value>TTS</value>
+  </data>
+  <data name="SettingsTtsOpenErrorMessage" xml:space="preserve">
+    <value>Unable to open system TTS settings.</value>
+  </data>
+  <data name="SettingsTtsAndroidOnlyMessage" xml:space="preserve">
+    <value>This feature is currently supported on Android.</value>
+  </data>
+  <data name="SettingsClearCacheConfirm" xml:space="preserve">
+    <value>Are you sure you want to clear all cache?</value>
+  </data>
+  <data name="SettingsClearCacheDone" xml:space="preserve">
+    <value>Cache cleared.</value>
+  </data>
+  <data name="SettingsLogoutConfirm" xml:space="preserve">
+    <value>Are you sure you want to exit?</value>
+  </data>
+
+  <!-- Offline package result messages -->
+  <data name="OfflineNoInternet" xml:space="preserve">
+    <value>No internet connection to download offline package.</value>
+  </data>
+  <data name="OfflinePoiFetchFailed" xml:space="preserve">
+    <value>Failed to download POI data from server.</value>
+  </data>
+  <data name="OfflineDownloadSummaryFormat" xml:space="preserve">
+    <value>Offline downloaded: {0} POIs, {1} scripts{2}{3}.</value>
+  </data>
+  <data name="OfflineDownloadAudioSuffixFormat" xml:space="preserve">
+    <value>, {0} audio files</value>
+  </data>
+  <data name="OfflineDownloadRouteSuffix" xml:space="preserve">
+    <value>, route graph</value>
+  </data>
+  <data name="OfflineDownloadCancelled" xml:space="preserve">
+    <value>Offline package download canceled.</value>
+  </data>
+  <data name="OfflineDownloadFailed" xml:space="preserve">
+    <value>Offline package download failed.</value>
+  </data>
+
+  <!-- Main map messages -->
+  <data name="MainMapNoOfflineData" xml:space="preserve">
+    <value>No offline POI data. Go online to sync data.</value>
+  </data>
+  <data name="MainMapNoOfflineDataFallback" xml:space="preserve">
+    <value>Unable to load POIs and no offline data available.</value>
+  </data>
+  <data name="MainMapLoadErrorFormat" xml:space="preserve">
+    <value>POI load error: {0}</value>
+  </data>
+  <data name="MainMapOpenPlayerFailedFormat" xml:space="preserve">
+    <value>Unable to open player: {0}</value>
+  </data>
+  <data name="MainMapOpenDetailFailedFormat" xml:space="preserve">
+    <value>Unable to open details: {0}</value>
+  </data>
+  <data name="MainMapClose" xml:space="preserve">
+    <value>Close</value>
+  </data>
+  <data name="MainMapButtonListen" xml:space="preserve">
+    <value>🔊 Listen narration</value>
+  </data>
+  <data name="MainMapButtonDetail" xml:space="preserve">
+    <value>View details</value>
+  </data>
+  <data name="MainMapButtonDirections" xml:space="preserve">
+    <value>Directions</value>
+  </data>
+  <data name="MainMapCurrentLocationUnavailable" xml:space="preserve">
+    <value>Unable to get current location for navigation.</value>
+  </data>
+  <data name="MainMapRouteUnavailable" xml:space="preserve">
+    <value>Unable to get route right now.</value>
+  </data>
+  <data name="MainMapOfflineRouteGraphMessage" xml:space="preserve">
+    <value>You are offline: using local route graph for navigation.</value>
+  </data>
+  <data name="MainMapOfflineRouteApproxMessage" xml:space="preserve">
+    <value>Offline route graph is not available yet, showing an estimated route. Go online and open Settings &gt; Download Offline Package to generate full routes.</value>
+  </data>
+  <data name="MainMapDirectionsError" xml:space="preserve">
+    <value>Unable to provide directions right now.</value>
+  </data>
+  <data name="MainMapMapLoadFailedFormat" xml:space="preserve">
+    <value>Map load failed: {0}</value>
+  </data>
+
+  <!-- POI detail / rating messages -->
+  <data name="POIDetailAudioStatusPlaying" xml:space="preserve">
+    <value>⏸ Playing...</value>
+  </data>
+  <data name="POIDetailAudioStatusPaused" xml:space="preserve">
+    <value>Paused</value>
+  </data>
+  <data name="POIDetailAudioStatusReady" xml:space="preserve">
+    <value>Tap ▶ to listen</value>
+  </data>
+  <data name="POIDetailLoadFailed" xml:space="preserve">
+    <value>Failed to load POI details</value>
+  </data>
+  <data name="POIDetailNoAudioContent" xml:space="preserve">
+    <value>No audio content available for this location</value>
+  </data>
+  <data name="POIDetailFavoriteLoginRequired" xml:space="preserve">
+    <value>Please register an account to use favorites.</value>
+  </data>
+  <data name="POIDetailRemoveFavoriteFailed" xml:space="preserve">
+    <value>Unable to remove from favorites.</value>
+  </data>
+  <data name="POIDetailAddFavoriteFailed" xml:space="preserve">
+    <value>Unable to add to favorites.</value>
+  </data>
+  <data name="POIDetailConnectionErrorFormat" xml:space="preserve">
+    <value>Connection error: {0}</value>
+  </data>
+  <data name="POIDetailRatingPromptTitle" xml:space="preserve">
+    <value>Rating</value>
+  </data>
+  <data name="POIDetailRatingPromptMessage" xml:space="preserve">
+    <value>Optional comment:</value>
+  </data>
+  <data name="POIDetailRatingSubmit" xml:space="preserve">
+    <value>Submit</value>
+  </data>
+  <data name="POIDetailRatingSuccess" xml:space="preserve">
+    <value>Rating submitted</value>
+  </data>
+  <data name="POIDetailAverageRatingFormat" xml:space="preserve">
+    <value>Average: {0:F1} ⭐</value>
+  </data>
+
+  <!-- Favorites / menu errors -->
+  <data name="FavoritesLoadFailed" xml:space="preserve">
+    <value>Unable to load favorites</value>
+  </data>
+  <data name="FavoritesRemovedSuccess" xml:space="preserve">
+    <value>Removed from favorites</value>
+  </data>
+  <data name="FavoritesRemoveFailed" xml:space="preserve">
+    <value>Unable to remove</value>
+  </data>
+  <data name="Success" xml:space="preserve">
+    <value>Success</value>
+  </data>
+  <data name="MenuNoOfflineData" xml:space="preserve">
+    <value>No offline POI data. Please go online to sync.</value>
+  </data>
+  <data name="MenuLoadFailed" xml:space="preserve">
+    <value>Unable to load list. Check network connection.</value>
+  </data>
+
+  <!-- Now playing -->
+  <data name="NowPlayingTourTitle" xml:space="preserve">
+    <value>Vinh Khanh Street Tour</value>
+  </data>
+  <data name="NowPlayingFallbackVietnamese" xml:space="preserve">
+    <value>Playing Vietnamese audio (translation not available yet)</value>
+  </data>
+  <data name="NowPlayingUpNextTitle" xml:space="preserve">
+    <value>UP NEXT POI</value>
+  </data>
+  <data name="NowPlayingDefaultAddress" xml:space="preserve">
+    <value>District 4, HCMC</value>
+  </data>
+  <data name="NowPlayingWalkMinutesFormat" xml:space="preserve">
+    <value>{0} min walk</value>
+  </data>
+  <data name="NowPlayingDistanceMetersAwayFormat" xml:space="preserve">
+    <value>{0:F0}m away</value>
+  </data>
+  <data name="NowPlayingDistanceKmAwayFormat" xml:space="preserve">
+    <value>{0:F1} km away</value>
+  </data>
+
+  <!-- Common -->
+  <data name="TrackingUnknown" xml:space="preserve">
+    <value>Unknown</value>
+  </data>
+
+  <!-- Android location notification -->
+  <data name="AndroidLocationChannelName" xml:space="preserve">
+    <value>VK Street Food Location</value>
+  </data>
+  <data name="AndroidLocationChannelDescription" xml:space="preserve">
+    <value>Tracks your location to suggest nearby food spots</value>
+  </data>
+  <data name="AndroidLocationNotificationText" xml:space="preserve">
+    <value>Tracking your location to suggest nearby places...</value>
   </data>
 </root>

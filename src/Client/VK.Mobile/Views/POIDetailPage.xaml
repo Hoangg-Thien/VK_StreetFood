@@ -298,37 +298,9 @@
                                                          TextColor="White"
                                                          CornerRadius="8"/>
                                           </FlexLayout>
-                                          <Label Text="{Binding Poi.AverageRating, StringFormat='Trung b&#236;nh: {0:F1} &#x2B50;'}"
+                                          <Label Text="{Binding AverageRatingText}"
                                                  FontSize="14"
                                                  HorizontalOptions="Center"/>
-                                   </StackLayout>
-                            </Border>
-
-                            <!-- Vendors -->
-                            <Border Padding="15"
-                                    BackgroundColor="White"
-                                    StrokeShape="RoundRectangle 10"
-                                    Stroke="#EEEEEE"
-                                    IsVisible="{Binding Poi.Vendors.Count, Converter={StaticResource CountToBoolConverter}}">
-                                   <StackLayout Spacing="10">
-                                          <Label Text="{Binding Source={x:Static loc:LocalizationResourceManager.Instance}, Path=[POIDetailVendors]}"
-                                                 FontSize="16"
-                                                 FontAttributes="Bold"/>
-                                          <CollectionView ItemsSource="{Binding Poi.Vendors}">
-                                                 <CollectionView.ItemTemplate>
-                                                        <DataTemplate>
-                                                               <StackLayout Padding="0,5"
-                                                                            Spacing="5">
-                                                                      <Label Text="{Binding Name}"
-                                                                             FontSize="14"
-                                                                             FontAttributes="Bold"/>
-                                                                      <Label Text="{Binding PhoneNumber}"
-                                                                             FontSize="12"
-                                                                             TextColor="Gray"/>
-                                                               </StackLayout>
-                                                        </DataTemplate>
-                                                 </CollectionView.ItemTemplate>
-                                          </CollectionView>
                                    </StackLayout>
                             </Border>
 

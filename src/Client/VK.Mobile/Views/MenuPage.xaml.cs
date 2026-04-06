@@ -20,7 +20,9 @@ public partial class MenuPage : ContentPage
         if (_viewModel.IsLoading)
             return;
 
-        if (!_viewModel.FilteredPois.Any() || !string.IsNullOrWhiteSpace(_viewModel.ErrorMessage))
+        if (_viewModel.NeedsLanguageReload ||
+            !_viewModel.FilteredPois.Any() ||
+            !string.IsNullOrWhiteSpace(_viewModel.ErrorMessage))
             await _viewModel.LoadPOIsCommand.ExecuteAsync(null);
     }
 }

@@ -1,9 +1,17 @@
+using Microsoft.Maui.Devices;
+
 namespace VK.Mobile.Models;
 
 public class AppSettings
 {
-    public const string ApiBaseUrl = "http://10.0.2.2:5089/api/";
-    public const string AudioBaseUrl = "http://10.0.2.2:5089/";
+    private const int DevServerPort = 5089;
+
+    // Android emulator uses 10.0.2.2, physical device can use adb reverse + 127.0.0.1.
+    public static string ApiBaseUrl => $"http://{GetDevServerHost()}:{DevServerPort}/api/";
+    public static string AudioBaseUrl => $"http://{GetDevServerHost()}:{DevServerPort}/";
+    public const string OsrmBaseUrl = "https://router.project-osrm.org";
+    public const string OfflineRoutePackageRelativeUrl = "offline/route-package";
+    public const string OfflineRoutePackageFileName = "vkstreetfood.routes.json";
 
     // Geofencing
     public const double GeofenceRadiusMeters = 50.0;
@@ -20,15 +28,16 @@ public class AppSettings
     public const double DefaultLongitude = 106.7022;
     public const int DefaultZoomLevel = 17;
 
-#if DEBUG
-    // Tọa độ fake cho emulator (Phố Vĩnh Khánh Q4)
-    public const bool UseMockLocation = true;
-    public const double MockLatitude = 10.75931;
-    public const double MockLongitude = 106.70701;
+    private static string GetDevServerHost()
+    {
+#if ANDROID
+        return DeviceInfo.Current.DeviceType == DeviceType.Virtual ? "10.0.2.2" : "127.0.0.1";
 #else
-    public const bool UseMockLocation = false;
-    public const double MockLatitude = DefaultLatitude;
-    public const double MockLongitude = DefaultLongitude;
+        return "localhost";
+#endif
+    }
+
+#if DEBUG
 #endif
 
     // Languages

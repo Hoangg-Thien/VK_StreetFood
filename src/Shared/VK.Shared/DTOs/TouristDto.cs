@@ -1,5 +1,7 @@
 namespace VK.Shared.DTOs;
 
+using System.Text.Json.Serialization;
+
 public class RegisterTouristRequest
 {
     public string DeviceId { get; set; } = string.Empty;
@@ -17,6 +19,20 @@ public class UpdateLocationRequest
 public class LogVisitRequest
 {
     public int PoiId { get; set; }
+
+    [JsonPropertyName("pointOfInterestId")]
+    public int PointOfInterestId { get; set; }
+
+    public string? TriggerMethod { get; set; }
+
+    public double? Latitude { get; set; }
+
+    public double? Longitude { get; set; }
+
+    public string? LanguageCode { get; set; }
+
+    [JsonIgnore]
+    public int EffectivePoiId => PoiId > 0 ? PoiId : PointOfInterestId;
 }
 
 public class VisitHistoryDto

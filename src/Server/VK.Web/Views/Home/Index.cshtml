@@ -12,392 +12,277 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
     <style>
-            *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-            body {
-                font-family: 'Inter', sans-serif;
-                background: #F4F6FB;
-                min-height: 100vh;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                overflow: hidden;
-            }
+        body {
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            background: #f5f7fb;
+            color: #111827;
+        }
 
-            /* Subtle dot grid background */
-            .bg-dec {
-                position: fixed;
-                inset: 0;
-                pointer-events: none;
-                z-index: 0;
-                background-image: radial-gradient(circle, #D4D8EA 1px, transparent 1px);
-                background-size: 28px 28px;
-                opacity: 0.6;
-            }
+        .page {
+            min-height: 100vh;
+            display: grid;
+            grid-template-columns: 48% 52%;
+        }
 
-            /* Soft orange blobs */
-            .bg-blob {
-                position: fixed;
-                border-radius: 50%;
-                filter: blur(100px);
-                opacity: 0.18;
-                pointer-events: none;
-                z-index: 0;
-            }
-            .bg-blob-1 { width: 500px; height: 500px; background: #E85D04; top: -160px; left: -160px; }
-            .bg-blob-2 { width: 350px; height: 350px; background: #FBBF24; bottom: -100px; right: -80px; }
+        .hero {
+            position: relative;
+            background-image: url('/images/adBg/background.jpg');
+            background-size: cover;
+            background-position: center;
+            overflow: hidden;
+        }
 
-            /* Login container */
-            .login-wrap {
-                position: relative;
-                z-index: 10;
-                display: flex;
-                width: 920px;
-                max-width: 97vw;
-                min-height: 540px;
-                border-radius: 20px;
-                overflow: hidden;
-                box-shadow: 0 8px 40px rgba(0,0,0,0.1);
-                border: 1px solid #E8EBF4;
-            }
+        .hero::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: rgba(9, 13, 23, 0.56);
+        }
 
-            /* LEFT PANEL */
-            .login-left {
-                flex: 1;
-                background: linear-gradient(145deg, #E85D04 0%, #C24D02 100%);
-                padding: 48px 44px;
-                display: flex;
-                flex-direction: column;
-                justify-content: space-between;
-                position: relative;
-                overflow: hidden;
-            }
+        .hero-content {
+            position: absolute;
+            left: 36px;
+            bottom: 52px;
+            z-index: 1;
+            color: #ffffff;
+            max-width: 420px;
+        }
 
-            .login-left::before {
-                content: '';
-                position: absolute;
-                width: 300px; height: 300px;
-                background: rgba(255,255,255,0.07);
-                border-radius: 50%;
-                top: -80px; right: -80px;
-            }
+        .hero-logo {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.18);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 18px;
+        }
 
-            .login-left::after {
-                content: '';
-                position: absolute;
-                width: 200px; height: 200px;
-                background: rgba(255,255,255,0.05);
-                border-radius: 50%;
-                bottom: -60px; left: -40px;
-            }
+        .hero-title {
+            font-size: 34px;
+            font-weight: 700;
+            line-height: 1.2;
+            margin-bottom: 10px;
+            text-shadow: 0 4px 18px rgba(0, 0, 0, 0.45);
+        }
 
-            .brand {
-                display: flex;
-                align-items: center;
-                gap: 12px;
-                position: relative; z-index: 1;
-            }
+        .hero-desc {
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.84);
+            line-height: 1.6;
+        }
 
-            .brand-icon {
-                width: 44px; height: 44px;
-                background: rgba(255,255,255,0.2);
-                border-radius: 12px;
-                display: flex; align-items: center; justify-content: center;
-                font-size: 22px;
-            }
+        .auth-pane {
+            background: #f4f6fb;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+        }
 
-            .brand-name { font-size: 18px; font-weight: 700; color: #fff; }
-            .brand-sub {
-                font-size: 10px;
-                color: rgba(255,255,255,0.75);
-                text-transform: uppercase;
-                letter-spacing: 1px;
-                font-weight: 600;
-            }
+        .login-card {
+            width: 420px;
+            background: #fff;
+            border: 1px solid #e8ebf4;
+            border-radius: 12px;
+            padding: 34px 30px 24px;
+            box-shadow: 0 16px 40px rgba(17, 24, 39, 0.10);
+        }
 
-            .panel-title {
-                font-size: 30px;
-                font-weight: 700;
-                color: #fff;
-                line-height: 1.3;
-                margin-bottom: 14px;
-                position: relative; z-index: 1;
-            }
+        .card-title {
+            text-align: center;
+            font-size: 30px;
+            font-weight: 700;
+            color: #1a1d2e;
+            margin-bottom: 8px;
+        }
 
-            .panel-desc {
-                font-size: 14px;
-                color: rgba(255,255,255,0.8);
-                line-height: 1.7;
-                margin-bottom: 32px;
-                position: relative; z-index: 1;
-            }
+        .card-subtitle {
+            text-align: center;
+            font-size: 14px;
+            color: #8b8fa8;
+            margin-bottom: 24px;
+        }
 
-            .panel-stats {
-                display: grid;
-                grid-template-columns: 1fr 1fr;
-                gap: 12px;
-                position: relative; z-index: 1;
-            }
+        .alert-error {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            border-radius: 6px;
+            padding: 10px;
+            display: flex;
+            gap: 8px;
+            font-size: 12px;
+            color: #dc2626;
+            margin-bottom: 14px;
+            align-items: center;
+        }
 
-            .panel-stat {
-                background: rgba(255,255,255,0.12);
-                border: 1px solid rgba(255,255,255,0.18);
-                border-radius: 12px;
-                padding: 14px 16px;
-                backdrop-filter: blur(4px);
-            }
+        .form-group { margin-bottom: 16px; }
 
-            .panel-stat-val { font-size: 22px; font-weight: 700; color: #fff; }
-            .panel-stat-label { font-size: 11px; color: rgba(255,255,255,0.7); margin-top: 3px; }
+        .form-label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            color: #4b5065;
+            margin-bottom: 8px;
+        }
 
-            .panel-footer { font-size: 12px; color: rgba(255,255,255,0.5); position: relative; z-index: 1; }
+        .form-input {
+            width: 100%;
+            border: 1px solid #e8ebf4;
+            border-radius: 10px;
+            padding: 12px 14px;
+            font-size: 14px;
+            color: #111827;
+            background: #f4f6fb;
+            outline: none;
+            transition: border-color .2s, box-shadow .2s;
+        }
 
-            /* RIGHT PANEL */
-            .login-right {
-                width: 420px;
-                background: #FFFFFF;
-                padding: 52px 44px;
-                display: flex;
-                flex-direction: column;
-                justify-content: center;
-            }
+        .form-input:focus {
+            border-color: #e85d04;
+            box-shadow: 0 0 0 3px rgba(232, 93, 4, 0.12);
+            background: #fff;
+        }
 
-            .login-header { margin-bottom: 32px; }
+        .input-wrap { position: relative; }
 
-            .login-title { font-size: 22px; font-weight: 700; color: #1A1D2E; margin-bottom: 6px; }
-            .login-subtitle { font-size: 13px; color: #8B8FA8; }
+        .toggle-pass {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            border: none;
+            background: transparent;
+            color: #b0b5c8;
+            cursor: pointer;
+            font-size: 14px;
+        }
 
-            /* Error alert */
-            .alert-error {
-                background: #FEF2F2;
-                border: 1px solid #FECACA;
-                border-radius: 8px;
-                padding: 12px 14px;
-                display: flex;
-                align-items: center;
-                gap: 8px;
-                font-size: 13px;
-                color: #DC2626;
-                margin-bottom: 20px;
-            }
+        .toggle-pass:hover { color: #8b8fa8; }
 
-            .form-group { margin-bottom: 18px; }
+        .forgot-row {
+            display: flex;
+            justify-content: flex-end;
+            margin: 6px 0 14px;
+        }
 
-            .form-label {
-                display: block;
-                font-size: 12px;
-                font-weight: 600;
-                color: #4B5065;
-                text-transform: uppercase;
-                letter-spacing: 0.6px;
-                margin-bottom: 8px;
-            }
+        .forgot-link {
+            font-size: 11px;
+            color: #6366f1;
+            text-decoration: none;
+        }
 
-            .input-wrap { position: relative; }
+        .forgot-link:hover { text-decoration: underline; }
 
-            .input-icon {
-                position: absolute;
-                left: 14px; top: 50%;
-                transform: translateY(-50%);
-                color: #B0B5C8;
-                font-size: 14px;
-                pointer-events: none;
-            }
+        .btn-login {
+            width: 100%;
+            border: none;
+            border-radius: 10px;
+            padding: 13px;
+            background: #e85d04;
+            color: #fff;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all .2s;
+        }
 
-            .form-input {
-                width: 100%;
-                background: #F4F6FB;
-                border: 1px solid #E8EBF4;
-                border-radius: 10px;
-                padding: 12px 14px 12px 42px;
-                color: #1A1D2E;
-                font-size: 14px;
-                font-family: 'Inter', sans-serif;
-                outline: none;
-                transition: border-color 0.2s, box-shadow 0.2s;
-            }
+        .btn-login:hover {
+            background: #ff6b2b;
+            transform: translateY(-1px);
+            box-shadow: 0 10px 24px rgba(232, 93, 4, 0.32);
+        }
 
-            .form-input:focus {
-                border-color: #E85D04;
-                box-shadow: 0 0 0 3px rgba(232,93,4,0.1);
-                background: #fff;
-            }
+        .card-footer {
+            margin-top: 12px;
+            text-align: center;
+            font-size: 10px;
+            color: #9ca3af;
+        }
 
-            .form-input::placeholder { color: #C0C4D4; }
+        .owner-link {
+            display: block;
+            margin-top: 10px;
+            text-align: center;
+            font-size: 12px;
+            color: #e85d04;
+            text-decoration: none;
+            font-weight: 600;
+        }
 
-            .toggle-pass {
-                position: absolute;
-                right: 14px; top: 50%;
-                transform: translateY(-50%);
-                background: none; border: none;
-                color: #B0B5C8;
-                cursor: pointer; font-size: 14px; padding: 0;
-            }
-            .toggle-pass:hover { color: #8B8FA8; }
+        .owner-link:hover { text-decoration: underline; }
 
-            .form-row {
-                display: flex;
-                align-items: center;
-                justify-content: space-between;
-                margin-bottom: 24px;
-                font-size: 13px;
-            }
+        @@media (max-width: 1024px) {
+            .page { grid-template-columns: 42% 58%; }
+            .hero-content { left: 24px; bottom: 30px; }
+            .hero-title { font-size: 28px; }
+        }
 
-            .remember-wrap {
-                display: flex; align-items: center; gap: 7px;
-                color: #8B8FA8; cursor: pointer;
-            }
-            .remember-wrap input[type="checkbox"] { width: 15px; height: 15px; accent-color: #E85D04; }
-
-            .forgot-link { color: #E85D04; text-decoration: none; font-size: 12px; }
-            .forgot-link:hover { text-decoration: underline; }
-
-            .btn-login {
-                width: 100%;
-                padding: 13px;
-                background: #E85D04;
-                color: #fff;
-                border: none; border-radius: 10px;
-                font-size: 14px; font-weight: 700;
-                font-family: 'Inter', sans-serif;
-                cursor: pointer;
-                transition: all 0.2s;
-                display: flex; align-items: center; justify-content: center; gap: 8px;
-            }
-
-            .btn-login:hover {
-                background: #FF6B2B;
-                transform: translateY(-1px);
-                box-shadow: 0 6px 20px rgba(232,93,4,0.35);
-            }
-
-            .btn-login:active { transform: translateY(0); }
-
-            .demo-hint {
-                margin-top: 20px;
-                background: #FFF7F4;
-                border: 1px solid #FFD4BC;
-                border-radius: 8px;
-                padding: 12px 14px;
-                font-size: 12px;
-                color: #6B5040;
-                line-height: 1.7;
-            }
-
-            .demo-hint strong { color: #E85D04; }
-
-            @@media (max-width: 768px) {
-                .login-left { display: none; }
-                .login-right { width: 100%; padding: 36px 28px; }
-                .login-wrap { min-height: auto; }
-            }
+        @@media (max-width: 768px) {
+            .page { grid-template-columns: 1fr; }
+            .hero { min-height: 220px; }
+            .hero-content { left: 20px; bottom: 20px; }
+            .hero-title { font-size: 24px; }
+            .auth-pane { padding: 22px; }
+            .login-card { width: 100%; max-width: 420px; padding: 28px 22px 22px; }
+            .card-title { font-size: 26px; }
+        }
     </style>
 </head>
 <body>
-    <div class="bg-dec"></div>
-    <div class="bg-blob bg-blob-1"></div>
-    <div class="bg-blob bg-blob-2"></div>
+    <div class="page">
+        <section class="hero" aria-hidden="true">
+            <div class="hero-content">
+                <div class="hero-logo"><i class="fa-solid fa-location-dot"></i></div>
+                <h1 class="hero-title">Hệ thống quản lý<br />Ẩm thực đường phố</h1>
+                <p class="hero-desc">Trung tâm điều phối toàn bộ hoạt động tại khu ẩm thực Vĩnh Khánh — quản lý địa điểm, audio thuyết minh, bản dịch đa ngôn ngữ và tour tham quan.</p>
+            </div>
+        </section>
 
-    <div class="login-wrap">
-        <!-- LEFT PANEL -->
-        <div class="login-left">
-            <div class="brand">
-                <div class="brand-icon">🍜</div>
-                <div>
-                    <div class="brand-name">Vĩnh Khánh</div>
-                    <div class="brand-sub">Street Food Admin</div>
+        <section class="auth-pane">
+            <div class="login-card">
+                <h2 class="card-title">Chào mừng trở lại!</h2>
+                <p class="card-subtitle">Đăng nhập để truy cập trang quản trị</p>
+
+                @if (ViewBag.Error != null)
+                {
+                    <div class="alert-error">
+                        <i class="fa-solid fa-circle-exclamation"></i>
+                        @ViewBag.Error
+                    </div>
+                }
+
+                <form method="post" action="/Home/Login">
+                    @Html.AntiForgeryToken()
+
+                    <div class="form-group">
+                        <label class="form-label">Email</label>
+                        <input type="email" name="email" class="form-input" placeholder="Nhập địa chỉ email..." autocomplete="email" required />
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Mật khẩu</label>
+                        <div class="input-wrap">
+                            <input type="password" name="password" id="passwordInput" class="form-input" placeholder="Nhập mật khẩu..." autocomplete="current-password" required />
+                            <button type="button" class="toggle-pass" onclick="togglePassword()">
+                                <i class="fa-solid fa-eye" id="eyeIcon"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn-login">Đăng nhập</button>
+                </form>
+
+                <div style="margin-top:12px; text-align:center; font-size:12px; color:#6b7280;">
+                    Bạn là chủ quán? <a href="/Home/OwnerRegister" class="owner-link" style="display:inline; margin-top:0;">Đăng ký tài khoản</a>
                 </div>
             </div>
-
-            <div>
-                <h1 class="panel-title">
-                    Hệ thống quản lý<br />Ẩm thực đường phố
-                </h1>
-                <p class="panel-desc">
-                    Trung tâm điều phối toàn bộ hoạt động tại khu ẩm thực Vinh Khánh —
-                    quản lý địa điểm, audio thuyết minh, bản dịch đa ngôn ngữ và tour tham quan.
-                </p>
-
-                <div class="panel-stats">
-                    <div class="panel-stat">
-                        <div class="panel-stat-val">3</div>
-                        <div class="panel-stat-label">Ngôn ngữ hỗ trợ</div>
-                    </div>
-                    <div class="panel-stat">
-                        <div class="panel-stat-val">24/7</div>
-                        <div class="panel-stat-label">Sẵn sàng hoạt động</div>
-                    </div>
-                    <div class="panel-stat">
-                        <div class="panel-stat-val">CMS</div>
-                        <div class="panel-stat-label">Quản lý nội dung</div>
-                    </div>
-                    <div class="panel-stat">
-                        <div class="panel-stat-val">Tour</div>
-                        <div class="panel-stat-label">Lộ trình tham quan</div>
-                    </div>
-                </div>
-            </div>
-
-        </div>
-
-        <!-- RIGHT PANEL -->
-        <div class="login-right">
-            <div class="login-header">
-                <div class="login-title">Chào mừng trở lại!</div>
-                <div class="login-subtitle">Đăng nhập để truy cập trang quản trị</div>
-            </div>
-
-            @if (ViewBag.Error != null)
-            {
-                <div class="alert-error">
-                    <i class="fa-solid fa-circle-exclamation"></i>
-                    @ViewBag.Error
-                </div>
-            }
-
-            <form method="post" action="/Home/Login">
-                @Html.AntiForgeryToken()
-
-                <div class="form-group">
-                    <label class="form-label">Email</label>
-                    <div class="input-wrap">
-                        <i class="fa-solid fa-envelope input-icon"></i>
-                        <input type="email" name="email" class="form-input"
-                               placeholder="Nhập địa chỉ email..."
-                               autocomplete="email" required />
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label">Mật khẩu</label>
-                    <div class="input-wrap">
-                        <i class="fa-solid fa-lock input-icon"></i>
-                        <input type="password" name="password" id="passwordInput" class="form-input"
-                               placeholder="Nhập mật khẩu..." autocomplete="current-password" required />
-                        <button type="button" class="toggle-pass" onclick="togglePassword()">
-                            <i class="fa-solid fa-eye" id="eyeIcon"></i>
-                        </button>
-                    </div>
-                </div>
-
-                <div class="form-row">
-                    <label class="remember-wrap">
-                        <input type="checkbox" name="remember" />
-                        Ghi nhớ đăng nhập
-                    </label>
-                </div>
-
-                <button type="submit" class="btn-login">
-                    <i class="fa-solid fa-arrow-right-to-bracket"></i>
-                    Đăng nhập
-                </button>
-            </form>
-
-            <div class="demo-hint">
-                <i class="fa-solid fa-circle-info" style="color:#E85D04;margin-right:5px;"></i>
-                <strong>Demo:</strong> email <strong>admin@vkstreetfood.vn</strong> / password <strong>Admin@2026</strong>
-            </div>
-        </div>
+        </section>
     </div>
 
     <script>

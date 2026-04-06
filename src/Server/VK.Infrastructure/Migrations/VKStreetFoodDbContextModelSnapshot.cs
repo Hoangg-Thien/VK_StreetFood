@@ -95,13 +95,23 @@ namespace VK.Infrastructure.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("AudioFileUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<DateTime?>("DeletedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<int?>("DurationSeconds")
+                        .HasColumnType("integer");
+
                     b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsGenerated")
                         .HasColumnType("boolean");
 
                     b.Property<string>("LanguageCode")
@@ -256,6 +266,166 @@ namespace VK.Infrastructure.Migrations
                         .IsUnique();
 
                     b.ToTable("OpeningHours", (string)null);
+                });
+
+            modelBuilder.Entity("VK.Core.Entities.PoiContentChangeRequest", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ActionType")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<int?>("AudioContentId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("LanguageCode")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)");
+
+                    b.Property<int>("OwnerUserId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("PointOfInterestId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("RequestType")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("ReviewNote")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<DateTime?>("ReviewedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("ReviewedByUserId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("TextContent")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("VendorId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AudioContentId");
+
+                    b.HasIndex("OwnerUserId");
+
+                    b.HasIndex("PointOfInterestId");
+
+                    b.HasIndex("ReviewedByUserId");
+
+                    b.HasIndex("Status");
+
+                    b.HasIndex("VendorId");
+
+                    b.ToTable("PoiContentChangeRequests", (string)null);
+                });
+
+            modelBuilder.Entity("VK.Core.Entities.PoiOwnerRegistration", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ContactPhone")
+                        .HasMaxLength(15)
+                        .HasColumnType("character varying(15)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<int?>("PointOfInterestId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("ReviewNote")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<DateTime?>("ReviewedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("ReviewedByUserId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("ShopAddress")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("ShopName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("VendorId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PointOfInterestId");
+
+                    b.HasIndex("ReviewedByUserId");
+
+                    b.HasIndex("Status");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("VendorId");
+
+                    b.ToTable("PoiOwnerRegistrations", (string)null);
                 });
 
             modelBuilder.Entity("VK.Core.Entities.PointOfInterest", b =>
@@ -458,6 +628,99 @@ namespace VK.Infrastructure.Migrations
                     b.ToTable("Tags", (string)null);
                 });
 
+            modelBuilder.Entity("VK.Core.Entities.Tour", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<string>("Emoji")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)");
+
+                    b.Property<int?>("EstimatedDurationMinutes")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name");
+
+                    b.HasIndex("Status");
+
+                    b.ToTable("Tours", (string)null);
+                });
+
+            modelBuilder.Entity("VK.Core.Entities.TourPointOfInterest", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<int>("PointOfInterestId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("TourId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PointOfInterestId");
+
+                    b.HasIndex("TourId", "PointOfInterestId")
+                        .IsUnique();
+
+                    b.HasIndex("TourId", "SortOrder");
+
+                    b.ToTable("TourPointsOfInterest", (string)null);
+                });
+
             modelBuilder.Entity("VK.Core.Entities.Tourist", b =>
                 {
                     b.Property<int>("Id")
@@ -545,8 +808,15 @@ namespace VK.Infrastructure.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
 
+                    b.Property<bool>("IsVerified")
+                        .HasColumnType("boolean");
+
                     b.Property<DateTime?>("LastLoginAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("PasswordHash")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
 
                     b.Property<string>("Role")
                         .IsRequired()
@@ -764,6 +1034,79 @@ namespace VK.Infrastructure.Migrations
                     b.Navigation("Vendor");
                 });
 
+            modelBuilder.Entity("VK.Core.Entities.PoiContentChangeRequest", b =>
+                {
+                    b.HasOne("VK.Core.Entities.AudioContent", "AudioContent")
+                        .WithMany()
+                        .HasForeignKey("AudioContentId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("VK.Core.Entities.User", "OwnerUser")
+                        .WithMany()
+                        .HasForeignKey("OwnerUserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("VK.Core.Entities.PointOfInterest", "PointOfInterest")
+                        .WithMany()
+                        .HasForeignKey("PointOfInterestId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("VK.Core.Entities.User", "ReviewedByUser")
+                        .WithMany()
+                        .HasForeignKey("ReviewedByUserId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("VK.Core.Entities.Vendor", "Vendor")
+                        .WithMany()
+                        .HasForeignKey("VendorId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("AudioContent");
+
+                    b.Navigation("OwnerUser");
+
+                    b.Navigation("PointOfInterest");
+
+                    b.Navigation("ReviewedByUser");
+
+                    b.Navigation("Vendor");
+                });
+
+            modelBuilder.Entity("VK.Core.Entities.PoiOwnerRegistration", b =>
+                {
+                    b.HasOne("VK.Core.Entities.PointOfInterest", "PointOfInterest")
+                        .WithMany()
+                        .HasForeignKey("PointOfInterestId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("VK.Core.Entities.User", "ReviewedByUser")
+                        .WithMany()
+                        .HasForeignKey("ReviewedByUserId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("VK.Core.Entities.User", "User")
+                        .WithMany("OwnerRegistrations")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("VK.Core.Entities.Vendor", "Vendor")
+                        .WithMany()
+                        .HasForeignKey("VendorId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("PointOfInterest");
+
+                    b.Navigation("ReviewedByUser");
+
+                    b.Navigation("User");
+
+                    b.Navigation("Vendor");
+                });
+
             modelBuilder.Entity("VK.Core.Entities.PointOfInterest", b =>
                 {
                     b.HasOne("VK.Core.Entities.Category", "Category")
@@ -799,6 +1142,25 @@ namespace VK.Infrastructure.Migrations
                     b.Navigation("PointOfInterest");
 
                     b.Navigation("Tourist");
+                });
+
+            modelBuilder.Entity("VK.Core.Entities.TourPointOfInterest", b =>
+                {
+                    b.HasOne("VK.Core.Entities.PointOfInterest", "PointOfInterest")
+                        .WithMany("TourPoints")
+                        .HasForeignKey("PointOfInterestId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("VK.Core.Entities.Tour", "Tour")
+                        .WithMany("TourPoints")
+                        .HasForeignKey("TourId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("PointOfInterest");
+
+                    b.Navigation("Tour");
                 });
 
             modelBuilder.Entity("VK.Core.Entities.Tourist", b =>
@@ -865,7 +1227,14 @@ namespace VK.Infrastructure.Migrations
 
                     b.Navigation("Ratings");
 
+                    b.Navigation("TourPoints");
+
                     b.Navigation("Vendors");
+                });
+
+            modelBuilder.Entity("VK.Core.Entities.Tour", b =>
+                {
+                    b.Navigation("TourPoints");
                 });
 
             modelBuilder.Entity("VK.Core.Entities.Tourist", b =>
@@ -877,6 +1246,11 @@ namespace VK.Infrastructure.Migrations
                     b.Navigation("Ratings");
 
                     b.Navigation("VisitLogs");
+                });
+
+            modelBuilder.Entity("VK.Core.Entities.User", b =>
+                {
+                    b.Navigation("OwnerRegistrations");
                 });
 
             modelBuilder.Entity("VK.Core.Entities.Vendor", b =>

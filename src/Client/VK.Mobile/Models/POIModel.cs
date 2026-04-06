@@ -33,7 +33,14 @@ public class POIModel
     /// Mức ưu tiên thuyết minh khi nhiều POI cùng vào geofence.
     /// Cao hơn = ưu tiên hơn. Mặc định 0.
     /// </summary>
+    [JsonPropertyName("priority")]
     public int Priority { get; set; } = 0;
+
+    /// <summary>
+    /// Bán kính kích hoạt riêng cho POI (mét). Nếu null thì dùng geofence radius mặc định trong Settings.
+    /// </summary>
+    [JsonPropertyName("triggerRadiusMeters")]
+    public double? TriggerRadiusMeters { get; set; }
 
     // Audio info
     public AudioInfo? Audio { get; set; }
@@ -47,8 +54,15 @@ public class AudioInfo
     public string LanguageCode { get; set; } = "vi";
     public string? AudioFileUrl { get; set; }
 
-    [JsonPropertyName("durationInSeconds")]
+    [JsonPropertyName("durationSeconds")]
     public int? DurationSeconds { get; set; }
+
+    [JsonPropertyName("durationInSeconds")]
+    public int? DurationInSeconds
+    {
+        get => DurationSeconds;
+        set => DurationSeconds = value;
+    }
 
     public string? TextContent { get; set; }
 }
@@ -76,6 +90,10 @@ public class AudioContentResult
 
     [JsonPropertyName("isGenerated")]
     public bool IsGenerated { get; set; }
+
+    /// <summary>True khi server trả về ngôn ngữ fallback thay vì ngôn ngữ yêu cầu.</summary>
+    [JsonPropertyName("isFallback")]
+    public bool IsFallback { get; set; }
 }
 
 public class POIDetailModel : POIModel

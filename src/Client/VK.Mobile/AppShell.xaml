@@ -6,7 +6,7 @@
     xmlns:local="clr-namespace:VK.Mobile.Views"
     Shell.FlyoutBehavior="Disabled"
     Shell.TabBarBackgroundColor="{StaticResource TabBarBackground}"
-    Shell.TabBarForegroundColor="{StaticResource TabBarSelected}"
+    Shell.TabBarForegroundColor="#FFFF6B35"
     Shell.TabBarUnselectedColor="{StaticResource TabBarUnselected}">
 
     <!-- Welcome Page (No TabBar) -->
@@ -23,7 +23,8 @@
             x:Name="TabMap"
             Title="Bản đồ"
             Route="MainMap"
-            ContentTemplate="{DataTemplate local:MainMapPage}">
+            ContentTemplate="{DataTemplate local:MainMapPage}"
+            Shell.NavBarIsVisible="False">
             <ShellContent.Icon>
                 <FontImageSource Glyph="🗺️"
                                  Size="22"/>
@@ -35,21 +36,22 @@
             x:Name="TabMenu"
             Title="Khám phá"
             Route="Menu"
-            ContentTemplate="{DataTemplate local:MenuPage}">
+            ContentTemplate="{DataTemplate local:MenuPage}"
+            Shell.NavBarIsVisible="False">
             <ShellContent.Icon>
                 <FontImageSource Glyph="🍜"
                                  Size="22"/>
             </ShellContent.Icon>
         </ShellContent>
 
-        <!-- Yêu thích -->
+        <!-- Tours -->
         <ShellContent
-            x:Name="TabFavorites"
-            Title="Yêu thích"
-            Route="Favorites"
-            ContentTemplate="{DataTemplate local:FavoritesPage}">
+            x:Name="TabTours"
+            Title="Tours"
+            Route="Tours"
+            ContentTemplate="{DataTemplate local:TourPage}">
             <ShellContent.Icon>
-                <FontImageSource Glyph="❤️"
+                <FontImageSource Glyph="🎟️"
                                  Size="22"/>
             </ShellContent.Icon>
         </ShellContent>

@@ -1,5 +1,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using System.Globalization;
+using System.Collections.ObjectModel;
 using VK.Mobile.Models;
 using VK.Mobile.Services;
 
@@ -11,7 +13,9 @@ public partial class SettingsViewModel : ObservableObject
     private readonly LocalPOIDatabase _localDb;
     private readonly ILocationService _locationService;
     private readonly IOfflineContentService _offlineContentService;
+    private readonly ITTSService _ttsService;
     private static readonly string[] LanguageCodes = { "vi", "en", "ko" };
+    private static LocalizationResourceManager L => LocalizationResourceManager.Instance;
 
     public string[] LanguageDisplayNames { get; } = { "Tiếng Việt", "English", "한국어" };
 
@@ -19,12 +23,14 @@ public partial class SettingsViewModel : ObservableObject
         StorageService storageService,
         LocalPOIDatabase localDb,
         ILocationService locationService,
-        IOfflineContentService offlineContentService)
+        IOfflineContentService offlineContentService,
+        ITTSService ttsService)
     {
         _storageService = storageService;
         _localDb = localDb;
         _locationService = locationService;
         _offlineContentService = offlineContentService;
+        _ttsService = ttsService;
         LoadSettings();
 
         // Sync khi ngôn ngữ được đổi từ trang khác (ví dụ MainMapPage)
@@ -32,9 +38,10 @@ public partial class SettingsViewModel : ObservableObject
         {
             _selectedLanguage = LocalizationResourceManager.Instance.CurrentLanguage;
             OnPropertyChanged(nameof(SelectedLanguageDisplayIndex));
+            _ = LoadTtsVoicesAsync();
         };
 
-        _ = RefreshOfflineStatusAsync();
+        _ = LoadTtsVoicesAsync();
     }
 
     [ObservableProperty]
@@ -59,7 +66,27 @@ public partial class SettingsViewModel : ObservableObject
     private bool _includeAudioFilesInOfflinePackage;
 
     [ObservableProperty]
-    private string _offlinePackageStatus = "Chưa tải gói offline.";
+    private string _offlinePackageStatus = "";
+
+    [ObservableProperty]
+    private ObservableCollection<TtsVoiceOption> _availableTtsVoices = new();
+
+    [ObservableProperty]
+    private TtsVoiceOption? _selectedTtsVoice;
+
+    [ObservableProperty]
+    private string _ttsVoiceStatus = "";
+
+    [ObservableProperty]
+    private bool _isLoadingTtsVoices;
+
+    public bool HasAvailableTtsVoices => AvailableTtsVoices.Count > 0;
+
+    partial void OnSelectedLanguageChanged(string value)
+    {
+        OnPropertyChanged(nameof(SelectedLanguageDisplayIndex));
+        _ = LoadTtsVoicesAsync();
+    }
 
     partial void OnNotificationsEnabledChanged(bool value)
         => Preferences.Set("NotificationsEnabled", value);
@@ -70,7 +97,7 @@ public partial class SettingsViewModel : ObservableObject
     /// <summary>Index trong LanguageDisplayNames để bind Picker.SelectedIndex</summary>
     public int SelectedLanguageDisplayIndex
     {
-        get => Array.IndexOf(LanguageCodes, LocalizationResourceManager.Instance.CurrentLanguage);
+        get => Array.IndexOf(LanguageCodes, SelectedLanguage);
         set
         {
             if (value >= 0 && value < LanguageCodes.Length)
@@ -85,11 +112,15 @@ public partial class SettingsViewModel : ObservableObject
         AutoPlayAudio = Preferences.Get("AutoPlayAudio", true);
         GeofenceRadius = Preferences.Get("GeofenceRadius", AppSettings.GeofenceRadiusMeters);
         LocationUpdateInterval = Preferences.Get("LocationUpdateInterval", AppSettings.LocationUpdateIntervalSeconds);
+
+        if (string.IsNullOrWhiteSpace(OfflinePackageStatus))
+            OfflinePackageStatus = L["SettingsOfflineNotDownloaded"];
     }
 
     [RelayCommand]
-    void SaveLanguage()
+    async Task SaveLanguage()
     {
+        await _storageService.SetPreferredLanguageAsync(SelectedLanguage);
         // Gọi LocalizationResourceManager để đổi ngôn ngữ toàn app
         LocalizationResourceManager.Instance.SetLanguage(SelectedLanguage);
     }
@@ -135,22 +166,26 @@ public partial class SettingsViewModel : ObservableObject
         try
         {
             IsDownloadingOfflinePackage = true;
-            OfflinePackageStatus = "Đang tải gói offline...";
 
             var result = await _offlineContentService.DownloadOfflinePackageAsync(
                 SelectedLanguage,
                 IncludeAudioFilesInOfflinePackage);
 
-            OfflinePackageStatus = result.Message;
             await Application.Current!.MainPage!.DisplayAlert(
-                result.Success ? "Offline" : "Lỗi",
+                result.Success ? L["SettingsOfflineTitle"] : L["Error"],
                 result.Message,
-                "OK");
+                L["OK"]);
+        }
+        catch (Exception ex)
+        {
+            await Application.Current!.MainPage!.DisplayAlert(
+                L["Error"],
+                ex.Message,
+                L["OK"]);
         }
         finally
         {
             IsDownloadingOfflinePackage = false;
-            await RefreshOfflineStatusAsync();
         }
     }
 
@@ -160,14 +195,12 @@ public partial class SettingsViewModel : ObservableObject
         try
         {
             var status = await _offlineContentService.GetStatusAsync();
-            var last = status.LastSyncUtc?.ToLocalTime().ToString("dd/MM HH:mm") ?? "chưa sync";
+            var last = status.LastSyncUtc?.ToLocalTime().ToString("dd/MM HH:mm") ?? L["SettingsOfflineNeverSynced"];
 
-            OfflinePackageStatus =
-                $"POI: {status.PoiCount}, Script: {status.ScriptCount}, Lần cuối: {last}";
         }
         catch
         {
-            OfflinePackageStatus = "Không đọc được trạng thái offline.";
+            OfflinePackageStatus = L["SettingsOfflineStatusReadError"];
         }
     }
 
@@ -185,26 +218,47 @@ public partial class SettingsViewModel : ObservableObject
         catch
         {
             await Application.Current!.MainPage!.DisplayAlert(
-                "TTS",
-                "Không mở được cài đặt TTS hệ thống.",
-                "OK");
+                L["SettingsTtsTitle"],
+                L["SettingsTtsOpenErrorMessage"],
+                L["OK"]);
         }
 #else
         await Application.Current!.MainPage!.DisplayAlert(
-            "TTS",
-            "Tính năng này hiện hỗ trợ trên Android.",
-            "OK");
+            L["SettingsTtsTitle"],
+            L["SettingsTtsAndroidOnlyMessage"],
+            L["OK"]);
 #endif
+    }
+
+    [RelayCommand]
+    async Task SaveSelectedTtsVoiceAsync()
+    {
+        if (SelectedTtsVoice == null)
+            return;
+
+        var ok = await _ttsService.SetPreferredVoiceAsync(SelectedTtsVoice.Id, SelectedLanguage);
+        TtsVoiceStatus = ok
+            ? string.Format(
+                CultureInfo.CurrentCulture,
+                L["SettingsTtsVoiceSelectedFormat"],
+                SelectedTtsVoice.DisplayName)
+            : L["SettingsTtsVoiceSaveFailed"];
+    }
+
+    [RelayCommand]
+    async Task RefreshTtsVoicesAsync()
+    {
+        await LoadTtsVoicesAsync();
     }
 
     [RelayCommand]
     async Task ClearCache()
     {
         bool confirm = await Application.Current!.MainPage!.DisplayAlert(
-            LocalizationResourceManager.Instance["SettingsClearCache"],
-            "Bạn có chắc muốn xóa toàn bộ bộ nhớ đệm?",
-            LocalizationResourceManager.Instance["OK"],
-            LocalizationResourceManager.Instance["Cancel"]);
+            L["SettingsClearCache"],
+            L["SettingsClearCacheConfirm"],
+            L["OK"],
+            L["Cancel"]);
 
         if (confirm)
         {
@@ -216,9 +270,9 @@ public partial class SettingsViewModel : ObservableObject
             await RefreshOfflineStatusAsync();
 
             await Application.Current.MainPage.DisplayAlert(
-                LocalizationResourceManager.Instance["OK"],
-                "Đã xóa bộ nhớ đệm.",
-                LocalizationResourceManager.Instance["OK"]);
+                L["Success"],
+                L["SettingsClearCacheDone"],
+                L["OK"]);
         }
     }
 
@@ -226,15 +280,62 @@ public partial class SettingsViewModel : ObservableObject
     async Task Logout()
     {
         bool confirm = await Application.Current!.MainPage!.DisplayAlert(
-            LocalizationResourceManager.Instance["SettingsLogout"],
-            "Bạn có chắc muốn thoát?",
-            LocalizationResourceManager.Instance["SettingsLogout"],
-            LocalizationResourceManager.Instance["Cancel"]);
+            L["SettingsLogout"],
+            L["SettingsLogoutConfirm"],
+            L["SettingsLogout"],
+            L["Cancel"]);
 
         if (confirm)
         {
             await _storageService.ClearAsync();
             await Shell.Current.GoToAsync("///Welcome");
+        }
+    }
+
+    private async Task LoadTtsVoicesAsync()
+    {
+        if (IsLoadingTtsVoices)
+            return;
+
+        try
+        {
+            IsLoadingTtsVoices = true;
+            var voices = await _ttsService.GetAvailableVoicesAsync(SelectedLanguage);
+
+            AvailableTtsVoices.Clear();
+            foreach (var voice in voices)
+                AvailableTtsVoices.Add(voice);
+
+            OnPropertyChanged(nameof(HasAvailableTtsVoices));
+
+            if (voices.Count == 0)
+            {
+                SelectedTtsVoice = null;
+                TtsVoiceStatus = L["SettingsTtsVoiceNoVoices"];
+                return;
+            }
+
+            var preferredVoiceId = _ttsService.GetPreferredVoiceId(SelectedLanguage);
+            SelectedTtsVoice = AvailableTtsVoices
+                .FirstOrDefault(v => string.Equals(v.Id, preferredVoiceId, StringComparison.Ordinal))
+                ?? AvailableTtsVoices.First();
+
+            TtsVoiceStatus = string.Format(
+                CultureInfo.CurrentCulture,
+                L["SettingsTtsVoiceReadyFormat"],
+                AvailableTtsVoices.Count,
+                SelectedTtsVoice.DisplayName);
+        }
+        catch
+        {
+            AvailableTtsVoices.Clear();
+            SelectedTtsVoice = null;
+            OnPropertyChanged(nameof(HasAvailableTtsVoices));
+            TtsVoiceStatus = L["SettingsTtsVoiceLoadFailed"];
+        }
+        finally
+        {
+            IsLoadingTtsVoices = false;
         }
     }
 }
