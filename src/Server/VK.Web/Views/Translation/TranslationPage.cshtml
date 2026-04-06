@@ -1,6 +1,7 @@
 @{
+    bool isOwner = ViewBag.IsOwner ?? false;
     ViewData["Title"] = "Bản dịch";
-    Layout = "_AdminLayout";
+    Layout = isOwner ? "_OwnerLayout" : "_AdminLayout";
 
     var pois = ViewBag.POIs as IEnumerable<VK.Core.Entities.PointOfInterest> ?? new List<VK.Core.Entities.PointOfInterest>();
     var allPois = ViewBag.AllPOIs as IEnumerable<dynamic> ?? new List<dynamic>();
@@ -31,7 +32,7 @@
 <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:24px;">
     <div>
         <div class="page-title">Bản dịch</div>
-        <div class="page-subtitle">Quản lý nội dung thuyết minh đa ngôn ngữ cho từng địa điểm</div>
+        <div class="page-subtitle">@(isOwner ? "Gửi yêu cầu chỉnh sửa bản dịch cho POI của bạn" : "Quản lý nội dung thuyết minh đa ngôn ngữ cho từng địa điểm")</div>
     </div>
 </div>
 

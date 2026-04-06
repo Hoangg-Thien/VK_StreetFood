@@ -1,5 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using System.Globalization;
 using VK.Mobile.Models;
 using VK.Mobile.Services;
 using Microsoft.Extensions.Logging;
@@ -14,12 +15,16 @@ public partial class POIDetailViewModel : ObservableObject, IQueryAttributable
     private readonly StorageService _storageService;
     private readonly LocalPOIDatabase _localDb;
     private readonly ILogger<POIDetailViewModel> _logger;
+    private static LocalizationResourceManager L => LocalizationResourceManager.Instance;
     private CancellationTokenSource? _ttsCts;
     private IDispatcherTimer? _progressTimer;
     private int _elapsedSeconds;
     private int _totalSeconds;
     private string _fullText = string.Empty;
     private bool _usingAudioService;
+    private bool _hasTrackedAudioPlayForSession;
+    private bool _hasTrackedAudioCompleteForSession;
+    private DateTime _audioSessionStartedAtUtc;
 
     [ObservableProperty]
     private POIDetailModel? _poi;
@@ -58,8 +63,13 @@ public partial class POIDetailViewModel : ObservableObject, IQueryAttributable
     public bool IsDragging { get; set; }
 
     public string AudioStatusText => IsPlayingAudio
-        ? "⏸ Đang phát..."
-        : (AudioPositionRatio > 0 ? "Đã tạm dừng" : "Nhấn ▶ để nghe");
+        ? L["POIDetailAudioStatusPlaying"]
+        : (AudioPositionRatio > 0 ? L["POIDetailAudioStatusPaused"] : L["POIDetailAudioStatusReady"]);
+
+    public string AverageRatingText
+        => Poi == null
+            ? string.Empty
+            : string.Format(CultureInfo.CurrentCulture, L["POIDetailAverageRatingFormat"], Poi.AverageRating);
 
     partial void OnIsPlayingAudioChanged(bool value)
     {
@@ -72,13 +82,16 @@ public partial class POIDetailViewModel : ObservableObject, IQueryAttributable
     {
         AudioTranscript = value?.TextContent ?? string.Empty;
         HasTranscript = !string.IsNullOrWhiteSpace(AudioTranscript);
-        // Estimate duration from word count (~130 wpm)
-        var words = AudioTranscript.Split(' ', StringSplitOptions.RemoveEmptyEntries).Length;
-        _totalSeconds = Math.Max(10, words * 60 / 130);
+        _totalSeconds = value?.DurationSeconds is > 0
+            ? value.DurationSeconds.Value
+            : EstimateDurationFromTranscript(AudioTranscript);
         AudioDurationText = FormatTime(_totalSeconds);
         AudioPositionRatio = 0;
         AudioPositionText = "0:00";
         _elapsedSeconds = 0;
+        _hasTrackedAudioPlayForSession = false;
+        _hasTrackedAudioCompleteForSession = false;
+        _audioSessionStartedAtUtc = DateTime.UtcNow;
         OnPropertyChanged(nameof(AudioStatusText));
     }
 
@@ -96,8 +109,13 @@ public partial class POIDetailViewModel : ObservableObject, IQueryAttributable
         _storageService = storageService;
         _localDb = localDb;
         _logger = logger;
+        LocalizationResourceManager.Instance.PropertyChanged += (_, _) =>
+        {
+            OnPropertyChanged(nameof(AudioStatusText));
+            OnPropertyChanged(nameof(AverageRatingText));
+        };
         _audioService.PlaybackCompleted += (_, _) =>
-            MainThread.BeginInvokeOnMainThread(() => { IsPlayingAudio = false; StopProgressTimer(); });
+            MainThread.BeginInvokeOnMainThread(() => _ = HandlePlaybackCompletedAsync());
     }
 
     // ── Progress timer (fake elapsed based on word-count estimate) ────────
@@ -130,6 +148,7 @@ public partial class POIDetailViewModel : ObservableObject, IQueryAttributable
                 IsPlayingAudio = false;
                 StopProgressTimer();
                 _ttsCts?.Cancel();
+                _ = TrackAudioCompleteIfNeededAsync();
             }
         };
         _progressTimer.Start();
@@ -191,7 +210,10 @@ public partial class POIDetailViewModel : ObservableObject, IQueryAttributable
         }
     }
 
-    partial void OnPoiChanged(POIDetailModel? value) { }
+    partial void OnPoiChanged(POIDetailModel? value)
+    {
+        OnPropertyChanged(nameof(AverageRatingText));
+    }
 
     private async Task LoadPOIDetailAsync(int poiId)
     {
@@ -199,7 +221,11 @@ public partial class POIDetailViewModel : ObservableObject, IQueryAttributable
         {
             IsLoading = true;
 
-            var language = await _storageService.GetPreferredLanguageAsync() ?? "vi";
+            var language = LocalizationResourceManager.Instance.CurrentLanguage;
+            if (string.IsNullOrWhiteSpace(language))
+            {
+                language = await _storageService.GetPreferredLanguageAsync() ?? "vi";
+            }
             SelectedLanguage = language;
 
             POIDetailModel? detail = null;
@@ -213,7 +239,7 @@ public partial class POIDetailViewModel : ObservableObject, IQueryAttributable
             // Offline fallback: dùng dữ liệu cache
             if (detail == null)
             {
-                var cached = await _localDb.GetCachedPOIsAsync();
+                var cached = await _localDb.GetCachedPOIsAsync(language);
                 var poi = cached.FirstOrDefault(p => p.Id == poiId);
                 if (poi != null)
                 {
@@ -262,7 +288,7 @@ public partial class POIDetailViewModel : ObservableObject, IQueryAttributable
                     var touristId = await _storageService.GetTouristIdAsync();
                     if (touristId != null)
                     {
-                        var favorites = await _apiService.GetFavoritesAsync(touristId.Value);
+                        var favorites = await _apiService.GetFavoritesAsync(touristId.Value, language);
                         IsFavorite = favorites.Any(f => f.Id == poiId);
                     }
 
@@ -277,7 +303,7 @@ public partial class POIDetailViewModel : ObservableObject, IQueryAttributable
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error loading POI detail");
-            await Shell.Current.DisplayAlert("Error", "Failed to load POI details", "OK");
+            await Shell.Current.DisplayAlert(L["Error"], L["POIDetailLoadFailed"], L["OK"]);
         }
         finally
         {
@@ -309,9 +335,9 @@ public partial class POIDetailViewModel : ObservableObject, IQueryAttributable
                 _usingAudioService = true;
                 if (_elapsedSeconds == 0)
                 {
-                    // Duration chưa biết — estimate từ word count làm placeholder
-                    var words = (SelectedAudio?.TextContent ?? "").Split(' ', StringSplitOptions.RemoveEmptyEntries).Length;
-                    _totalSeconds = Math.Max(10, words * 60 / 130);
+                    _totalSeconds = SelectedAudio?.DurationSeconds is > 0
+                        ? SelectedAudio.DurationSeconds.Value
+                        : EstimateDurationFromTranscript(SelectedAudio?.TextContent);
                     AudioDurationText = FormatTime(_totalSeconds);
                     AudioPositionRatio = 0;
                     AudioPositionText = "0:00";
@@ -319,6 +345,7 @@ public partial class POIDetailViewModel : ObservableObject, IQueryAttributable
                 }
                 IsPlayingAudio = true;
                 _ = _audioService.PlayAudioAsync(audioUrl, Poi?.Id);
+                _audioSessionStartedAtUtc = DateTime.UtcNow;
             }
             else
             {
@@ -331,7 +358,7 @@ public partial class POIDetailViewModel : ObservableObject, IQueryAttributable
                 System.Diagnostics.Debug.WriteLine($"[POIDetail] Final text for TTS ({text?.Length ?? 0} chars): {text?[..Math.Min(60, text?.Length ?? 0)]}");
                 if (string.IsNullOrWhiteSpace(text))
                 {
-                    await Shell.Current.DisplayAlert("Thông báo", "Không có nội dung âm thanh cho điểm này", "OK");
+                    await Shell.Current.DisplayAlert(L["Error"], L["POIDetailNoAudioContent"], L["OK"]);
                     return;
                 }
 
@@ -350,6 +377,7 @@ public partial class POIDetailViewModel : ObservableObject, IQueryAttributable
                 var token = _ttsCts.Token;
                 var lang = SelectedLanguage;
                 IsPlayingAudio = true;
+                _audioSessionStartedAtUtc = DateTime.UtcNow;
                 var speakText = GetTextFromPosition(_fullText, _elapsedSeconds, _totalSeconds);
                 _ = _ttsService.SpeakTextAsync(speakText, lang, token)
                                .ContinueWith(t =>
@@ -361,9 +389,18 @@ public partial class POIDetailViewModel : ObservableObject, IQueryAttributable
 
             // Track in background
             var touristId = await _storageService.GetTouristIdAsync();
-            if (touristId != null && Poi != null)
+            if (touristId != null && Poi != null && !_hasTrackedAudioPlayForSession)
+            {
+                _hasTrackedAudioPlayForSession = true;
                 _ = _apiService.TrackEventAsync(touristId, Poi.Id, "audio_play", SelectedLanguage);
+            }
         }
+    }
+
+    private static int EstimateDurationFromTranscript(string? transcript)
+    {
+        var words = (transcript ?? string.Empty).Split(' ', StringSplitOptions.RemoveEmptyEntries).Length;
+        return Math.Max(10, words * 60 / 130);
     }
 
     [RelayCommand]
@@ -427,6 +464,8 @@ public partial class POIDetailViewModel : ObservableObject, IQueryAttributable
         IsPlayingAudio = false;
         _elapsedSeconds = 0;
         _usingAudioService = false;
+        _hasTrackedAudioPlayForSession = false;
+        _hasTrackedAudioCompleteForSession = false;
         AudioPositionRatio = 0;
         AudioPositionText = "0:00";
         StopProgressTimer();
@@ -441,7 +480,7 @@ public partial class POIDetailViewModel : ObservableObject, IQueryAttributable
             var touristId = await _storageService.GetTouristIdAsync();
             if (touristId == null || Poi == null)
             {
-                await Shell.Current.DisplayAlert("Thông báo", "Vui lòng đăng ký tài khoản để sử dụng tính năng yêu thích.", "OK");
+                await Shell.Current.DisplayAlert(L["Error"], L["POIDetailFavoriteLoginRequired"], L["OK"]);
                 return;
             }
 
@@ -450,19 +489,22 @@ public partial class POIDetailViewModel : ObservableObject, IQueryAttributable
             {
                 success = await _apiService.RemoveFavoriteAsync(touristId.Value, Poi.Id);
                 if (success) IsFavorite = false;
-                else await Shell.Current.DisplayAlert("Lỗi", "Không thể xóa khỏi yêu thích.", "OK");
+                else await Shell.Current.DisplayAlert(L["Error"], L["POIDetailRemoveFavoriteFailed"], L["OK"]);
             }
             else
             {
                 success = await _apiService.AddFavoriteAsync(touristId.Value, Poi.Id);
                 if (success) IsFavorite = true;
-                else await Shell.Current.DisplayAlert("Lỗi", "Không thể thêm vào yêu thích.", "OK");
+                else await Shell.Current.DisplayAlert(L["Error"], L["POIDetailAddFavoriteFailed"], L["OK"]);
             }
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error toggling favorite");
-            await Shell.Current.DisplayAlert("Lỗi", $"Lỗi kết nối: {ex.Message}", "OK");
+            await Shell.Current.DisplayAlert(
+                L["Error"],
+                string.Format(CultureInfo.CurrentCulture, L["POIDetailConnectionErrorFormat"], ex.Message),
+                L["OK"]);
         }
     }
 
@@ -477,10 +519,10 @@ public partial class POIDetailViewModel : ObservableObject, IQueryAttributable
                 return;
 
             var comment = await Shell.Current.DisplayPromptAsync(
-                "Rating",
-                "Optional comment:",
-                "Submit",
-                "Cancel");
+                L["POIDetailRatingPromptTitle"],
+                L["POIDetailRatingPromptMessage"],
+                L["POIDetailRatingSubmit"],
+                L["Cancel"]);
 
             var success = await _apiService.SubmitRatingAsync(
                 touristId.Value,
@@ -490,7 +532,7 @@ public partial class POIDetailViewModel : ObservableObject, IQueryAttributable
 
             if (success)
             {
-                await Shell.Current.DisplayAlert("Success", "Rating submitted", "OK");
+                await Shell.Current.DisplayAlert(L["Success"], L["POIDetailRatingSuccess"], L["OK"]);
                 await LoadPOIDetailAsync(Poi.Id);
             }
         }
@@ -522,5 +564,36 @@ public partial class POIDetailViewModel : ObservableObject, IQueryAttributable
         else
             await _ttsService.StopAsync();
         await Shell.Current.GoToAsync("..");
+    }
+
+    private async Task HandlePlaybackCompletedAsync()
+    {
+        IsPlayingAudio = false;
+        StopProgressTimer();
+        await TrackAudioCompleteIfNeededAsync();
+    }
+
+    private async Task TrackAudioCompleteIfNeededAsync()
+    {
+        if (_hasTrackedAudioCompleteForSession || Poi == null)
+            return;
+
+        _hasTrackedAudioCompleteForSession = true;
+        try
+        {
+            var touristId = await _storageService.GetTouristIdAsync();
+            if (touristId == null)
+                return;
+
+            var durationSeconds = _elapsedSeconds > 0
+                ? _elapsedSeconds
+                : Math.Max(1, (int)(DateTime.UtcNow - _audioSessionStartedAtUtc).TotalSeconds);
+
+            await _apiService.TrackEventAsync(touristId, Poi.Id, "audio_complete", SelectedLanguage, durationSeconds);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogDebug(ex, "Could not track audio_complete for POI {PoiId}", Poi?.Id);
+        }
     }
 }

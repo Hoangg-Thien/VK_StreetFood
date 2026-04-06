@@ -1,5 +1,4 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-using Mapsui;
+﻿using Mapsui;
 using Mapsui.Extensions;
 using Mapsui.Layers;
 using Mapsui.Projections;
@@ -7,8 +6,11 @@ using Mapsui.Styles;
 using Mapsui.Tiling;
 using Mapsui.Tiling.Layers;
 using Mapsui.UI.Maui;
+using Mapsui.Nts;
+using NetTopologySuite.Geometries;
 using BruTile.Cache;
 using BruTile.Predefined;
+using System.Globalization;
 using VK.Mobile.ViewModels;
 using VK.Mobile.Models;
 using VK.Mobile.Services;
@@ -18,12 +20,16 @@ namespace VK.Mobile.Views;
 public partial class MainMapPage : ContentPage
 {
     private readonly MainMapViewModel _viewModel;
-    private readonly IServiceProvider _serviceProvider;
+    private readonly IRoutingService _routingService;
     private MapControl? _mapControl;
     private WritableLayer? _poiLayer;
+    private WritableLayer? _routeLayer;
     private WritableLayer? _locationLayer;
+    private bool _isRouting = false;
+    private bool _hasActiveRoute = false;
     private bool _hasCenteredOnUser = false;
     private POIModel? _selectedPoi;
+    private static LocalizationResourceManager L => LocalizationResourceManager.Instance;
     // Viewport save/restore on tab switch
     private double _savedCenterX = double.NaN;
     private double _savedCenterY = double.NaN;
@@ -35,11 +41,13 @@ public partial class MainMapPage : ContentPage
 
     private static bool IsOfflineMode => Connectivity.NetworkAccess != NetworkAccess.Internet;
 
-    public MainMapPage(MainMapViewModel viewModel, IServiceProvider serviceProvider)
+    public MainMapPage(
+        MainMapViewModel viewModel,
+        IRoutingService routingService)
     {
         InitializeComponent();
         _viewModel = viewModel;
-        _serviceProvider = serviceProvider;
+        _routingService = routingService;
         BindingContext = _viewModel;
         Loaded += OnPageLoaded;
     }
@@ -60,9 +68,6 @@ public partial class MainMapPage : ContentPage
                 if (args.PropertyName == nameof(_viewModel.NearestPoi))
                     UpdatePOIMarkers(); // re-draw để highlight POI gần nhất
             };
-
-            // Geofence tự động mở NowPlayingPage
-            _viewModel.GeofencePOITriggered += OnGeofencePOITriggered;
 
             try { await _viewModel.InitializeCommand.ExecuteAsync(null); }
             catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"VM init error: {ex}"); }
@@ -103,6 +108,10 @@ public partial class MainMapPage : ContentPage
             _poiLayer = new WritableLayer { Name = "POIs", Style = null };
             map.Layers.Add(_poiLayer);
 
+            // Direction route polyline layer
+            _routeLayer = new WritableLayer { Name = "Route", Style = null };
+            map.Layers.Add(_routeLayer);
+
             // User location layer
             _locationLayer = new WritableLayer { Name = "Location", Style = null };
             map.Layers.Add(_locationLayer);
@@ -119,7 +128,7 @@ public partial class MainMapPage : ContentPage
             System.Diagnostics.Debug.WriteLine($"InitializeMap error: {ex}");
             MapContainer.Content = new Label
             {
-                Text = $"Map load failed: {ex.Message}",
+                Text = string.Format(CultureInfo.CurrentCulture, L["MainMapMapLoadFailedFormat"], ex.Message),
                 HorizontalOptions = LayoutOptions.Center,
                 VerticalOptions = LayoutOptions.Center,
                 TextColor = Colors.Red
@@ -330,6 +339,78 @@ public partial class MainMapPage : ContentPage
         });
     }
 
+    private void DrawRoutePolyline(RouteResultModel route)
+    {
+        if (_routeLayer == null || _mapControl?.Map == null || route.Coordinates.Count < 2)
+            return;
+
+        MainThread.BeginInvokeOnMainThread(() =>
+        {
+            try
+            {
+                _routeLayer.Clear();
+
+                var projectedCoordinates = route.Coordinates
+                    .Select(point => SphericalMercator.FromLonLat(point.Longitude, point.Latitude))
+                    .Select(point => point.ToMPoint())
+                    .Select(point => new Coordinate(point.X, point.Y))
+                    .ToArray();
+
+                if (projectedCoordinates.Length < 2)
+                    return;
+
+                var feature = new GeometryFeature
+                {
+                    Geometry = new LineString(projectedCoordinates)
+                };
+
+                feature.Styles.Add(new VectorStyle
+                {
+                    Line = new Pen(Mapsui.Styles.Color.FromString("#1565C0"), 5),
+                    Outline = new Pen(Mapsui.Styles.Color.White, 2)
+                });
+
+                _routeLayer.Add(feature);
+
+                if (feature.Extent != null)
+                {
+                    _mapControl.Map.Navigator.ZoomToBox(feature.Extent, MBoxFit.Fit, 80);
+                }
+
+                _hasActiveRoute = true;
+                ClearRouteBorder.IsVisible = true;
+                _mapControl.Map.Refresh();
+                System.Diagnostics.Debug.WriteLine($"Route drawn: {route.DistanceMeters:F0}m, {route.DurationSeconds:F0}s, points={route.Coordinates.Count}");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"DrawRoutePolyline error: {ex}");
+            }
+        });
+    }
+
+    private void ClearCurrentRoute()
+    {
+        if (_routeLayer == null || _mapControl?.Map == null || !_hasActiveRoute)
+            return;
+
+        MainThread.BeginInvokeOnMainThread(() =>
+        {
+            try
+            {
+                _routeLayer.Clear();
+                _mapControl.Map.Refresh();
+
+                _hasActiveRoute = false;
+                ClearRouteBorder.IsVisible = false;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"ClearCurrentRoute error: {ex}");
+            }
+        });
+    }
+
     private void MapControl_Info(object? sender, MapInfoEventArgs e)
     {
         if (_poiLayer == null || _mapControl == null) return;
@@ -338,6 +419,7 @@ public partial class MainMapPage : ContentPage
         {
             var screenPos = e.ScreenPosition;
             var worldPos = _mapControl.Map.Navigator.Viewport.ScreenToWorld(screenPos.X, screenPos.Y);
+            var worldTapTolerance = _mapControl.Map.Navigator.Viewport.Resolution * 12; // ~12px tap radius
 
             PointFeature? closest = null;
             double minDist = double.MaxValue;
@@ -349,7 +431,7 @@ public partial class MainMapPage : ContentPage
                     var dx = pf.Point.X - worldPos.X;
                     var dy = pf.Point.Y - worldPos.Y;
                     var dist = Math.Sqrt(dx * dx + dy * dy);
-                    if (dist < 300 && dist < minDist)
+                    if (dist < worldTapTolerance && dist < minDist)
                     {
                         minDist = dist;
                         closest = pf;
@@ -362,7 +444,10 @@ public partial class MainMapPage : ContentPage
                 var poi = _viewModel.Pois.FirstOrDefault(p => p.Id == closestId);
                 if (poi != null)
                     MainThread.BeginInvokeOnMainThread(() => ShowPOIBottomCard(poi));
+                return;
             }
+
+            MainThread.BeginInvokeOnMainThread(HidePOIBottomCard);
         }
         catch (Exception ex)
         {
@@ -400,12 +485,26 @@ public partial class MainMapPage : ContentPage
         _selectedPoi = null;
     }
 
-    private static string FormatCardDistance(double? distKm) => distKm switch
+    private static string FormatCardDistance(double? distKm)
     {
-        null or 0 => string.Empty,
-        < 0.1    => $"📍 {distKm.Value * 1000:F0}m",
-        _        => $"📍 {distKm.Value:F1} km"
-    };
+        if (distKm is null or 0)
+            return string.Empty;
+
+        if (distKm < 0.1)
+        {
+            var text = string.Format(
+                CultureInfo.CurrentCulture,
+                LocalizationResourceManager.Instance["NowPlayingDistanceMetersAwayFormat"],
+                distKm.Value * 1000);
+            return $"📍 {text}";
+        }
+
+        var kmText = string.Format(
+            CultureInfo.CurrentCulture,
+            LocalizationResourceManager.Instance["NowPlayingDistanceKmAwayFormat"],
+            distKm.Value);
+        return $"📍 {kmText}";
+    }
 
     private static double ComputeDistanceKm(double lat1, double lon1, double lat2, double lon2)
     {
@@ -419,7 +518,7 @@ public partial class MainMapPage : ContentPage
     }
 
     private void OnCardBackdropTapped(object? sender, TappedEventArgs e) => HidePOIBottomCard();
-    private void OnCardCloseTapped(object? sender, EventArgs e)          => HidePOIBottomCard();
+    private void OnCardCloseTapped(object? sender, EventArgs e) => HidePOIBottomCard();
 
     private async void OnPOIListenClicked(object? sender, EventArgs e)
     {
@@ -439,22 +538,59 @@ public partial class MainMapPage : ContentPage
 
     private async void OnPOIDirectionsClicked(object? sender, EventArgs e)
     {
+        if (_isRouting) return;
         if (_selectedPoi == null || (_selectedPoi.Latitude == 0 && _selectedPoi.Longitude == 0)) return;
-        var lat = _selectedPoi.Latitude;
-        var lon = _selectedPoi.Longitude;
-        var name = Uri.EscapeDataString(_selectedPoi.Name ?? string.Empty);
+
+        var poi = _selectedPoi;
+        var currentLocation = _viewModel.CurrentLocation;
         HidePOIBottomCard();
+
+        if (currentLocation == null)
+        {
+            await DisplayAlertAsync(L["Error"], L["MainMapCurrentLocationUnavailable"], L["MainMapClose"]);
+            return;
+        }
+
+        _isRouting = true;
         try
         {
-            // Mở Google Maps chỉ đường — dùng Launcher tránh xung đột namespace với Mapsui
-            var uri = new Uri($"https://www.google.com/maps/dir/?api=1&destination={lat},{lon}&destination_place_id={name}");
-            await Launcher.OpenAsync(uri);
+            var route = await _routingService.GetDrivingRouteAsync(
+                currentLocation.Latitude,
+                currentLocation.Longitude,
+                poi.Latitude,
+                poi.Longitude);
+
+            if (route == null || route.Coordinates.Count < 2)
+            {
+                await DisplayAlertAsync(L["Error"], L["MainMapRouteUnavailable"], L["MainMapClose"]);
+                return;
+            }
+
+            DrawRoutePolyline(route);
+
+            if (route.Provider == "offline-graph")
+            {
+                await DisplayAlertAsync(L["SettingsOfflineTitle"], L["MainMapOfflineRouteGraphMessage"], L["MainMapClose"]);
+            }
+            else if (route.Provider == "offline-fallback")
+            {
+                await DisplayAlertAsync(L["SettingsOfflineTitle"], L["MainMapOfflineRouteApproxMessage"], L["MainMapClose"]);
+            }
         }
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"Directions error: {ex}");
-            await DisplayAlert("Lỗi", "Không thể mở ứng dụng bản đồ.", "Đóng");
+            await DisplayAlertAsync(L["Error"], L["MainMapDirectionsError"], L["MainMapClose"]);
         }
+        finally
+        {
+            _isRouting = false;
+        }
+    }
+
+    private void OnClearRouteClicked(object? sender, EventArgs e)
+    {
+        ClearCurrentRoute();
     }
 
     private void OnZoomInClicked(object? sender, EventArgs e)
@@ -552,77 +688,5 @@ public partial class MainMapPage : ContentPage
             }
         }
 
-        _viewModel.StopTrackingCommand.Execute(null);
-        _viewModel.GeofencePOITriggered -= OnGeofencePOITriggered;
-    }
-
-    private async void OnGeofencePOITriggered(object? sender, VK.Mobile.Models.POIModel poi)
-    {
-        try
-        {
-            // Đóng NowPlayingPage đang mở (nếu có)
-            NowPlayingViewModel.RequestAutoClose();
-            await Task.Delay(350); // chờ dismiss animation
-
-            // Lấy content player theo thứ tự ưu tiên: API -> cache offline -> description fallback
-            var apiService = _serviceProvider.GetRequiredService<IApiService>();
-            var offlineService = _serviceProvider.GetRequiredService<IOfflineContentService>();
-            string audioText;
-
-            try
-            {
-                var audio = await apiService.GetAudioForPOIAsync(poi.Id, _viewModel.SelectedLanguage);
-                if (audio != null && !string.IsNullOrWhiteSpace(audio.TextContent))
-                {
-                    audioText = audio.TextContent;
-                    await offlineService.CacheNarrationScriptAsync(
-                        poi.Id,
-                        audio.LanguageCode,
-                        audio.TextContent,
-                        audio.AudioFileUrl,
-                        audio.DurationInSeconds);
-                }
-                else
-                {
-                    audioText = await offlineService.GetCachedNarrationTextAsync(poi.Id, _viewModel.SelectedLanguage)
-                                ?? (string.IsNullOrWhiteSpace(poi.Description)
-                                    ? poi.Name
-                                    : $"{poi.Name}. {poi.Description}");
-                }
-            }
-            catch
-            {
-                audioText = await offlineService.GetCachedNarrationTextAsync(poi.Id, _viewModel.SelectedLanguage)
-                            ?? (string.IsNullOrWhiteSpace(poi.Description)
-                                ? poi.Name
-                                : $"{poi.Name}. {poi.Description}");
-            }
-
-            static string FormatDist(double? km) => km switch
-            {
-                null or 0 => "",
-                < 0.1 => $"{(km.Value * 1000):F0}m away",
-                _ => $"{km.Value:F1} km away"
-            };
-
-            var page = _serviceProvider.GetRequiredService<NowPlayingPage>();
-            var vm = (NowPlayingViewModel)page.BindingContext;
-            vm.SetAllPois(_viewModel.NearbyPOIs.Count > 0 ? _viewModel.NearbyPOIs : _viewModel.Pois);
-            vm.Initialize(
-                poi.Id,
-                poi.Name,
-                poi.CategoryName ?? string.Empty,
-                poi.ImageUrl ?? string.Empty,
-                audioText,
-                _viewModel.SelectedLanguage,
-                poi.Address ?? string.Empty,
-                FormatDist(poi.DistanceKm));
-
-            await Shell.Current.Navigation.PushModalAsync(page, animated: true);
-        }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"OnGeofencePOITriggered error: {ex}");
-        }
     }
 }

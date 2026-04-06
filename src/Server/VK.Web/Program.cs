@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using VK.Infrastructure.Data;
+using VK.Web.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -22,11 +23,19 @@ builder.Services.AddDbContext<VKStreetFoodDbContext>(options =>
 // Add HttpClient to call API
 builder.Services.AddHttpClient("VKAPI", client =>
 {
-    client.BaseAddress = new Uri("http://localhost:5089/api/");
+    var apiBaseUrl = builder.Configuration["ApiSettings:BaseUrl"] ?? "http://localhost:5089/api/";
+    client.BaseAddress = new Uri(apiBaseUrl);
     client.Timeout = TimeSpan.FromSeconds(30);
 });
 
+builder.Services.AddHttpClient<ITextTranslationService, GoogleTextTranslationService>(client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(20);
+});
+
 var app = builder.Build();
+
+await SchemaBootstrapper.EnsureOwnerAuthSchemaAsync(app.Services, app.Logger);
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())

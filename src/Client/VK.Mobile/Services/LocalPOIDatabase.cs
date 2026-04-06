@@ -26,25 +26,41 @@ public class LocalPOIDatabase
         if (_db == null)
         {
             _db = new SQLiteAsyncConnection(DbPath);
-            await _db.CreateTableAsync<PoiCacheEntry>();
+            await _db.CreateTableAsync<PoiCacheEntryV2>();
             await _db.CreateTableAsync<AudioScriptCacheEntry>();
         }
         return _db;
     }
 
     /// <summary>Lưu toàn bộ danh sách POI vào SQLite.</summary>
-    public async Task SavePOIsAsync(List<POIModel> pois)
+    public async Task SavePOIsAsync(List<POIModel> pois, string languageCode = "vi")
     {
         try
         {
             var db = await GetDbAsync();
-            var entry = new PoiCacheEntry
+            var lang = string.IsNullOrWhiteSpace(languageCode)
+                ? "vi"
+                : languageCode.Trim().ToLowerInvariant();
+
+            var entry = await db.Table<PoiCacheEntryV2>()
+                .FirstOrDefaultAsync(x => x.LanguageCode == lang);
+
+            if (entry == null)
             {
-                Id = 1,
-                JsonData = JsonSerializer.Serialize(pois, _json),
-                CachedAt = DateTime.UtcNow
-            };
-            await db.InsertOrReplaceAsync(entry);
+                entry = new PoiCacheEntryV2
+                {
+                    LanguageCode = lang,
+                    JsonData = JsonSerializer.Serialize(pois, _json),
+                    CachedAt = DateTime.UtcNow
+                };
+                await db.InsertAsync(entry);
+            }
+            else
+            {
+                entry.JsonData = JsonSerializer.Serialize(pois, _json);
+                entry.CachedAt = DateTime.UtcNow;
+                await db.UpdateAsync(entry);
+            }
         }
         catch (Exception ex)
         {
@@ -56,187 +72,46 @@ public class LocalPOIDatabase
     /// Đọc POI từ cache SQLite.
     /// Trả về list rỗng nếu chưa có cache hoặc lỗi.
     /// </summary>
-    public async Task<List<POIModel>> GetCachedPOIsAsync()
+    public async Task<List<POIModel>> GetCachedPOIsAsync(string languageCode = "vi")
     {
         try
         {
             var db = await GetDbAsync();
-            var entry = await db.FindAsync<PoiCacheEntry>(1);
+            var lang = string.IsNullOrWhiteSpace(languageCode)
+                ? "vi"
+                : languageCode.Trim().ToLowerInvariant();
+
+            var entry = await db.Table<PoiCacheEntryV2>()
+                .FirstOrDefaultAsync(x => x.LanguageCode == lang);
+
+            if (entry == null && !string.Equals(lang, "vi", StringComparison.OrdinalIgnoreCase))
+            {
+                entry = await db.Table<PoiCacheEntryV2>()
+                    .FirstOrDefaultAsync(x => x.LanguageCode == "vi");
+            }
+
             if (entry == null || string.IsNullOrEmpty(entry.JsonData))
-                return await GetBuiltInFallbackPoisAsync();
+                return new List<POIModel>();
 
             var list = JsonSerializer.Deserialize<List<POIModel>>(entry.JsonData, _json)
                        ?? new List<POIModel>();
 
             if (list.Count == 0)
-                return await GetBuiltInFallbackPoisAsync();
+                return new List<POIModel>();
 
             return list;
         }
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"[LocalPOIDatabase] GetCachedPOIs error: {ex.Message}");
-            return await GetBuiltInFallbackPoisAsync();
+            return new List<POIModel>();
         }
     }
-
-    private async Task<List<POIModel>> GetBuiltInFallbackPoisAsync()
-    {
-        var fallback = BuildBuiltInFallbackPois();
-        if (fallback.Count > 0)
-        {
-            try
-            {
-                await SavePOIsAsync(fallback);
-            }
-            catch
-            {
-            }
-        }
-
-        return fallback;
-    }
-
-    private static List<POIModel> BuildBuiltInFallbackPois() => new()
-    {
-        new POIModel
-        {
-            Id = 1,
-            Name = "Cổng chào Phố Ẩm thực Vĩnh Khánh",
-            Description = "Chào mừng bạn đến với Phố Ẩm thực Vĩnh Khánh – thiên đường ẩm thực đêm của Sài Gòn.",
-            Latitude = 10.7619058983358,
-            Longitude = 106.702227165271,
-            Address = "Vĩnh Khánh, Phường 9, Quận 4, TP.HCM",
-            CategoryName = "Landmark",
-            ImageUrl = "/images/poi/cong-chao.jpg"
-        },
-        new POIModel
-        {
-            Id = 2,
-            Name = "Ốc Vũ",
-            Description = "Quán ốc lâu năm nổi tiếng với nước chấm sốt me đặc trưng.",
-            Latitude = 10.7615184310278,
-            Longitude = 106.7027154252,
-            Address = "37 Vĩnh Khánh, Phường 9, Quận 4, TP.HCM",
-            CategoryName = "Seafood",
-            ImageUrl = "/images/poi/oc-vu.jpg"
-        },
-        new POIModel
-        {
-            Id = 3,
-            Name = "Ốc Thảo",
-            Description = "Quán ốc nổi tiếng với món ốc len xào dừa béo ngậy.",
-            Latitude = 10.7617951625975,
-            Longitude = 106.702392988972,
-            Address = "383 Vĩnh Khánh, Phường 9, Quận 4, TP.HCM",
-            CategoryName = "Seafood",
-            ImageUrl = "/images/poi/oc-thao.jpg"
-        },
-        new POIModel
-        {
-            Id = 4,
-            Name = "Ốc Sáu Nở",
-            Description = "Quán ốc vỉa hè đậm chất Sài Gòn với món ốc hương trứng muối.",
-            Latitude = 10.7610380785009,
-            Longitude = 106.702904448097,
-            Address = "128 Vĩnh Khánh, Phường 9, Quận 4, TP.HCM",
-            CategoryName = "Seafood",
-            ImageUrl = "/images/poi/oc-sau-no.jpg"
-        },
-        new POIModel
-        {
-            Id = 5,
-            Name = "Ốc Oanh",
-            Description = "Quán ốc nổi tiếng được Michelin Bib Gourmand.",
-            Latitude = 10.7608486298266,
-            Longitude = 106.703295774422,
-            Address = "534 Vĩnh Khánh, Phường 9, Quận 4, TP.HCM",
-            CategoryName = "Seafood",
-            ImageUrl = "/images/poi/oc-oanh.jpg"
-        },
-        new POIModel
-        {
-            Id = 6,
-            Name = "A Fat Hot Pot",
-            Description = "Nhà hàng lẩu phong cách Hong Kong nổi tiếng với lẩu collagen.",
-            Latitude = 10.7608069330753,
-            Longitude = 106.703478752187,
-            Address = "668 Vĩnh Khánh, Phường 9, Quận 4, TP.HCM",
-            CategoryName = "Hotpot",
-            ImageUrl = "/images/poi/a-fat.jpg"
-        },
-        new POIModel
-        {
-            Id = 7,
-            Name = "Chilli Lẩu Nướng Tự Chọn",
-            Description = "Buffet nướng ngoài trời rất được giới trẻ yêu thích.",
-            Latitude = 10.7607944319756,
-            Longitude = 106.703659068107,
-            Address = "232/105 Vĩnh Khánh, Phường 9, Quận 4, TP.HCM",
-            CategoryName = "Hotpot",
-            ImageUrl = "/images/poi/chilli.jpg"
-        },
-        new POIModel
-        {
-            Id = 8,
-            Name = "Alo Quán – Seafood & Beer",
-            Description = "Quán hải sản hiện đại với không gian chill.",
-            Latitude = 10.761127163188,
-            Longitude = 106.704754254081,
-            Address = "333 Vĩnh Khánh, Phường 9, Quận 4, TP.HCM",
-            CategoryName = "Seafood",
-            ImageUrl = "/images/poi/alo-quan.jpg"
-        },
-        new POIModel
-        {
-            Id = 9,
-            Name = "Ốc Đào 2",
-            Description = "Quán ốc nổi tiếng với khách du lịch quốc tế.",
-            Latitude = 10.7613479651701,
-            Longitude = 106.704967847399,
-            Address = "232/123 Vĩnh Khánh, Phường 9, Quận 4, TP.HCM",
-            CategoryName = "Seafood",
-            ImageUrl = "/images/poi/oc-dao-2.jpg"
-        },
-        new POIModel
-        {
-            Id = 10,
-            Name = "Lãng Quán",
-            Description = "Quán nhậu mở cửa đến 4 giờ sáng.",
-            Latitude = 10.7611499881882,
-            Longitude = 106.705384011963,
-            Address = "531 Vĩnh Khánh, Phường 9, Quận 4, TP.HCM",
-            CategoryName = "Hotpot",
-            ImageUrl = "/images/poi/lang-quan.jpg"
-        },
-        new POIModel
-        {
-            Id = 11,
-            Name = "Ớt Xiêm Quán",
-            Description = "Quán nổi tiếng với các món ăn cực cay.",
-            Latitude = 10.7611852360527,
-            Longitude = 106.705703610392,
-            Address = "568 Vĩnh Khánh, Phường 9, Quận 4, TP.HCM",
-            CategoryName = "Hotpot",
-            ImageUrl = "/images/poi/ot-xiem.jpg"
-        },
-        new POIModel
-        {
-            Id = 12,
-            Name = "Bún Cá Châu Đốc Dì Tư",
-            Description = "Quán bún cá miền Tây nổi tiếng.",
-            Latitude = 10.761123552507,
-            Longitude = 106.706606909857,
-            Address = "320/79 Vĩnh Khánh, Phường 9, Quận 4, TP.HCM",
-            CategoryName = "Noodle",
-            ImageUrl = "/images/poi/bun-ca.jpg"
-        }
-    };
 
     /// <summary>Số lượng POI hiện có trong cache.</summary>
-    public async Task<int> GetCachedPoiCountAsync()
+    public async Task<int> GetCachedPoiCountAsync(string languageCode = "vi")
     {
-        var list = await GetCachedPOIsAsync();
+        var list = await GetCachedPOIsAsync(languageCode);
         return list.Count;
     }
 
@@ -345,7 +220,9 @@ public class LocalPOIDatabase
         try
         {
             var db = await GetDbAsync();
-            var entry = await db.FindAsync<PoiCacheEntry>(1);
+            var entry = await db.Table<PoiCacheEntryV2>()
+                .OrderByDescending(x => x.CachedAt)
+                .FirstOrDefaultAsync();
             return entry?.CachedAt;
         }
         catch { return null; }
@@ -357,7 +234,7 @@ public class LocalPOIDatabase
         try
         {
             var db = await GetDbAsync();
-            await db.DeleteAllAsync<PoiCacheEntry>();
+            await db.DeleteAllAsync<PoiCacheEntryV2>();
             await db.DeleteAllAsync<AudioScriptCacheEntry>();
         }
         catch (Exception ex)
@@ -367,11 +244,14 @@ public class LocalPOIDatabase
     }
 }
 
-[SQLite.Table("poi_cache")]
-public class PoiCacheEntry
+[SQLite.Table("poi_cache_v2")]
+public class PoiCacheEntryV2
 {
-    [PrimaryKey]
-    public int Id { get; set; } = 1;
+    [PrimaryKey, AutoIncrement]
+    public int Id { get; set; }
+
+    [Indexed(Name = "IX_PoiCache_Language", Unique = true)]
+    public string LanguageCode { get; set; } = "vi";
 
     public string JsonData { get; set; } = string.Empty;
 

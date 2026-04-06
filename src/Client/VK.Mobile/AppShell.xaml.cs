@@ -12,11 +12,12 @@ public partial class AppShell : Shell
 		// Register routes for navigation
 		Routing.RegisterRoute("POIDetail", typeof(POIDetailPage));
 		Routing.RegisterRoute("poidetail", typeof(POIDetailPage));
-		Routing.RegisterRoute("analytics", typeof(AnalyticsPage));
 		Routing.RegisterRoute("NowPlaying", typeof(NowPlayingPage));
+		Routing.RegisterRoute("FavoritesPage", typeof(FavoritesPage));
 
 		// Lắng nghe thay đổi ngôn ngữ để cập nhật tab titles
 		LocalizationResourceManager.Instance.PropertyChanged += (_, _) => UpdateTabTitles();
+		UpdateTabTitles();
 	}
 
 	private void UpdateTabTitles()
@@ -24,7 +25,7 @@ public partial class AppShell : Shell
 		var L = LocalizationResourceManager.Instance;
 		TabMap.Title = L["TabMap"];
 		TabMenu.Title = L["TabExplore"];
-		TabFavorites.Title = L["TabFavorites"];
+		TabTours.Title = L["TabTours"];
 		TabProfile.Title = L["TabProfile"];
 		TabSettings.Title = L["TabSettings"];
 	}

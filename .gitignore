@@ -86,3 +86,15 @@ obj/
 *.cache
 *.pdb
 TestResults/
+
+# Recursive build artifacts (API/Web/Mobile/Test projects)
+**/[Bb]in/**
+**/[Oo]bj/**
+**/[Ll]og/**
+**/[Ll]ogs/**
+**/TestResults/**
+**/*.trx
+**/*.coverage
+**/*.coveragexml
+
+**/Directory.Build.props

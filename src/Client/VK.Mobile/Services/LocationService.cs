@@ -50,18 +50,6 @@ public class LocationService : ILocationService
 
     public async Task<Location?> GetCurrentLocationAsync()
     {
-#if DEBUG
-        // Trả về mock location cố định khi chạy debug trên emulator
-        if (AppSettings.UseMockLocation)
-        {
-            System.Diagnostics.Debug.WriteLine($"[Location] Using mock location: {AppSettings.MockLatitude}, {AppSettings.MockLongitude}");
-            return new Location(AppSettings.MockLatitude, AppSettings.MockLongitude)
-            {
-                Accuracy = 5.0,
-                Timestamp = DateTimeOffset.UtcNow
-            };
-        }
-#endif
         try
         {
             // Check and request location permissions
@@ -158,7 +146,8 @@ public class LocationService : ILocationService
                             var nearbyPOIs = await _apiService.GetNearbyPOIsAsync(
                                 location.Latitude,
                                 location.Longitude,
-                                radiusMeters / 1000.0);
+                                radiusMeters / 1000.0,
+                                LocalizationResourceManager.Instance.CurrentLanguage);
 
                             LocationChanged?.Invoke(this, new LocationChangedEventArgs
                             {

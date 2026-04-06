@@ -12,8 +12,8 @@ public interface IApiService
     Task<bool> UpdateLocationAsync(int touristId, double latitude, double longitude);
 
     // POI
-    Task<List<POIModel>> GetAllPOIsAsync(string? search = null);
-    Task<List<POIModel>> GetNearbyPOIsAsync(double latitude, double longitude, double radiusKm = 1.0);
+    Task<List<POIModel>> GetAllPOIsAsync(string? search = null, string languageCode = "vi");
+    Task<List<POIModel>> GetNearbyPOIsAsync(double latitude, double longitude, double radiusKm = 1.0, string languageCode = "vi");
     Task<POIDetailModel?> GetPOIDetailAsync(int poiId, string languageCode = "vi");
     Task<POIDetailModel?> ScanQRCodeAsync(string qrCode, string languageCode = "vi");
 
@@ -24,7 +24,7 @@ public interface IApiService
     // Favorites
     Task<bool> AddFavoriteAsync(int touristId, int poiId);
     Task<bool> RemoveFavoriteAsync(int touristId, int poiId);
-    Task<List<POIModel>> GetFavoritesAsync(int touristId);
+    Task<List<POIModel>> GetFavoritesAsync(int touristId, string languageCode = "vi");
 
     // Audio
     Task<AudioContentResult?> GetAudioForPOIAsync(int poiId, string languageCode = "vi");
@@ -41,6 +41,16 @@ public interface IApiService
     Task<bool> TrackEventAsync(int? touristId, int poiId, string eventType, string? languageCode = null, int? durationSeconds = null);
     Task<TouristStatsModel?> GetMyStatsAsync(int touristId);
     Task<List<TopPOIModel>> GetTopPOIsAsync(int count = 10);
+
+    // Tours
+    Task<List<TourModel>> GetToursAsync(string languageCode = "vi");
+    Task<TourModel?> GetTourByIdAsync(int tourId, string languageCode = "vi");
+
+    // Localization
+    /// <summary>Hotset: Pre-warm audio cho top N POI gần nhất khi mở app.</summary>
+    Task PrepareHotsetAsync(IEnumerable<int> poiIds, string languageCode = "vi", CancellationToken ct = default);
+    /// <summary>Warmup: Generate toàn bộ audio corpus còn thiếu dưới nền.</summary>
+    Task WarmupAsync(string languageCode = "vi", CancellationToken ct = default);
 }
 
 public class ApiService : IApiService
@@ -99,13 +109,13 @@ public class ApiService : IApiService
         }
     }
 
-    public async Task<List<POIModel>> GetAllPOIsAsync(string? search = null)
+    public async Task<List<POIModel>> GetAllPOIsAsync(string? search = null, string languageCode = "vi")
     {
         try
         {
-            var url = "poi";
+            var url = $"poi?languageCode={Uri.EscapeDataString(languageCode)}";
             if (!string.IsNullOrEmpty(search))
-                url += $"?search={Uri.EscapeDataString(search)}";
+                url += $"&search={Uri.EscapeDataString(search)}";
 
             var fullUrl = new Uri(_httpClient.BaseAddress!, url);
             _logger.LogInformation("Fetching POIs from: {Url}", fullUrl);
@@ -143,11 +153,11 @@ public class ApiService : IApiService
         }
     }
 
-    public async Task<List<POIModel>> GetNearbyPOIsAsync(double latitude, double longitude, double radiusKm = 1.0)
+    public async Task<List<POIModel>> GetNearbyPOIsAsync(double latitude, double longitude, double radiusKm = 1.0, string languageCode = "vi")
     {
         try
         {
-            var url = $"poi/nearby?latitude={latitude}&longitude={longitude}&radiusKm={radiusKm}";
+            var url = $"poi/nearby?latitude={latitude}&longitude={longitude}&radiusKm={radiusKm}&languageCode={Uri.EscapeDataString(languageCode)}";
             var pois = await _httpClient.GetFromJsonAsync<List<POIModel>>(url, _jsonOptions);
             return pois ?? new List<POIModel>();
         }
@@ -275,11 +285,13 @@ public class ApiService : IApiService
         }
     }
 
-    public async Task<List<POIModel>> GetFavoritesAsync(int touristId)
+    public async Task<List<POIModel>> GetFavoritesAsync(int touristId, string languageCode = "vi")
     {
         try
         {
-            return await _httpClient.GetFromJsonAsync<List<POIModel>>($"tourist/{touristId}/favorites", _jsonOptions) ?? new List<POIModel>();
+            return await _httpClient.GetFromJsonAsync<List<POIModel>>(
+                $"tourist/{touristId}/favorites?languageCode={Uri.EscapeDataString(languageCode)}",
+                _jsonOptions) ?? new List<POIModel>();
         }
         catch (Exception ex)
         {
@@ -341,6 +353,62 @@ public class ApiService : IApiService
         {
             _logger.LogError(ex, "Error getting top POIs");
             return new List<TopPOIModel>();
+        }
+    }
+
+    public async Task<List<TourModel>> GetToursAsync(string languageCode = "vi")
+    {
+        try
+        {
+            return await _httpClient.GetFromJsonAsync<List<TourModel>>(
+                $"tour?languageCode={Uri.EscapeDataString(languageCode)}",
+                _jsonOptions) ?? new List<TourModel>();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting tours");
+            return new List<TourModel>();
+        }
+    }
+
+    public async Task<TourModel?> GetTourByIdAsync(int tourId, string languageCode = "vi")
+    {
+        try
+        {
+            return await _httpClient.GetFromJsonAsync<TourModel>(
+                $"tour/{tourId}?languageCode={Uri.EscapeDataString(languageCode)}",
+                _jsonOptions);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting tour detail for {TourId}", tourId);
+            return null;
+        }
+    }
+
+    public async Task PrepareHotsetAsync(IEnumerable<int> poiIds, string languageCode = "vi", CancellationToken ct = default)
+    {
+        try
+        {
+            var body = new { poiIds = poiIds.ToList(), languageCode };
+            await _httpClient.PostAsJsonAsync("localizations/prepare-hotset", body, ct);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogDebug(ex, "[ApiService] PrepareHotsetAsync failed (non-critical)");
+        }
+    }
+
+    public async Task WarmupAsync(string languageCode = "vi", CancellationToken ct = default)
+    {
+        try
+        {
+            var body = new { languageCode };
+            await _httpClient.PostAsJsonAsync("localizations/warmup", body, ct);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogDebug(ex, "[ApiService] WarmupAsync failed (non-critical)");
         }
     }
 }

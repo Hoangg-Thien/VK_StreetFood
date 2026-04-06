@@ -50,7 +50,7 @@ public partial class ProfileViewModel : ObservableObject
                 PreferredLanguage = await _storageService.GetPreferredLanguageAsync() ?? "vi";
 
                 // Load favorites count
-                var favorites = await _apiService.GetFavoritesAsync(touristId.Value);
+                var favorites = await _apiService.GetFavoritesAsync(touristId.Value, PreferredLanguage);
                 TotalFavorites = favorites.Count;
 
                 // Load visit / activity stats
@@ -78,13 +78,7 @@ public partial class ProfileViewModel : ObservableObject
     [RelayCommand]
     async Task NavigateToFavorites()
     {
-        await Shell.Current.GoToAsync("///Favorites");
-    }
-
-    [RelayCommand]
-    async Task NavigateToAnalytics()
-    {
-        await Shell.Current.GoToAsync("analytics");
+        await Shell.Current.GoToAsync("FavoritesPage");
     }
 
     public string GetLanguageDisplayName(string code)
@@ -93,9 +87,7 @@ public partial class ProfileViewModel : ObservableObject
         {
             "vi" => "Tiếng Việt",
             "en" => "English",
-            "ja" => "日本語",
             "ko" => "한국어",
-            "zh" => "中文",
             _ => code
         };
     }

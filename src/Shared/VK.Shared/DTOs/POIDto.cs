@@ -14,6 +14,16 @@ public class POIListItemDto
     public string Category { get; set; } = string.Empty;
     public List<string> Tags { get; set; } = new();
     public double? DistanceKm { get; set; }
+
+    /// <summary>
+    /// Geofence trigger priority: larger value wins when multiple POIs are in range.
+    /// </summary>
+    public int Priority { get; set; } = 0;
+
+    /// <summary>
+    /// Optional per-POI trigger radius (meters). If null, clients use app-level default radius.
+    /// </summary>
+    public double? TriggerRadiusMeters { get; set; }
 }
 
 public class POIDetailDto : POIListItemDto

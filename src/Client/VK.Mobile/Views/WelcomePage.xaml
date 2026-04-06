@@ -7,133 +7,160 @@
              BackgroundColor="{StaticResource PageBackground}"
              Shell.NavBarIsVisible="False">
 
-    <Grid>
-        <!-- Gradient Background -->
-        <BoxView>
-            <BoxView.Background>
-                <LinearGradientBrush StartPoint="0,0"
-                                     EndPoint="1,1">
-                    <GradientStop Color="#FFF27A4F"
-                                  Offset="0.0"/>
-                    <GradientStop Color="#FFF27A4F"
-                                  Offset="1.0"/>
-                </LinearGradientBrush>
-            </BoxView.Background>
-        </BoxView>
+       <Grid>
+              <!-- Gradient Background -->
+              <BoxView>
+                     <BoxView.Background>
+                            <LinearGradientBrush StartPoint="0,0"
+                                                 EndPoint="1,1">
+                                   <GradientStop Color="#FFF27A4F"
+                                                 Offset="0.0"/>
+                                   <GradientStop Color="#FFF27A4F"
+                                                 Offset="1.0"/>
+                            </LinearGradientBrush>
+                     </BoxView.Background>
+              </BoxView>
 
-        <!-- Content -->
-        <VerticalStackLayout VerticalOptions="Center"
-                             Padding="40"
-                             Spacing="30">
+              <!-- Content -->
+              <ScrollView>
+                     <VerticalStackLayout VerticalOptions="Center"
+                                          Padding="{OnIdiom Phone='24,24,24,16', Tablet='48,48,48,24'}"
+                                          Spacing="{OnIdiom Phone=16, Tablet=24}">
 
-            <!-- App Icon/Logo -->
-            <Border StrokeShape="RoundRectangle 80"
-                    BackgroundColor="White"
-                    HeightRequest="160"
-                    WidthRequest="160"
-                    HorizontalOptions="Center"
-                    Shadow="{StaticResource Shadow}">
-                <Label Text="🍜"
-                       FontSize="80"
-                       HorizontalOptions="Center"
-                       VerticalOptions="Center"/>
-            </Border>
+                            <!-- App Icon/Logo -->
+                            <Border HeightRequest="160"
+                                    WidthRequest="160"
+                                    HorizontalOptions="Center"
+                                    Padding="0"
+                                    BackgroundColor="Transparent"
+                                    Shadow="{StaticResource Shadow}">
 
-            <!-- App Name -->
-            <Label Text="VK Street Food"
-                   FontSize="36"
-                   FontAttributes="Bold"
-                   TextColor="White"
-                   HorizontalTextAlignment="Center"/>
+                                   <Border.Clip>
+                                          <EllipseGeometry Center="80,80"
+                                                           RadiusX="80"
+                                                           RadiusY="80"/>
+                                   </Border.Clip>
 
-            <!-- Tagline -->
-            <Label Text="{Binding Tagline}"
-                   FontSize="18"
-                   TextColor="White"
-                   Opacity="0.9"
-                   HorizontalTextAlignment="Center"/>
+                                   <Image Source="welcome_logo.png"
+                                          HeightRequest="160"
+                                          WidthRequest="160"
+                                          Aspect="AspectFill"
+                                          Scale="1"/>
+                            </Border>
 
-            <!-- Language Selection -->
-            <HorizontalStackLayout HorizontalOptions="Center"
-                                   Spacing="8">
-                <Button Text="Tiếng Việt"
-                        Command="{Binding SelectLanguageCommand}"
-                        CommandParameter="vi"
-                        BackgroundColor="{Binding ViBackground}"
-                        TextColor="{Binding ViTextColor}"
-                        FontSize="13"
-                        HeightRequest="40"
-                        CornerRadius="20"
-                        Padding="14,0"
-                        BorderColor="White"
-                        BorderWidth="1.5"/>
-                <Button Text="English"
-                        Command="{Binding SelectLanguageCommand}"
-                        CommandParameter="en"
-                        BackgroundColor="{Binding EnBackground}"
-                        TextColor="{Binding EnTextColor}"
-                        FontSize="13"
-                        HeightRequest="40"
-                        CornerRadius="20"
-                        Padding="14,0"
-                        BorderColor="White"
-                        BorderWidth="1.5"/>
-                <Button Text="한국어"
-                        Command="{Binding SelectLanguageCommand}"
-                        CommandParameter="ko"
-                        BackgroundColor="{Binding KoBackground}"
-                        TextColor="{Binding KoTextColor}"
-                        FontSize="13"
-                        HeightRequest="40"
-                        CornerRadius="20"
-                        Padding="14,0"
-                        BorderColor="White"
-                        BorderWidth="1.5"/>
-            </HorizontalStackLayout>
+                            <!-- App Name -->
+                            <Label Text="VK Street Food"
+                                   FontSize="{OnIdiom Phone=26, Tablet=34}"
+                                   FontAttributes="Bold"
+                                   TextColor="White"
+                                   HorizontalTextAlignment="Center"/>
 
-            <!-- Features List -->
-            <VerticalStackLayout Spacing="15"
-                                 Margin="0,20,0,0">
-                <HorizontalStackLayout Spacing="15">
-                    <Label Text="📍"
-                           FontSize="24"/>
-                    <Label Text="{Binding FeatureLocation}"
-                           TextColor="White"
-                           FontSize="16"
-                           VerticalOptions="Center"/>
-                </HorizontalStackLayout>
+                            <!-- Tagline -->
+                            <Label Text="{Binding Tagline}"
+                                   FontSize="{OnIdiom Phone=16, Tablet=18}"
+                                   TextColor="White"
+                                   Opacity="0.9"
+                                   MaxLines="2"
+                                   LineBreakMode="WordWrap"
+                                   HorizontalTextAlignment="Center"/>
 
-                <HorizontalStackLayout Spacing="15">
-                    <Label Text="🎧"
-                           FontSize="24"/>
-                    <Label Text="{Binding FeatureAudio}"
-                           TextColor="White"
-                           FontSize="16"
-                           VerticalOptions="Center"/>
-                </HorizontalStackLayout>
+                            <!-- Language Selection -->
+                            <HorizontalStackLayout HorizontalOptions="Center"
+                                                   Spacing="6">
+                                   <Button Text="Tiếng Việt"
+                                           Command="{Binding SelectLanguageCommand}"
+                                           CommandParameter="vi"
+                                           BackgroundColor="{Binding ViBackground}"
+                                           TextColor="{Binding ViTextColor}"
+                                           FontSize="14"
+                                           HeightRequest="44"
+                                           CornerRadius="20"
+                                           Padding="14,8"
+                                           BorderColor="White"
+                                           BorderWidth="1.5"/>
+                                   <Button Text="English"
+                                           Command="{Binding SelectLanguageCommand}"
+                                           CommandParameter="en"
+                                           BackgroundColor="{Binding EnBackground}"
+                                           TextColor="{Binding EnTextColor}"
+                                           FontSize="14"
+                                           HeightRequest="44"
+                                           CornerRadius="20"
+                                           Padding="14,8"
+                                           BorderColor="White"
+                                           BorderWidth="1.5"/>
+                                   <Button Text="한국어"
+                                           Command="{Binding SelectLanguageCommand}"
+                                           CommandParameter="ko"
+                                           BackgroundColor="{Binding KoBackground}"
+                                           TextColor="{Binding KoTextColor}"
+                                           FontSize="14"
+                                           HeightRequest="44"
+                                           CornerRadius="20"
+                                           Padding="14,8"
+                                           BorderColor="White"
+                                           BorderWidth="1.5"/>
+                            </HorizontalStackLayout>
 
-                <HorizontalStackLayout Spacing="15">
-                    <Label Text="📱"
-                           FontSize="24"/>
-                    <Label Text="{Binding FeatureQR}"
-                           TextColor="White"
-                           FontSize="16"
-                           VerticalOptions="Center"/>
-                </HorizontalStackLayout>
-            </VerticalStackLayout>
+                            <!-- Features List -->
+                            <VerticalStackLayout Spacing="15"
+                                                 Margin="0,20,0,0">
+                                   <Grid ColumnDefinitions="Auto,*"
+                                         ColumnSpacing="12">
+                                          <Label Text="📍"
+                                                 FontSize="24"/>
+                                          <Label Text="{Binding FeatureLocation}"
+                                                 Grid.Column="1"
+                                                 TextColor="White"
+                                                 FontSize="{OnIdiom Phone=15, Tablet=16}"
+                                                 LineBreakMode="WordWrap"
+                                                 MaxLines="2"
+                                                 HorizontalOptions="Fill"
+                                                 VerticalOptions="Center"/>
+                                   </Grid>
 
-            <!-- Get Started Button -->
-            <Button Text="{Binding GetStartedText}"
-                    Command="{Binding GetStartedCommand}"
-                    BackgroundColor="White"
-                    TextColor="{StaticResource Primary}"
-                    FontSize="18"
-                    FontAttributes="Bold"
-                    HeightRequest="56"
-                    CornerRadius="28"
-                    Margin="0,30,0,0"
-                    Shadow="{StaticResource Shadow}"/>
+                                   <Grid ColumnDefinitions="Auto,*"
+                                         ColumnSpacing="12">
+                                          <Label Text="🎧"
+                                                 FontSize="24"/>
+                                          <Label Text="{Binding FeatureAudio}"
+                                                 Grid.Column="1"
+                                                 TextColor="White"
+                                                 FontSize="{OnIdiom Phone=15, Tablet=16}"
+                                                 LineBreakMode="WordWrap"
+                                                 MaxLines="2"
+                                                 HorizontalOptions="Fill"
+                                                 VerticalOptions="Center"/>
+                                   </Grid>
 
-        </VerticalStackLayout>
-    </Grid>
+                                   <Grid ColumnDefinitions="Auto,*"
+                                         ColumnSpacing="12">
+                                          <Label Text="📱"
+                                                 FontSize="24"/>
+                                          <Label Text="{Binding FeatureQR}"
+                                                 Grid.Column="1"
+                                                 TextColor="White"
+                                                 FontSize="{OnIdiom Phone=15, Tablet=16}"
+                                                 LineBreakMode="WordWrap"
+                                                 MaxLines="2"
+                                                 HorizontalOptions="Fill"
+                                                 VerticalOptions="Center"/>
+                                   </Grid>
+                            </VerticalStackLayout>
+
+                            <!-- Get Started Button -->
+                            <Button Text="{Binding GetStartedText}"
+                                    Command="{Binding GetStartedCommand}"
+                                    BackgroundColor="White"
+                                    TextColor="{StaticResource Primary}"
+                                    FontSize="{OnIdiom Phone=16, Tablet=18}"
+                                    FontAttributes="Bold"
+                                    HeightRequest="60"
+                                    CornerRadius="28"
+                                    Margin="0,22,0,12"
+                                    Shadow="{StaticResource Shadow}"/>
+
+                     </VerticalStackLayout>
+              </ScrollView>
+       </Grid>
 </ContentPage>

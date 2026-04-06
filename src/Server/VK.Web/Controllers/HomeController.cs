@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using VK.Infrastructure.Data;
 using VK.Web.Models;
+using VK.Web.Services;
+using VK.Core.Entities;
 
 namespace VK.Web.Controllers;
 
@@ -23,8 +25,14 @@ public class HomeController : Controller
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
     public IActionResult Index()
     {
-        if (HttpContext.Session.GetString("AdminLoggedIn") == "true")
+        if (HttpContext.Session.GetString("UserLoggedIn") == "true")
+        {
+            var role = HttpContext.Session.GetString("UserRole");
+            if (string.Equals(role, "poi_owner", StringComparison.OrdinalIgnoreCase))
+                return RedirectToAction("Index", "Owner");
+
             return RedirectToAction("Index", "Dashboard");
+        }
 
         return View();
     }
@@ -46,12 +54,48 @@ public class HomeController : Controller
                 var user = await _context.Users
                     .FirstOrDefaultAsync(u => u.Email == adminEmail && u.Role == "Admin");
 
+                HttpContext.Session.SetString("UserLoggedIn", "true");
+                HttpContext.Session.SetString("UserRole", "admin");
                 HttpContext.Session.SetString("AdminLoggedIn", "true");
                 HttpContext.Session.SetString("AdminUsername", user?.FullName ?? adminEmail.Split('@')[0]);
                 HttpContext.Session.SetString("AdminEmail", adminEmail);
 
                 TempData["InitAdminTab"] = "1";
                 return RedirectToAction("Index", "Dashboard");
+            }
+
+            var owner = await _context.Users
+                .Include(u => u.Vendor)
+                .FirstOrDefaultAsync(u =>
+                    !u.IsDeleted &&
+                    u.Email == email &&
+                    u.Role == "poi_owner");
+
+            if (owner != null && PasswordHasher.Verify(password, owner.PasswordHash))
+            {
+                if (!owner.IsVerified)
+                {
+                    ViewBag.Error = "Tài khoản chủ quán đang chờ duyệt. Vui lòng đợi admin xác nhận.";
+                    return View("Index");
+                }
+
+                owner.LastLoginAt = DateTime.UtcNow;
+                await _context.SaveChangesAsync();
+
+                HttpContext.Session.SetString("UserLoggedIn", "true");
+                HttpContext.Session.SetString("UserRole", "poi_owner");
+                HttpContext.Session.SetString("UserEmail", owner.Email);
+                HttpContext.Session.SetString("UserDisplayName", owner.FullName ?? owner.Email.Split('@')[0]);
+
+                if (owner.VendorId.HasValue)
+                    HttpContext.Session.SetInt32("VendorId", owner.VendorId.Value);
+
+                HttpContext.Session.Remove("AdminLoggedIn");
+                HttpContext.Session.Remove("AdminUsername");
+                HttpContext.Session.Remove("AdminEmail");
+
+                TempData["InitAdminTab"] = "1";
+                return RedirectToAction("Index", "Owner");
             }
         }
         catch (Exception ex)
@@ -64,6 +108,8 @@ public class HomeController : Controller
 
             if (email == adminEmail && password == adminPassword)
             {
+                HttpContext.Session.SetString("UserLoggedIn", "true");
+                HttpContext.Session.SetString("UserRole", "admin");
                 HttpContext.Session.SetString("AdminLoggedIn", "true");
                 HttpContext.Session.SetString("AdminUsername", "Admin");
                 HttpContext.Session.SetString("AdminEmail", adminEmail);
@@ -93,5 +139,112 @@ public class HomeController : Controller
     public IActionResult Error()
     {
         return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> OwnerRegister()
+    {
+        ViewBag.Pois = await _context.PointsOfInterest
+            .Where(p => p.IsActive && !p.IsDeleted && p.Id != 1)
+            .OrderBy(p => p.Name)
+            .ToListAsync();
+
+        return View();
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> OwnerRegister(
+        string fullName,
+        string email,
+        string phoneNumber,
+        string password,
+        int pointOfInterestId,
+        string? notes)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(fullName) ||
+                string.IsNullOrWhiteSpace(email) ||
+                string.IsNullOrWhiteSpace(phoneNumber) ||
+                string.IsNullOrWhiteSpace(password))
+            {
+                TempData["OwnerRegisterError"] = "Vui lòng nhập đầy đủ thông tin.";
+                return RedirectToAction(nameof(OwnerRegister));
+            }
+
+            var existed = await _context.Users
+                .AnyAsync(u => !u.IsDeleted && u.Email == email);
+
+            if (existed)
+            {
+                TempData["OwnerRegisterError"] = "Email đã được sử dụng.";
+                return RedirectToAction(nameof(OwnerRegister));
+            }
+
+            var poi = await _context.PointsOfInterest
+                .FirstOrDefaultAsync(p => p.Id == pointOfInterestId && p.IsActive && !p.IsDeleted);
+
+            if (poi == null)
+            {
+                TempData["OwnerRegisterError"] = "Không tìm thấy quán đăng ký.";
+                return RedirectToAction(nameof(OwnerRegister));
+            }
+
+            var vendor = await _context.Vendors
+                .FirstOrDefaultAsync(v => v.PointOfInterestId == poi.Id && !v.IsDeleted);
+
+            if (vendor == null)
+            {
+                vendor = new Vendor
+                {
+                    Name = poi.Name,
+                    Description = poi.Description,
+                    ContactPerson = fullName,
+                    PhoneNumber = phoneNumber,
+                    Email = email,
+                    PointOfInterestId = poi.Id,
+                    ImageUrl = poi.ImageUrl,
+                    IsActive = false
+                };
+                _context.Vendors.Add(vendor);
+                await _context.SaveChangesAsync();
+            }
+
+            var user = new User
+            {
+                Email = email,
+                FullName = fullName,
+                Role = "poi_owner",
+                PasswordHash = PasswordHasher.Hash(password),
+                IsVerified = false,
+                VendorId = vendor.Id
+            };
+            _context.Users.Add(user);
+            await _context.SaveChangesAsync();
+
+            _context.PoiOwnerRegistrations.Add(new PoiOwnerRegistration
+            {
+                UserId = user.Id,
+                PointOfInterestId = poi.Id,
+                VendorId = vendor.Id,
+                ShopName = poi.Name,
+                ShopAddress = poi.Address,
+                ContactPhone = phoneNumber,
+                Notes = notes,
+                Status = "pending"
+            });
+
+            await _context.SaveChangesAsync();
+
+            TempData["OwnerRegisterSuccess"] = "Đăng ký thành công. Vui lòng chờ admin duyệt tài khoản chủ quán.";
+            return RedirectToAction(nameof(OwnerRegister));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Owner registration failed");
+            TempData["OwnerRegisterError"] = "Đăng ký thất bại. Vui lòng thử lại.";
+            return RedirectToAction(nameof(OwnerRegister));
+        }
     }
 }

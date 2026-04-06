@@ -33,6 +33,9 @@ public static class MauiProgram
 		// Register Services
 		builder.Services.AddSingleton<IApiService, ApiService>();
 		builder.Services.AddSingleton<ILocationService, LocationService>();
+		builder.Services.AddSingleton<IRoutingService, OsrmRoutingService>();
+		builder.Services.AddSingleton<IGeofenceEngine, GeofenceEngine>();
+		builder.Services.AddSingleton<INarrationCoordinator, NarrationCoordinator>();
 		builder.Services.AddSingleton<IAudioService, AudioService>();
 		builder.Services.AddSingleton<IOfflineContentService, OfflineContentService>();
 #if ANDROID
@@ -42,6 +45,7 @@ public static class MauiProgram
 #endif
 		builder.Services.AddSingleton<StorageService>();
 		builder.Services.AddSingleton<LocalPOIDatabase>();
+		builder.Services.AddSingleton<ITourSessionService, TourSessionService>();
 		builder.Services.AddSingleton(AudioManager.Current);
 
 		// Register HttpClient
@@ -54,8 +58,8 @@ public static class MauiProgram
 		builder.Services.AddTransient<FavoritesViewModel>();
 		builder.Services.AddTransient<SettingsViewModel>();
 		builder.Services.AddTransient<ProfileViewModel>();
-		builder.Services.AddTransient<AnalyticsViewModel>();
 		builder.Services.AddTransient<MenuViewModel>();
+		builder.Services.AddTransient<TourViewModel>();
 		builder.Services.AddTransient<NowPlayingViewModel>();
 
 		// Register Views
@@ -65,8 +69,8 @@ public static class MauiProgram
 		builder.Services.AddTransient<FavoritesPage>();
 		builder.Services.AddTransient<SettingsPage>();
 		builder.Services.AddTransient<ProfilePage>();
-		builder.Services.AddTransient<AnalyticsPage>();
 		builder.Services.AddTransient<MenuPage>();
+		builder.Services.AddTransient<TourPage>();
 		builder.Services.AddTransient<NowPlayingPage>();
 
 		return builder.Build();

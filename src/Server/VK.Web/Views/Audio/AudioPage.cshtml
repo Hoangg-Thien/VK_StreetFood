@@ -1,6 +1,7 @@
 @{
+    bool isOwner = ViewBag.IsOwner ?? false;
     ViewData["Title"] = "Quản lý Audio";
-    Layout = "_AdminLayout";
+    Layout = isOwner ? "_OwnerLayout" : "_AdminLayout";
 
     var audios = ViewBag.Audios as IEnumerable<VK.Core.Entities.AudioContent> ?? new List<VK.Core.Entities.AudioContent>();
     int total = ViewBag.Total ?? 0;
@@ -31,11 +32,11 @@
 <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:24px;">
     <div>
         <div class="page-title">Quản lý Audio</div>
-        <div class="page-subtitle">Nội dung thuyết minh âm thanh cho từng địa điểm theo ngôn ngữ</div>
+        <div class="page-subtitle">@(isOwner ? "Gửi yêu cầu chỉnh sửa audio cho quán của bạn" : "Nội dung thuyết minh âm thanh cho từng địa điểm theo ngôn ngữ")</div>
     </div>
     <button class="btn-primary-admin" onclick="openModal('addAudioModal')">
         <i class="fa-solid fa-plus"></i>
-        Thêm Audio
+        @(isOwner ? "Gửi yêu cầu thêm Audio" : "Thêm Audio")
     </button>
 </div>
 

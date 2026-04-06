@@ -32,7 +32,7 @@
                                                 Command="{Binding SaveLanguageCommand}"
                                                 BackgroundColor="{StaticResource Primary}"
                                                 TextColor="White"
-                                                HeightRequest="44"
+                                                HeightRequest="60"
                                                 CornerRadius="8"/>
                                 </VerticalStackLayout>
                         </Frame>
@@ -79,12 +79,45 @@
                                                         OnColor="{StaticResource Primary}"/>
                                         </Grid>
 
-                                        <Button Text="TTS Voice / Offline Data"
-                                                Command="{Binding OpenTtsSettingsCommand}"
-                                                BackgroundColor="{StaticResource Primary}"
-                                                TextColor="White"
-                                                HeightRequest="44"
-                                                CornerRadius="8"/>
+                                        <Label Text="{Binding Source={x:Static loc:LocalizationResourceManager.Instance}, Path=[SettingsTtsVoiceLabel]}"
+                                               FontSize="14"
+                                               FontAttributes="Bold"
+                                               TextColor="{StaticResource TextPrimary}"/>
+
+                                        <Picker ItemsSource="{Binding AvailableTtsVoices}"
+                                                ItemDisplayBinding="{Binding DisplayName}"
+                                                SelectedItem="{Binding SelectedTtsVoice}"
+                                                IsEnabled="{Binding HasAvailableTtsVoices}"
+                                                BackgroundColor="{StaticResource PageBackground}"
+                                                TextColor="{StaticResource TextPrimary}"/>
+
+                                        <Grid ColumnDefinitions="*,*"
+                                              ColumnSpacing="8">
+                                                <Button Grid.Column="0"
+                                                        Text="{Binding Source={x:Static loc:LocalizationResourceManager.Instance}, Path=[SettingsTtsVoiceSaveButton]}"
+                                                        Command="{Binding SaveSelectedTtsVoiceCommand}"
+                                                        BackgroundColor="{StaticResource Primary}"
+                                                        TextColor="White"
+                                                        HeightRequest="60"
+                                                        CornerRadius="8"
+                                                        IsEnabled="{Binding HasAvailableTtsVoices}"/>
+
+                                                <Button Grid.Column="1"
+                                                        Text="{Binding Source={x:Static loc:LocalizationResourceManager.Instance}, Path=[SettingsTtsVoiceRefreshButton]}"
+                                                        Command="{Binding RefreshTtsVoicesCommand}"
+                                                        BackgroundColor="{StaticResource PageBackground}"
+                                                        TextColor="{StaticResource TextPrimary}"
+                                                        HeightRequest="60"
+                                                        CornerRadius="8"/>
+                                        </Grid>
+
+                                        <ActivityIndicator IsRunning="{Binding IsLoadingTtsVoices}"
+                                                           IsVisible="{Binding IsLoadingTtsVoices}"
+                                                           Color="{StaticResource Primary}"/>
+
+                                        <Label Text="{Binding TtsVoiceStatus}"
+                                               FontSize="12"
+                                               TextColor="{StaticResource TextSecondary}"/>
                                 </VerticalStackLayout>
                         </Frame>
 
@@ -134,7 +167,7 @@
                                                 Command="{Binding SaveLocationSettingsCommand}"
                                                 BackgroundColor="{StaticResource Primary}"
                                                 TextColor="White"
-                                                HeightRequest="44"
+                                                HeightRequest="60"
                                                 CornerRadius="8"/>
                                 </VerticalStackLayout>
                         </Frame>
@@ -151,33 +184,18 @@
                                                FontAttributes="Bold"
                                                TextColor="{StaticResource TextPrimary}"/>
 
-                                        <Label Text="{Binding OfflinePackageStatus}"
-                                               FontSize="13"
-                                               TextColor="{StaticResource TextSecondary}"/>
-
-                                        <Button Text="Tải gói offline"
+                                        <Button Text="{Binding Source={x:Static loc:LocalizationResourceManager.Instance}, Path=[SettingsDownloadOfflinePackage]}"
                                                 Command="{Binding DownloadOfflinePackageCommand}"
                                                 BackgroundColor="{StaticResource Primary}"
                                                 TextColor="White"
-                                                HeightRequest="44"
-                                                CornerRadius="8"/>
-
-                                        <ActivityIndicator IsRunning="{Binding IsDownloadingOfflinePackage}"
-                                                           IsVisible="{Binding IsDownloadingOfflinePackage}"
-                                                           Color="{StaticResource Primary}"/>
-
-                                        <Button Text="Cập nhật trạng thái offline"
-                                                Command="{Binding RefreshOfflineStatusCommand}"
-                                                BackgroundColor="{StaticResource PageBackground}"
-                                                TextColor="{StaticResource TextPrimary}"
-                                                HeightRequest="44"
+                                                HeightRequest="60"
                                                 CornerRadius="8"/>
 
                                         <Button Text="{Binding Source={x:Static loc:LocalizationResourceManager.Instance}, Path=[SettingsClearCache]}"
                                                 Command="{Binding ClearCacheCommand}"
                                                 BackgroundColor="{StaticResource Warning}"
                                                 TextColor="White"
-                                                HeightRequest="44"
+                                                HeightRequest="60"
                                                 CornerRadius="8"/>
                                 </VerticalStackLayout>
                         </Frame>
@@ -197,7 +215,7 @@
                                                 Command="{Binding LogoutCommand}"
                                                 BackgroundColor="{StaticResource Error}"
                                                 TextColor="White"
-                                                HeightRequest="44"
+                                                HeightRequest="60"
                                                 CornerRadius="8"/>
                                 </VerticalStackLayout>
                         </Frame>
