@@ -877,15 +877,21 @@ dotnet test tests/VK.Core.Tests/VK.Core.Tests.csproj
 
 ### Test Coverage
 
-> ⚠️ **Note**: Test projects hiện đang ở giai đoạn khởi tạo mẫu. Cần bổ sung test cases cho:
->
-> - POI business logic
-> - Audio generation & fallback
-> - Geofence triggers
-> - Owner approval workflow
-> - Analytics calculations
+```bash
+dotnet test tests/VK.API.Tests/VK.API.Tests.csproj --collect:"XPlat Code Coverage"
+```
 
-**Roadmap**: Xem [Testing Strategy](#roadmap)
+Coverage report được tạo tại:
+
+`tests/VK.API.Tests/TestResults/<guid>/coverage.cobertura.xml`
+
+### Trạng thái test hiện tại
+
+- ✅ Unit tests cho business/service logic (TouristAppService, AnalyticsAppService)
+- ✅ Integration tests cho API endpoints + database operations (SQLite in-memory)
+- 🎯 Coverage goal: 60-80%
+
+> Ghi chú: coverage tổng toàn bộ API hiện vẫn thấp do nhiều module chưa có test. Mục tiêu 60-80% khả thi khi tiếp tục bổ sung test theo từng cụm nghiệp vụ (POI, Tour, Audio, Owner workflow, Analytics queries).
 
 ---
 

@@ -89,6 +89,11 @@ if (!app.Environment.IsDevelopment())
 app.MapControllers();
 
 // Seed database in background — don't block startup
-app.SeedDatabaseInBackground();
+if (!app.Environment.IsEnvironment("Testing"))
+{
+    app.SeedDatabaseInBackground();
+}
 
 app.Run();
+
+public partial class Program;
