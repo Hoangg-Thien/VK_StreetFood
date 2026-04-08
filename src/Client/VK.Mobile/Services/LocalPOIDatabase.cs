@@ -134,13 +134,13 @@ public class LocalPOIDatabase
                 : languageCode.Trim().ToLowerInvariant();
 
             var existing = await db.Table<AudioScriptCacheEntry>()
-                .FirstOrDefaultAsync(x => x.PoiId == poiId && x.LanguageCode == lang);
+                .FirstOrDefaultAsync(x => x.POIId == poiId && x.LanguageCode == lang);
 
             if (existing == null)
             {
                 await db.InsertAsync(new AudioScriptCacheEntry
                 {
-                    PoiId = poiId,
+                    POIId = poiId,
                     LanguageCode = lang,
                     TextContent = textContent,
                     AudioFileUrl = audioFileUrl,
@@ -175,7 +175,7 @@ public class LocalPOIDatabase
                 : languageCode.Trim().ToLowerInvariant();
 
             return await db.Table<AudioScriptCacheEntry>()
-                .FirstOrDefaultAsync(x => x.PoiId == poiId && x.LanguageCode == lang);
+                .FirstOrDefaultAsync(x => x.POIId == poiId && x.LanguageCode == lang);
         }
         catch (Exception ex)
         {
@@ -265,7 +265,7 @@ public class AudioScriptCacheEntry
     public int Id { get; set; }
 
     [Indexed(Name = "IX_AudioScript_PoiLang", Order = 1, Unique = true)]
-    public int PoiId { get; set; }
+    public int POIId { get; set; }
 
     [Indexed(Name = "IX_AudioScript_PoiLang", Order = 2, Unique = true)]
     public string LanguageCode { get; set; } = "vi";

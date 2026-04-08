@@ -18,7 +18,7 @@ public class UpdateLocationRequest
 
 public class LogVisitRequest
 {
-    public int PoiId { get; set; }
+    public int POIId { get; set; }
 
     [JsonPropertyName("pointOfInterestId")]
     public int PointOfInterestId { get; set; }
@@ -32,27 +32,27 @@ public class LogVisitRequest
     public string? LanguageCode { get; set; }
 
     [JsonIgnore]
-    public int EffectivePoiId => PoiId > 0 ? PoiId : PointOfInterestId;
+    public int EffectivePOIId => POIId > 0 ? POIId : PointOfInterestId;
 }
 
 public class VisitHistoryDto
 {
     public int VisitId { get; set; }
-    public int PoiId { get; set; }
-    public string PoiName { get; set; } = string.Empty;
-    public string? PoiImageUrl { get; set; }
+    public int POIId { get; set; }
+    public string POIName { get; set; } = string.Empty;
+    public string? POIImageUrl { get; set; }
     public DateTime VisitedAt { get; set; }
 }
 
 public class AddFavoriteRequest
 {
-    public int PoiId { get; set; }
+    public int POIId { get; set; }
     public string? Note { get; set; }
 }
 
 public class SubmitRatingRequest
 {
-    public int PoiId { get; set; }
+    public int POIId { get; set; }
     public int Score { get; set; } // 1-5
     public string? Comment { get; set; }
     public string? LanguageCode { get; set; }

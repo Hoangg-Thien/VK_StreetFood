@@ -1,5 +1,7 @@
 using Microsoft.EntityFrameworkCore;
+using VK.Core.Interfaces;
 using VK.Infrastructure.Data;
+using VK.Infrastructure.Repositories;
 using VK.Web.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -19,6 +21,11 @@ builder.Services.AddSession(options =>
 // Add DbContext
 builder.Services.AddDbContext<VKStreetFoodDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
+builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+builder.Services.AddScoped<IPoiManagementRepository, PoiManagementRepository>();
+builder.Services.AddScoped<ITourManagementRepository, TourManagementRepository>();
 
 // Add HttpClient to call API
 builder.Services.AddHttpClient("VKAPI", client =>

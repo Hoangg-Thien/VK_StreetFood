@@ -32,12 +32,22 @@ public static class MauiProgram
 
 		// Register Services
 		builder.Services.AddSingleton<IApiService, ApiService>();
+		builder.Services.AddSingleton<ITouristApiClient, TouristApiClient>();
+		builder.Services.AddSingleton<IPoiApiClient, PoiApiClient>();
+		builder.Services.AddSingleton<IAudioApiClient, AudioApiClient>();
+		builder.Services.AddSingleton<IAnalyticsApiClient, AnalyticsApiClient>();
+		builder.Services.AddSingleton<ITourApiClient, TourApiClient>();
+		builder.Services.AddSingleton<ILocalizationApiClient, LocalizationApiClient>();
 		builder.Services.AddSingleton<ILocationService, LocationService>();
 		builder.Services.AddSingleton<IRoutingService, OsrmRoutingService>();
 		builder.Services.AddSingleton<IGeofenceEngine, GeofenceEngine>();
 		builder.Services.AddSingleton<INarrationCoordinator, NarrationCoordinator>();
 		builder.Services.AddSingleton<IAudioService, AudioService>();
 		builder.Services.AddSingleton<IOfflineContentService, OfflineContentService>();
+		builder.Services.AddSingleton<IOfflineSyncService>(sp => (OfflineContentService)sp.GetRequiredService<IOfflineContentService>());
+		builder.Services.AddSingleton<IOfflineAudioDownloader, OfflineAudioDownloader>();
+		builder.Services.AddSingleton<IMapTileCacheService, MapTileCacheService>();
+		builder.Services.AddSingleton<IRoutePackageService, RoutePackageService>();
 #if ANDROID
 		builder.Services.AddSingleton<ITTSService, VK.Mobile.Platforms.Android.AndroidTTSService>();
 #else

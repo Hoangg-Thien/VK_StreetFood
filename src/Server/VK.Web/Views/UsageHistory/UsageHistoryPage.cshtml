@@ -108,7 +108,7 @@
                             @foreach (var item in topListened)
                             {
                                 <tr>
-                                    <td>@item.PoiName</td>
+                                    <td>@item.POIName</td>
                                     <td>@item.AudioPlayCount</td>
                                     <td>@item.UniqueListeners</td>
                                     <td>@item.AudioCompleteCount</td>
@@ -147,7 +147,7 @@
                             @foreach (var item in avgListen)
                             {
                                 <tr>
-                                    <td>@item.PoiName</td>
+                                    <td>@item.POIName</td>
                                     <td>@TimeSpan.FromSeconds(item.AverageDurationSeconds).ToString("mm\\:ss")</td>
                                     <td>@item.SampleCount</td>
                                 </tr>

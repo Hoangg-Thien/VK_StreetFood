@@ -107,11 +107,11 @@ public partial class TourViewModel : ObservableObject
         if (detail.Points.Count == 0)
             detail = tour;
 
-        if (detail.Points.Count == 0 && detail.FirstPoiId is int singlePoiId && singlePoiId > 0)
+        if (detail.Points.Count == 0 && detail.FirstPOIId is int singlePoiId && singlePoiId > 0)
         {
             detail.Points = new List<TourPointModel>
             {
-                new() { PoiId = singlePoiId, Name = detail.Name }
+                new() { POIId = singlePoiId, Name = detail.Name }
             };
         }
 

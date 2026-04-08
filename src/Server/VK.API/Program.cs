@@ -1,8 +1,11 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
+using VK.Core.Interfaces;
 using VK.Infrastructure.Data;
+using VK.Infrastructure.Repositories;
 using VK.API.Extensions;
 using VK.API.Services;
+using VK.API.Services.AppServices;
 
 // Force IPv4 so DNS doesn't resolve Supabase to IPv6 (unreachable on dev machines)
 AppContext.SetSwitch("System.Net.preferIPv4Stack", true);
@@ -13,8 +16,12 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContext<VKStreetFoodDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
+builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
+builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddHttpContextAccessor();
 
 builder.Services.Configure<AudioStorageOptions>(options =>
 {
@@ -26,6 +33,12 @@ builder.Services.AddScoped<ITtsGenerationService, TtsGenerationService>();
 
 // AudioTaskManager: singleton — deduplicates concurrent on-demand TTS requests
 builder.Services.AddSingleton<IAudioTaskManager, AudioTaskManager>();
+
+// Application services: move business logic out of controllers
+builder.Services.AddScoped<IPOIAppService, POIAppService>();
+builder.Services.AddScoped<ITourAppService, TourAppService>();
+builder.Services.AddScoped<ITouristAppService, TouristAppService>();
+builder.Services.AddScoped<IAnalyticsAppService, AnalyticsAppService>();
 
 // Add Swagger
 builder.Services.AddSwaggerGen(c =>
@@ -76,6 +89,11 @@ if (!app.Environment.IsDevelopment())
 app.MapControllers();
 
 // Seed database in background — don't block startup
-app.SeedDatabaseInBackground();
+if (!app.Environment.IsEnvironment("Testing"))
+{
+    app.SeedDatabaseInBackground();
+}
 
 app.Run();
+
+public partial class Program;

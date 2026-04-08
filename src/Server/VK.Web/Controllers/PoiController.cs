@@ -1,9 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
-using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
-using VK.Infrastructure.Data;
 using VK.Core.Entities;
+using VK.Core.Interfaces;
 using VK.Shared.Constants;
 using VK.Web.Services;
 
@@ -11,18 +10,24 @@ namespace VK.Web.Controllers;
 
 public class PoiController : Controller
 {
-    private readonly VKStreetFoodDbContext _context;
+    private readonly IPoiManagementRepository _poiManagementRepository;
+    private readonly IRepository<PoiContentChangeRequest> _changeRequestRepository;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<PoiController> _logger;
     private readonly ITextTranslationService _textTranslationService;
     private readonly IWebHostEnvironment _environment;
 
     public PoiController(
-        VKStreetFoodDbContext context,
+        IPoiManagementRepository poiManagementRepository,
+        IRepository<PoiContentChangeRequest> changeRequestRepository,
+        IUnitOfWork unitOfWork,
         ILogger<PoiController> logger,
         ITextTranslationService textTranslationService,
         IWebHostEnvironment environment)
     {
-        _context = context;
+        _poiManagementRepository = poiManagementRepository;
+        _changeRequestRepository = changeRequestRepository;
+        _unitOfWork = unitOfWork;
         _logger = logger;
         _textTranslationService = textTranslationService;
         _environment = environment;
@@ -56,51 +61,19 @@ public class PoiController : Controller
             var isOwner = string.Equals(role, "poi_owner", StringComparison.OrdinalIgnoreCase);
             var ownerVendorId = HttpContext.Session.GetInt32("VendorId");
 
-            var query = _context.PointsOfInterest
-                .Include(p => p.Category)
-                .Include(p => p.AudioContents)
-                .AsQueryable();
-
-            if (isOwner)
-            {
-                if (!ownerVendorId.HasValue)
-                {
-                    return RedirectToAction("Index", "Home");
-                }
-
-                var ownerPoiId = await _context.Vendors
-                    .Where(v => v.Id == ownerVendorId.Value && !v.IsDeleted)
-                    .Select(v => (int?)v.PointOfInterestId)
-                    .FirstOrDefaultAsync();
-
-                if (!ownerPoiId.HasValue)
-                {
-                    query = query.Where(_ => false);
-                }
-                else
-                {
-                    query = query.Where(p => p.Id == ownerPoiId.Value);
-                }
-            }
-
-            if (!string.IsNullOrWhiteSpace(search))
-                query = query.Where(p => p.Name.Contains(search) || p.Address.Contains(search));
-
-            if (categoryId.HasValue)
-                query = query.Where(p => p.CategoryId == categoryId);
-
-            if (isActive.HasValue)
-                query = query.Where(p => p.IsActive == isActive.Value);
-
             int pageSize = 10;
-            int total = await query.CountAsync();
-            var pois = await query
-                .OrderByDescending(p => p.CreatedAt)
-                .Skip((page - 1) * pageSize)
-                .Take(pageSize)
-                .ToListAsync();
+            if (isOwner && !ownerVendorId.HasValue)
+                return RedirectToAction("Index", "Home");
 
-            var categories = await _context.Categories.ToListAsync();
+            var (pois, total) = await _poiManagementRepository.GetPagedPoisAsync(
+                search,
+                categoryId,
+                isActive,
+                isOwner ? ownerVendorId : null,
+                page,
+                pageSize);
+
+            var categories = await _poiManagementRepository.GetCategoriesAsync();
 
             ViewBag.POIs = pois;
             ViewBag.Categories = categories;
@@ -143,8 +116,8 @@ public class PoiController : Controller
                 return RedirectToAction(nameof(Index));
             }
 
-            _context.PointsOfInterest.Add(model);
-            await _context.SaveChangesAsync();
+            await _poiManagementRepository.AddPoiAsync(model);
+            await _unitOfWork.SaveChangesAsync();
 
             await EnsureDefaultTranslationsAsync(
                 model.Id,
@@ -153,7 +126,7 @@ public class PoiController : Controller
                 model.Address,
                 updateVietnamese: true);
 
-            await _context.SaveChangesAsync();
+            await _unitOfWork.SaveChangesAsync();
 
             TempData["Success"] = "Thêm địa điểm thành công!";
         }
@@ -180,10 +153,7 @@ public class PoiController : Controller
                 return RedirectToAction(nameof(Index));
             }
 
-            var ownerPoiId = await _context.Vendors
-                .Where(v => v.Id == ownerVendorId.Value && !v.IsDeleted)
-                .Select(v => (int?)v.PointOfInterestId)
-                .FirstOrDefaultAsync();
+            var ownerPoiId = await _poiManagementRepository.GetOwnerPoiIdAsync(ownerVendorId.Value);
 
             if (!ownerPoiId.HasValue || ownerPoiId.Value != model.Id)
             {
@@ -200,8 +170,7 @@ public class PoiController : Controller
                     return RedirectToAction(nameof(Index));
                 }
 
-                var ownerUser = await _context.Users
-                    .FirstOrDefaultAsync(u => !u.IsDeleted && u.Email == ownerEmail && u.Role == "poi_owner");
+                var ownerUser = await _poiManagementRepository.GetOwnerUserByEmailAsync(ownerEmail);
 
                 if (ownerUser == null)
                 {
@@ -221,7 +190,7 @@ public class PoiController : Controller
                     ImageUrl = model.ImageUrl
                 };
 
-                _context.PoiContentChangeRequests.Add(new PoiContentChangeRequest
+                await _changeRequestRepository.AddAsync(new PoiContentChangeRequest
                 {
                     OwnerUserId = ownerUser.Id,
                     VendorId = ownerVendorId.Value,
@@ -234,7 +203,7 @@ public class PoiController : Controller
                     Status = "pending"
                 });
 
-                await _context.SaveChangesAsync();
+                await _unitOfWork.SaveChangesAsync();
                 TempData["Success"] = "Đã gửi yêu cầu chỉnh sửa POI. Admin duyệt xong mới áp dụng.";
             }
             catch (Exception ex)
@@ -248,7 +217,7 @@ public class PoiController : Controller
 
         try
         {
-            var existing = await _context.PointsOfInterest.FindAsync(model.Id);
+            var existing = await _poiManagementRepository.GetPoiByIdAsync(model.Id);
             if (existing == null)
             {
                 TempData["Error"] = "Không tìm thấy địa điểm.";
@@ -271,7 +240,7 @@ public class PoiController : Controller
                 model.Address,
                 updateVietnamese: true);
 
-            await _context.SaveChangesAsync();
+            await _unitOfWork.SaveChangesAsync();
             TempData["Success"] = "Cập nhật địa điểm thành công!";
         }
         catch (Exception ex)
@@ -306,57 +275,14 @@ public class PoiController : Controller
 
         try
         {
-            await _context.VisitLogs
-                .IgnoreQueryFilters()
-                .Where(v => v.PointOfInterestId == id)
-                .ExecuteDeleteAsync();
-
-            await _context.Analytics
-                .IgnoreQueryFilters()
-                .Where(a => a.PointOfInterestId == id)
-                .ExecuteDeleteAsync();
-
-            await _context.Ratings
-                .IgnoreQueryFilters()
-                .Where(r => r.PointOfInterestId == id)
-                .ExecuteDeleteAsync();
-
-            await _context.Favorites
-                .IgnoreQueryFilters()
-                .Where(f => f.PointOfInterestId == id)
-                .ExecuteDeleteAsync();
-
-            await _context.TourPointsOfInterest
-                .IgnoreQueryFilters()
-                .Where(tp => tp.PointOfInterestId == id)
-                .ExecuteDeleteAsync();
-
-            await _context.PoiContentChangeRequests
-                .IgnoreQueryFilters()
-                .Where(r => r.PointOfInterestId == id)
-                .ExecuteDeleteAsync();
-
-            await _context.AudioContents
-                .IgnoreQueryFilters()
-                .Where(a => a.PointOfInterestId == id)
-                .ExecuteDeleteAsync();
-
-            // Hard delete translations first, then POI itself.
-            await _context.PointOfInterestTranslations
-                .IgnoreQueryFilters()
-                .Where(t => t.PointOfInterestId == id)
-                .ExecuteDeleteAsync();
-
-            var deletedPoiCount = await _context.PointsOfInterest
-                .IgnoreQueryFilters()
-                .Where(p => p.Id == id)
-                .ExecuteDeleteAsync();
-
-            if (deletedPoiCount == 0)
+            var poi = await _poiManagementRepository.GetPoiByIdAsync(id);
+            if (poi == null)
             {
                 TempData["Error"] = "Không tìm thấy địa điểm.";
                 return RedirectToAction(nameof(Index));
             }
+
+            await _poiManagementRepository.HardDeletePoiGraphAsync(id);
 
             TempData["Success"] = "Xóa địa điểm thành công!";
         }
@@ -378,11 +304,11 @@ public class PoiController : Controller
             return RedirectToAction(nameof(Index));
         }
 
-        var poi = await _context.PointsOfInterest.FindAsync(id);
+        var poi = await _poiManagementRepository.GetPoiByIdAsync(id);
         if (poi != null)
         {
             poi.IsActive = !poi.IsActive;
-            await _context.SaveChangesAsync();
+            await _unitOfWork.SaveChangesAsync();
         }
         return RedirectToAction(nameof(Index));
     }
@@ -442,9 +368,7 @@ public class PoiController : Controller
     {
         var translatedValues = await BuildTranslatedValuesAsync(description, address);
 
-        var translations = await _context.PointOfInterestTranslations
-            .Where(t => t.PointOfInterestId == poiId)
-            .ToListAsync();
+        var translations = await _poiManagementRepository.GetTranslationsAsync(poiId);
 
         var byLang = translations
             .ToDictionary(t => t.LanguageCode, StringComparer.OrdinalIgnoreCase);
@@ -467,7 +391,7 @@ public class PoiController : Controller
                 continue;
             }
 
-            _context.PointOfInterestTranslations.Add(new PointOfInterestTranslation
+            await _poiManagementRepository.AddTranslationAsync(new PointOfInterestTranslation
             {
                 PointOfInterestId = poiId,
                 LanguageCode = lang,

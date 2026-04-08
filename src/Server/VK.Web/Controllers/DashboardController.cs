@@ -1,21 +1,34 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using VK.Infrastructure.Data;
+using VK.Core.Entities;
+using VK.Core.Interfaces;
 
 namespace VK.Web.Controllers;
 
 public class DashboardController : AdminBaseController
 {
-    private readonly VKStreetFoodDbContext _context;
+    private readonly IRepository<PointOfInterest> _poiRepository;
+    private readonly IRepository<Tourist> _touristRepository;
+    private readonly IRepository<VisitLog> _visitLogRepository;
+    private readonly IRepository<AudioContent> _audioRepository;
+    private readonly IRepository<Rating> _ratingRepository;
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly ILogger<DashboardController> _logger;
 
     public DashboardController(
-        VKStreetFoodDbContext context,
+        IRepository<PointOfInterest> poiRepository,
+        IRepository<Tourist> touristRepository,
+        IRepository<VisitLog> visitLogRepository,
+        IRepository<AudioContent> audioRepository,
+        IRepository<Rating> ratingRepository,
         IHttpClientFactory httpClientFactory,
         ILogger<DashboardController> logger)
     {
-        _context = context;
+        _poiRepository = poiRepository;
+        _touristRepository = touristRepository;
+        _visitLogRepository = visitLogRepository;
+        _audioRepository = audioRepository;
+        _ratingRepository = ratingRepository;
         _httpClientFactory = httpClientFactory;
         _logger = logger;
     }
@@ -24,16 +37,16 @@ public class DashboardController : AdminBaseController
     {
         try
         {
-            var totalPOIs = await _context.PointsOfInterest.CountAsync();
-            var totalTourists = await _context.Tourists.CountAsync();
-            var totalVisits = await _context.VisitLogs.CountAsync();
-            var totalAudio = await _context.AudioContents.CountAsync();
+            var totalPOIs = await _poiRepository.Query().CountAsync();
+            var totalTourists = await _touristRepository.Query().CountAsync();
+            var totalVisits = await _visitLogRepository.Query().CountAsync();
+            var totalAudio = await _audioRepository.Query().CountAsync();
 
-            var averageRating = await _context.Ratings
+            var averageRating = await _ratingRepository.Query()
                 .AverageAsync(r => (double?)r.Score) ?? 0;
 
             // Recent POIs
-            var recentPOIs = await _context.PointsOfInterest
+            var recentPOIs = await _poiRepository.Query()
                 .Include(p => p.Category)
                 .OrderByDescending(p => p.CreatedAt)
                 .Take(5)
@@ -41,7 +54,7 @@ public class DashboardController : AdminBaseController
 
             // Last 7 days visit chart data
             var last7Days = DateTime.UtcNow.AddDays(-7);
-            var dailyVisits = await _context.VisitLogs
+            var dailyVisits = await _visitLogRepository.Query()
                 .Where(v => v.VisitedAt >= last7Days)
                 .GroupBy(v => v.VisitedAt.Date)
                 .Select(g => new { Date = g.Key, Count = g.Count() })

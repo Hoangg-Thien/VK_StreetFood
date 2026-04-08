@@ -74,7 +74,7 @@ public class AudioContentResult
     public int AudioId { get; set; }
 
     [JsonPropertyName("poiId")]
-    public int PoiId { get; set; }
+    public int POIId { get; set; }
 
     [JsonPropertyName("languageCode")]
     public string LanguageCode { get; set; } = "vi";
