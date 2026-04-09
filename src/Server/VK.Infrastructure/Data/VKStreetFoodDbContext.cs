@@ -14,7 +14,6 @@ public class VKStreetFoodDbContext : DbContext
     public DbSet<PointOfInterestTranslation> PointOfInterestTranslations { get; set; }
     public DbSet<AudioContent> AudioContents { get; set; }
     public DbSet<Vendor> Vendors { get; set; }
-    public DbSet<Product> Products { get; set; }
     public DbSet<Tourist> Tourists { get; set; }
     public DbSet<VisitLog> VisitLogs { get; set; }
     public DbSet<Category> Categories { get; set; }
@@ -42,7 +41,6 @@ public class VKStreetFoodDbContext : DbContext
         modelBuilder.Entity<PointOfInterestTranslation>().HasQueryFilter(t => !t.IsDeleted);
         modelBuilder.Entity<AudioContent>().HasQueryFilter(a => !a.IsDeleted);
         modelBuilder.Entity<Vendor>().HasQueryFilter(v => !v.IsDeleted);
-        modelBuilder.Entity<Product>().HasQueryFilter(p => !p.IsDeleted);
         modelBuilder.Entity<Tourist>().HasQueryFilter(t => !t.IsDeleted);
         modelBuilder.Entity<VisitLog>().HasQueryFilter(v => !v.IsDeleted);
         modelBuilder.Entity<Category>().HasQueryFilter(c => !c.IsDeleted);

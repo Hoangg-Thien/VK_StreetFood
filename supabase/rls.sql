@@ -22,7 +22,6 @@ BEGIN
         'PointOfInterestTranslations',
         'PointOfInterestTag',
         'PointsOfInterest',
-        'Products',
         'Ratings',
         'Tags',
         'TourPointsOfInterest',

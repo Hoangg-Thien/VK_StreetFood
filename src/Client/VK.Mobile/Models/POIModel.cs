@@ -115,18 +115,7 @@ public class VendorInfo
     public string? PhoneNumber { get; set; }
     public decimal AverageRating { get; set; }
     public string? ImageUrl { get; set; }
-    public List<ProductInfo> Products { get; set; } = new();
     public List<OpeningHoursInfo> OpeningHours { get; set; } = new();
-}
-
-public class ProductInfo
-{
-    [JsonPropertyName("productId")]
-    public int Id { get; set; }
-    public string Name { get; set; } = string.Empty;
-    public string? Description { get; set; }
-    public decimal Price { get; set; }
-    public string? ImageUrl { get; set; }
 }
 
 public class OpeningHoursInfo

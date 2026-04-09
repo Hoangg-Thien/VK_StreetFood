@@ -9,7 +9,9 @@ Tài liệu này mô tả cách setup schema Supabase theo đúng trạng thái 
 3. `supabase/migrations/seed_pois.sql` (tuỳ chọn cho môi trường mới)
 
 ## Lưu ý quan trọng
+
 - `rls.sql` đặt RLS về trạng thái `DISABLE` cho app tables (phù hợp hiện trạng `rowsecurity=false`).
+
 ## Verify sau khi chạy
 
 ```sql
@@ -20,7 +22,7 @@ WHERE table_schema = 'public'
   AND table_name IN (
     'Analytics','AudioContents','Categories','Favorites','OpeningHours',
     'PoiContentChangeRequests','PoiOwnerRegistrations','PointOfInterestTag',
-    'PointsOfInterest','Products','Ratings','Tags','TourPointsOfInterest',
+    'PointsOfInterest','Ratings','Tags','TourPointsOfInterest',
     'Tourists','Tours','Users','Vendors','VisitLogs','__EFMigrationsHistory'
   )
 ORDER BY table_name;
@@ -32,7 +34,7 @@ WHERE schemaname = 'public'
   AND tablename IN (
     'Analytics','AudioContents','Categories','Favorites','OpeningHours',
     'PoiContentChangeRequests','PoiOwnerRegistrations','PointOfInterestTag',
-    'PointsOfInterest','Products','Ratings','Tags','TourPointsOfInterest',
+    'PointsOfInterest','Ratings','Tags','TourPointsOfInterest',
     'Tourists','Tours','Users','Vendors','VisitLogs','__EFMigrationsHistory'
   )
 ORDER BY tablename;

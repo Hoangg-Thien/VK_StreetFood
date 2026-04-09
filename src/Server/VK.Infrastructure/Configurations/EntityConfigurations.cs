@@ -50,28 +50,6 @@ public class VendorConfiguration : IEntityTypeConfiguration<Vendor>
 
         builder.Property(v => v.AverageRating)
             .HasPrecision(3, 2);
-
-        builder.HasMany(v => v.Products)
-            .WithOne(p => p.Vendor)
-            .HasForeignKey(p => p.VendorId)
-            .OnDelete(DeleteBehavior.Cascade);
-    }
-}
-
-public class ProductConfiguration : IEntityTypeConfiguration<Product>
-{
-    public void Configure(EntityTypeBuilder<Product> builder)
-    {
-        builder.ToTable("Products");
-
-        builder.HasKey(p => p.Id);
-
-        builder.Property(p => p.Name)
-            .IsRequired()
-            .HasMaxLength(200);
-
-        builder.Property(p => p.Price)
-            .HasPrecision(18, 2);
     }
 }
 
