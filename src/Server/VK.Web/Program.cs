@@ -57,6 +57,10 @@ if (enableHttpsRedirection)
 {
     app.UseHttpsRedirection();
 }
+
+// Serve runtime-uploaded files under wwwroot (e.g. /images/poi/*).
+app.UseStaticFiles();
+
 app.UseRouting();
 
 app.UseSession();
