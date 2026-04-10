@@ -93,11 +93,5 @@ public partial class WelcomeViewModel : ObservableObject
         }
 
         await Shell.Current.GoToAsync("//MainMap");
-
-        if (!await App.TryOpenPendingNarrationAsync(forceFromWelcome: true))
-        {
-            await Task.Delay(150);
-            await App.TryOpenPendingNarrationAsync(forceFromWelcome: true);
-        }
     }
 }

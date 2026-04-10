@@ -7,77 +7,78 @@
              Shell.NavBarIsVisible="False"
              BackgroundColor="{StaticResource PageBackground}">
 
-    <ScrollView>
-        <VerticalStackLayout Padding="24,40"
-                             Spacing="18">
+       <ScrollView>
+              <VerticalStackLayout Padding="24,40"
+                                   Spacing="18">
 
-            <Label Text="Thanh toán"
-                   FontSize="28"
-                   FontAttributes="Bold"
-                   TextColor="#2D2D2D"/>
+                     <Label Text="Thanh toán"
+                            FontSize="28"
+                            FontAttributes="Bold"
+                            TextColor="#2D2D2D"/>
 
-            <Label Text="Hoàn tất thanh toán để mở khóa trải nghiệm trong app"
-                   FontSize="15"
-                   TextColor="#666"/>
+                     <Label Text="Hoàn tất thanh toán để mở khóa trải nghiệm trong app"
+                            FontSize="15"
+                            TextColor="#666"/>
 
-            <Border StrokeShape="RoundRectangle 16"
-                    BackgroundColor="White"
-                    Padding="16">
-                <VerticalStackLayout Spacing="10">
-                    <Label Text="Thông tin giao dịch"
-                           FontSize="16"
-                           FontAttributes="Bold"
-                           TextColor="#333"/>
+                     <Border StrokeShape="RoundRectangle 16"
+                             BackgroundColor="White"
+                             Padding="16">
+                            <VerticalStackLayout Spacing="10">
+                                   <Label Text="Thông tin giao dịch"
+                                          FontSize="16"
+                                          FontAttributes="Bold"
+                                          TextColor="#333"/>
 
-                    <Grid ColumnDefinitions="*,Auto">
-                        <Label Text="POI ID"
-                               TextColor="#666"/>
-                        <Label Grid.Column="1"
-                               Text="{Binding PoiId}"
-                               FontAttributes="Bold"
-                               TextColor="#222"/>
-                    </Grid>
+                                   <Grid ColumnDefinitions="*,Auto"
+                                         IsVisible="{Binding HasPoiContext}">
+                                          <Label Text="POI ID"
+                                                 TextColor="#666"/>
+                                          <Label Grid.Column="1"
+                                                 Text="{Binding PoiId}"
+                                                 FontAttributes="Bold"
+                                                 TextColor="#222"/>
+                                   </Grid>
 
-                    <Grid ColumnDefinitions="*,Auto">
-                        <Label Text="Số tiền"
-                               TextColor="#666"/>
-                        <Label Grid.Column="1"
-                               Text="{Binding AmountText}"
-                               FontAttributes="Bold"
-                               TextColor="#FF6B35"/>
-                    </Grid>
+                                   <Grid ColumnDefinitions="*,Auto">
+                                          <Label Text="Số tiền"
+                                                 TextColor="#666"/>
+                                          <Label Grid.Column="1"
+                                                 Text="{Binding AmountText}"
+                                                 FontAttributes="Bold"
+                                                 TextColor="#FF6B35"/>
+                                   </Grid>
 
-                    <Grid ColumnDefinitions="*,Auto">
-                        <Label Text="Liên kết QR"
-                               TextColor="#666"/>
-                        <Label Grid.Column="1"
-                               Text="{Binding DeepLinkName}"
-                               FontAttributes="Bold"
-                               TextColor="#222"/>
-                    </Grid>
+                                   <Grid ColumnDefinitions="*,Auto">
+                                          <Label Text="Liên kết QR"
+                                                 TextColor="#666"/>
+                                          <Label Grid.Column="1"
+                                                 Text="{Binding DeepLinkName}"
+                                                 FontAttributes="Bold"
+                                                 TextColor="#222"/>
+                                   </Grid>
 
-                </VerticalStackLayout>
-            </Border>
+                            </VerticalStackLayout>
+                     </Border>
 
-            <Label Text="{Binding StatusMessage}"
-                   TextColor="#444"
-                   FontSize="14"/>
+                     <Label Text="{Binding StatusMessage}"
+                            TextColor="#444"
+                            FontSize="14"/>
 
-            <Button Text="Thanh toán"
-                    Command="{Binding PayCommand}"
-                    IsEnabled="{Binding CanPay}"
-                    BackgroundColor="#FF6B35"
-                    TextColor="White"
-                    FontSize="17"
-                    FontAttributes="Bold"
-                    HeightRequest="54"
-                    CornerRadius="14"/>
+                     <Button Text="Thanh toán"
+                             Command="{Binding PayCommand}"
+                             IsEnabled="{Binding CanPay}"
+                             BackgroundColor="#FF6B35"
+                             TextColor="White"
+                             FontSize="17"
+                             FontAttributes="Bold"
+                             HeightRequest="54"
+                             CornerRadius="14"/>
 
-            <ActivityIndicator IsVisible="{Binding IsProcessing}"
-                               IsRunning="{Binding IsProcessing}"
-                               Color="#FF6B35"
-                               HorizontalOptions="Center"/>
+                     <ActivityIndicator IsVisible="{Binding IsProcessing}"
+                                        IsRunning="{Binding IsProcessing}"
+                                        Color="#FF6B35"
+                                        HorizontalOptions="Center"/>
 
-        </VerticalStackLayout>
-    </ScrollView>
+              </VerticalStackLayout>
+       </ScrollView>
 </ContentPage>

@@ -10,6 +10,11 @@ namespace VK.Mobile;
     new[] { Intent.ActionView },
     Categories = new[] { Intent.CategoryDefault, Intent.CategoryBrowsable },
     DataScheme = "vkstreetfood",
+    DataHost = "pay")]
+[IntentFilter(
+    new[] { Intent.ActionView },
+    Categories = new[] { Intent.CategoryDefault, Intent.CategoryBrowsable },
+    DataScheme = "vkstreetfood",
     DataHost = "poi")]
 [IntentFilter(
     new[] { Intent.ActionView },

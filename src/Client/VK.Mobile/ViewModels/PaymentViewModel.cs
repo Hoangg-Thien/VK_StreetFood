@@ -40,14 +40,17 @@ public partial class PaymentViewModel : ObservableObject, IQueryAttributable
     [NotifyCanExecuteChangedFor(nameof(PayCommand))]
     private bool _isQrExpired;
 
+    public bool HasPoiContext => PoiId > 0;
+
     public string AmountText => string.Format(
         System.Globalization.CultureInfo.GetCultureInfo("vi-VN"),
         "{0:N0} VND",
         AmountVnd);
 
-    public bool CanPay => PoiId > 0 && !IsProcessing && !IsPaid && !IsQrExpired;
+    public bool CanPay => !IsProcessing && !IsPaid && !IsQrExpired;
 
     partial void OnAmountVndChanged(decimal value) => OnPropertyChanged(nameof(AmountText));
+    partial void OnPoiIdChanged(int value) => OnPropertyChanged(nameof(HasPoiContext));
 
     public PaymentViewModel(
         IApiService apiService,
@@ -76,7 +79,7 @@ public partial class PaymentViewModel : ObservableObject, IQueryAttributable
 
         StatusMessage = PoiId > 0
             ? "Nhấn Thanh toán để bắt đầu khám phá"
-            : "Không tìm thấy. Vui lòng quét lại mã QR.";
+            : "Nhấn Thanh toán để mở khóa vào app.";
 
         _ = LoadQrPaymentConfigAsync();
     }

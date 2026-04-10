@@ -5,11 +5,9 @@ namespace VK.Mobile;
 public partial class App : Application
 {
 	private static int? _pendingPoiId;
-	private static bool _pendingAutoPlay;
 	private static bool _pendingPaymentRequired;
 	private static bool _pendingPaymentCompleted;
 	private static DateTimeOffset? _pendingQrIssuedAtUtc;
-	private static readonly SemaphoreSlim _pendingNavigationGate = new(1, 1);
 
 	public App()
 	{
@@ -30,13 +28,12 @@ public partial class App : Application
 
 	public static bool TryCapturePendingFromUri(Uri? uri)
 	{
-		if (!TryResolvePoiDeepLink(uri, out var poiId, out var autoplay))
+		if (!TryResolvePaymentDeepLink(uri, out var poiId))
 		{
 			return false;
 		}
 
 		_pendingPoiId = poiId;
-		_pendingAutoPlay = autoplay;
 		_pendingPaymentRequired = true;
 		_pendingPaymentCompleted = false;
 		_pendingQrIssuedAtUtc = ResolveQrIssuedAt(uri) ?? DateTimeOffset.UtcNow;
@@ -44,7 +41,7 @@ public partial class App : Application
 	}
 
 	public static bool HasPendingPayment
-		=> _pendingPoiId is int poiId && poiId > 0 && _pendingPaymentRequired && !_pendingPaymentCompleted;
+		=> _pendingPaymentRequired && !_pendingPaymentCompleted;
 
 	public static int? PendingPoiId => _pendingPoiId;
 	public static DateTimeOffset? PendingQrIssuedAtUtc => _pendingQrIssuedAtUtc;
@@ -52,6 +49,9 @@ public partial class App : Application
 	public static void MarkPendingPaymentCompleted()
 	{
 		_pendingPaymentCompleted = true;
+		_pendingPaymentRequired = false;
+		_pendingPoiId = null;
+		_pendingQrIssuedAtUtc = null;
 	}
 
 	public static Task<bool> TryOpenPendingPaymentAsync()
@@ -73,9 +73,13 @@ public partial class App : Application
 
 				var query = new Dictionary<string, object>
 				{
-					["poiId"] = _pendingPoiId!.Value,
 					["fromQr"] = "1"
 				};
+
+				if (_pendingPoiId is int pendingPoiId && pendingPoiId > 0)
+				{
+					query["poiId"] = pendingPoiId;
+				}
 
 				await Shell.Current.GoToAsync("Payment", query);
 				return true;
@@ -88,109 +92,9 @@ public partial class App : Application
 		});
 	}
 
-	public static Task<bool> TryOpenPendingNarrationAsync()
+	private static bool TryResolvePaymentDeepLink(Uri? uri, out int? poiId)
 	{
-		return TryOpenPendingNarrationAsync(forceFromWelcome: false);
-	}
-
-	public static async Task<bool> TryOpenPendingNarrationAsync(bool forceFromWelcome)
-	{
-		if (HasPendingPayment)
-		{
-			return false;
-		}
-
-		if (_pendingPoiId is not int poiId || poiId <= 0)
-		{
-			return false;
-		}
-
-		if (Shell.Current == null)
-		{
-			return false;
-		}
-
-		if (!forceFromWelcome && IsOnWelcomeRoute())
-		{
-			return false;
-		}
-
-		await _pendingNavigationGate.WaitAsync();
-
-		try
-		{
-			if (_pendingPoiId is not int pendingPoiId || pendingPoiId <= 0)
-			{
-				return false;
-			}
-
-			var language = LocalizationResourceManager.Instance.CurrentLanguage;
-			if (string.IsNullOrWhiteSpace(language))
-			{
-				language = "vi";
-			}
-
-			var query = new Dictionary<string, object>
-			{
-				["poiId"] = pendingPoiId,
-				["autoplay"] = _pendingAutoPlay ? "1" : "0",
-				["language"] = language,
-				["fromQr"] = "1"
-			};
-
-			var opened = false;
-			for (var attempt = 0; attempt < 3 && !opened; attempt++)
-			{
-				try
-				{
-					await MainThread.InvokeOnMainThreadAsync(async () =>
-					{
-						await Shell.Current.GoToAsync("NowPlaying", query);
-					});
-					opened = true;
-				}
-				catch (Exception ex) when (attempt < 2)
-				{
-					System.Diagnostics.Debug.WriteLine($"[DeepLink] Retry open NowPlaying ({attempt + 1}/3): {ex.Message}");
-					await Task.Delay(150);
-				}
-			}
-
-			if (!opened)
-			{
-				return false;
-			}
-
-			_pendingPoiId = null;
-			_pendingAutoPlay = false;
-			return true;
-		}
-		catch (Exception ex)
-		{
-			System.Diagnostics.Debug.WriteLine($"[DeepLink] Open NowPlaying failed: {ex.Message}");
-			return false;
-		}
-		finally
-		{
-			_pendingNavigationGate.Release();
-		}
-	}
-
-	private static bool IsOnWelcomeRoute()
-	{
-		var location = Shell.Current?.CurrentState?.Location?.OriginalString;
-		if (string.IsNullOrWhiteSpace(location))
-		{
-			return false;
-		}
-
-		return location.Contains("Welcome", StringComparison.OrdinalIgnoreCase);
-	}
-
-	private static bool TryResolvePoiDeepLink(Uri? uri, out int poiId, out bool autoplay)
-	{
-		poiId = 0;
-		autoplay = false;
+		poiId = null;
 
 		if (uri == null)
 		{
@@ -203,34 +107,64 @@ public partial class App : Application
 		}
 
 		var trimmed = uri.AbsolutePath.Trim('/');
+		if (uri.Host.Equals("pay", StringComparison.OrdinalIgnoreCase))
+		{
+			if (int.TryParse(trimmed, out var payPoiId) && payPoiId > 0)
+			{
+				poiId = payPoiId;
+			}
+
+			var payQueryPoiId = GetQueryValue(uri.Query, "poiId") ?? GetQueryValue(uri.Query, "id");
+			if (int.TryParse(payQueryPoiId, out var payQueryParsedPoiId) && payQueryParsedPoiId > 0)
+			{
+				poiId = payQueryParsedPoiId;
+			}
+
+			return true;
+		}
+
 		if (uri.Host.Equals(".", StringComparison.OrdinalIgnoreCase))
 		{
 			var segments = trimmed.Split('/', StringSplitOptions.RemoveEmptyEntries);
-			if (segments.Length < 2 || !segments[0].Equals("pay", StringComparison.OrdinalIgnoreCase))
+			if (segments.Length == 0 || !segments[0].Equals("pay", StringComparison.OrdinalIgnoreCase))
 			{
 				return false;
 			}
 
-			trimmed = segments[1];
+			if (segments.Length >= 2 && int.TryParse(segments[1], out var legacyPoiId) && legacyPoiId > 0)
+			{
+				poiId = legacyPoiId;
+			}
+
+			var legacyQueryPoiId = GetQueryValue(uri.Query, "poiId") ?? GetQueryValue(uri.Query, "id");
+			if (int.TryParse(legacyQueryPoiId, out var legacyQueryParsedPoiId) && legacyQueryParsedPoiId > 0)
+			{
+				poiId = legacyQueryParsedPoiId;
+			}
+
+			return true;
 		}
-		else if (!uri.Host.Equals("pay", StringComparison.OrdinalIgnoreCase)
-			&& !uri.Host.Equals("poi", StringComparison.OrdinalIgnoreCase)
+
+		if (!uri.Host.Equals("poi", StringComparison.OrdinalIgnoreCase)
 			&& !uri.Host.Equals("open", StringComparison.OrdinalIgnoreCase))
 		{
 			return false;
 		}
 
-		if (!int.TryParse(trimmed, out poiId) || poiId <= 0)
+		if (int.TryParse(trimmed, out var parsedPoiId) && parsedPoiId > 0)
 		{
-			var poiIdRaw = GetQueryValue(uri.Query, "poiId") ?? GetQueryValue(uri.Query, "id");
-			if (!int.TryParse(poiIdRaw, out poiId) || poiId <= 0)
-			{
-				return false;
-			}
+			poiId = parsedPoiId;
+			return true;
 		}
 
-		autoplay = GetQueryValue(uri.Query, "autoplay") is "1" or "true";
-		return true;
+		var poiIdRaw = GetQueryValue(uri.Query, "poiId") ?? GetQueryValue(uri.Query, "id");
+		if (int.TryParse(poiIdRaw, out var queryPoiId) && queryPoiId > 0)
+		{
+			poiId = queryPoiId;
+			return true;
+		}
+
+		return false;
 	}
 
 	private static DateTimeOffset? ResolveQrIssuedAt(Uri? uri)
