@@ -15,6 +15,11 @@ RUN dotnet publish "src/Server/VK.API/VK.API.csproj" -c Release -o /app/publish 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
 WORKDIR /app
 
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends python3 python3-pip \
+    && pip3 install --no-cache-dir edge-tts \
+    && rm -rf /var/lib/apt/lists/*
+
 ENV ASPNETCORE_URLS=http://+:8080
 ENV ASPNETCORE_FORWARDEDHEADERS_ENABLED=true
 

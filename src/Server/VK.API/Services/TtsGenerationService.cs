@@ -167,48 +167,83 @@ public class TtsGenerationService : ITtsGenerationService
             .Replace("\n", " ")
             .Replace("\r", "");
 
-        var psi = new ProcessStartInfo
+        var pythonCandidates = new[]
         {
-            FileName = "python",
-            Arguments = $"-m edge_tts --voice \"{voice}\" --text \"{safeText}\" --write-media \"{outputPath}\"",
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            UseShellExecute = false,
-            CreateNoWindow = true,
-        };
-
-        using var process = new Process { StartInfo = psi };
-
-        var stderr = new System.Text.StringBuilder();
-        process.ErrorDataReceived += (_, e) =>
-        {
-            if (e.Data != null) stderr.AppendLine(e.Data);
-        };
-
-        process.Start();
-        process.BeginErrorReadLine();
-
-        // Timeout 60s mỗi file
-        using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
-        timeoutCts.CancelAfter(TimeSpan.FromSeconds(60));
-
-        try
-        {
-            await process.WaitForExitAsync(timeoutCts.Token);
+            Environment.GetEnvironmentVariable("TTS_PYTHON_EXECUTABLE"),
+            "python3",
+            "python"
         }
-        catch (OperationCanceledException)
+        .Where(x => !string.IsNullOrWhiteSpace(x))
+        .Select(x => x!.Trim())
+        .Distinct(StringComparer.OrdinalIgnoreCase)
+        .ToList();
+
+        string? lastError = null;
+
+        foreach (var pythonExecutable in pythonCandidates)
         {
-            try { process.Kill(); } catch { /* best effort */ }
-            _logger.LogWarning("edge-tts timeout: {Voice} → {Path}", voice, outputPath);
-            return false;
+            var psi = new ProcessStartInfo
+            {
+                FileName = pythonExecutable,
+                Arguments = $"-m edge_tts --voice \"{voice}\" --text \"{safeText}\" --write-media \"{outputPath}\"",
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false,
+                CreateNoWindow = true,
+            };
+
+            using var process = new Process { StartInfo = psi };
+            var stderr = new System.Text.StringBuilder();
+
+            process.ErrorDataReceived += (_, e) =>
+            {
+                if (e.Data != null) stderr.AppendLine(e.Data);
+            };
+
+            try
+            {
+                process.Start();
+            }
+            catch (Exception ex)
+            {
+                lastError = ex.Message;
+                _logger.LogWarning("Could not start python executable '{PythonExe}' for edge-tts", pythonExecutable);
+                continue;
+            }
+
+            process.BeginErrorReadLine();
+
+            // Timeout 60s mỗi file
+            using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+            timeoutCts.CancelAfter(TimeSpan.FromSeconds(60));
+
+            try
+            {
+                await process.WaitForExitAsync(timeoutCts.Token);
+            }
+            catch (OperationCanceledException)
+            {
+                try { process.Kill(); } catch { /* best effort */ }
+                _logger.LogWarning("edge-tts timeout: {Voice} → {Path}", voice, outputPath);
+                return false;
+            }
+
+            if (process.ExitCode == 0)
+            {
+                return File.Exists(outputPath) && new FileInfo(outputPath).Length > 0;
+            }
+
+            lastError = stderr.ToString();
+            _logger.LogError(
+                "edge-tts failed with executable '{PythonExe}', ExitCode={Code}: {Err}",
+                pythonExecutable,
+                process.ExitCode,
+                lastError);
         }
 
-        if (process.ExitCode != 0)
-        {
-            _logger.LogError("edge-tts ExitCode={Code}: {Err}", process.ExitCode, stderr.ToString());
-            return false;
-        }
-
-        return File.Exists(outputPath) && new FileInfo(outputPath).Length > 0;
+        _logger.LogError(
+            "edge-tts failed: no working python executable found. Last error: {LastError}",
+            lastError ?? "unknown");
+        return false;
     }
 }
