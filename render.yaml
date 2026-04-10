@@ -1,10 +1,10 @@
 services:
   - type: web
     name: vk-api
-    runtime: docker
+    env: docker
     plan: free
-    rootDir: .
     dockerfilePath: ./src/Server/VK.API/Dockerfile
+    dockerContext: .
     autoDeploy: true
     healthCheckPath: /swagger
     envVars:
@@ -17,10 +17,10 @@ services:
 
   - type: web
     name: vk-web
-    runtime: docker
+    env: docker
     plan: free
-    rootDir: .
     dockerfilePath: ./src/Server/VK.Web/Dockerfile
+    dockerContext: .
     autoDeploy: true
     envVars:
       - key: ASPNETCORE_ENVIRONMENT
