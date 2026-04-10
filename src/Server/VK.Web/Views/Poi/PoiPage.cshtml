@@ -40,6 +40,27 @@ List<VK.Core.Entities.PointOfInterest>();
     }
 </div>
 
+@{
+    var sharedQrTargetUrl = "vkstreetfood://pay";
+    var sharedQrImageUrl = "https://api.qrserver.com/v1/create-qr-code/?size=260x260&data=" +
+Uri.EscapeDataString(sharedQrTargetUrl);
+    var sharedQrFileName = "vkstreetfood-pay-qr.png";
+}
+
+<div class="admin-card" style="margin-bottom:18px;">
+    <div class="admin-card-header">
+        <div class="admin-card-title">QR</div>
+    </div>
+    <div class="admin-card-body" style="display:flex;flex-direction:column;gap:10px;align-items:flex-start;">
+        <img src="@sharedQrImageUrl" alt="QR thanh toán chung" title="Quét để mở màn hình thanh toán"
+             style="width:170px;height:170px;padding:8px;border-radius:10px;border:1px solid var(--border-color);background:#fff;object-fit:contain;" />
+        <a href="@sharedQrImageUrl" download="@sharedQrFileName" target="_blank" rel="noopener noreferrer"
+               style="font-size:12px;color:var(--accent-orange);text-decoration:none;font-weight:600;">
+            <i class="fa-solid fa-download"></i> Tải về
+        </a>
+    </div>
+</div>
+
 <!-- TABLE CARD -->
 <div class="admin-card">
     <!-- FILTER BAR -->
@@ -80,7 +101,6 @@ List<VK.Core.Entities.PointOfInterest>();
                     <th>Danh mục</th>
                     <th>Tọa độ</th>
                     <th>Audio</th>
-                    <th>QR</th>
                     <th>Trạng thái</th>
                     <th>Hành động</th>
                 </tr>
@@ -95,10 +115,6 @@ List<VK.Core.Entities.PointOfInterest>();
                         var bgColors = new[] { "#E85D04", "#3B82F6", "#8B5CF6", "#22C55E", "#F59E0B" };
                         var bg = bgColors[Math.Abs(poi.Id.GetHashCode()) % bgColors.Length];
                         var apiBase = "http://localhost:5089";
-                        var qrTargetUrl = "vkstreetfood://pay";
-                        var qrImageUrl = "https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=" +
-                Uri.EscapeDataString(qrTargetUrl);
-                        var qrFileName = "vkstreetfood-pay-qr.png";
                         <tr>
                             <td>
                                 <div class="item-info">
@@ -138,20 +154,6 @@ List<VK.Core.Entities.PointOfInterest>();
                                     <i class="fa-solid fa-headphones"></i>
                                     @poi.AudioContents.Count
                                 </span>
-                            </td>
-                            <td>
-                                <div style="display:flex;flex-direction:column;align-items:center;gap:6px;">
-                                     <img src="@qrImageUrl" alt="QR thanh toán" title="Quét để mở màn hình thanh toán"
-                                         style="width:68px;height:68px;padding:4px;border-radius:8px;border:1px solid var(--border);background:#fff;object-fit:contain;" />
-                                    <a href="@qrImageUrl"
-                                       download="@qrFileName"
-                                       target="_blank"
-                                       rel="noopener noreferrer"
-                                       style="font-size:11px;color:var(--accent-orange);text-decoration:none;font-weight:600;">
-                                        <i class="fa-solid fa-download"></i> Tải QR
-                                    </a>
-                                    <span style="font-size:11px;color:var(--text-muted);">QR chung</span>
-                                </div>
                             </td>
                             <td>
                                 @if (poi.IsActive)
@@ -195,7 +197,7 @@ List<VK.Core.Entities.PointOfInterest>();
                 else
                 {
                     <tr>
-                        <td colspan="7">
+                        <td colspan="6">
                             <div class="empty-state">
                                 <i class="fa-solid fa-map-location-dot"></i>
                                 <p>Chưa có địa điểm nào. Hãy thêm địa điểm đầu tiên!</p>

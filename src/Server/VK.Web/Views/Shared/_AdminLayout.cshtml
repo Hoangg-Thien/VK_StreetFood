@@ -53,6 +53,12 @@
                 Bản dịch
             </a>
 
+            <a href="/Payment"
+                   class='@(ViewContext.RouteData.Values["controller"]?.ToString() == "Payment" ? "active" : "")'>
+                <i class="fa-solid fa-qrcode"></i>
+                Thanh toán
+            </a>
+
             <div class="sidebar-section-label" style="margin-top:8px">Phân tích</div>
 
             <a href="/UsageHistory"

@@ -1,0 +1,91 @@
+@model VK.Web.Models.PaymentConfigEditViewModel
+@{
+    ViewData["Title"] = "Quản lý thanh toán";
+    Layout = "_AdminLayout";
+
+    var qrTargetUrl = Model.DeepLinkPreview;
+    var qrImageUrl = "https://api.qrserver.com/v1/create-qr-code/?size=260x260&data=" + Uri.EscapeDataString(qrTargetUrl);
+}
+
+@if (TempData["Success"] != null)
+{
+    <div
+        style="background:rgba(34,197,94,0.12);border:1px solid rgba(34,197,94,0.2);border-radius:8px;padding:12px 16px;margin-bottom:16px;color:#22C55E;font-size:13px;">
+        <i class="fa-solid fa-circle-check"></i> @TempData["Success"]
+    </div>
+}
+@if (TempData["Error"] != null)
+{
+    <div
+        style="background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.2);border-radius:8px;padding:12px 16px;margin-bottom:16px;color:#EF4444;font-size:13px;">
+        <i class="fa-solid fa-circle-xmark"></i> @TempData["Error"]
+    </div>
+}
+
+<div
+    style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:24px;gap:14px;flex-wrap:wrap;">
+    <div>
+        <div class="page-title">Quản lý thanh toán</div>
+        <div class="page-subtitle">Cấu hình link QR, số tiền mặc định và thời hạn hiệu lực QR cho mobile app.</div>
+    </div>
+</div>
+
+<div style="display:grid;grid-template-columns:minmax(320px,1fr) 360px;gap:18px;align-items:start;">
+    <div class="admin-card">
+        <div class="admin-card-header">
+            <div>
+                <div class="admin-card-title">Cấu hình luồng thanh toán</div>
+                <div class="admin-card-subtitle">Thay đổi tại đây sẽ áp dụng cho endpoint API payment/qr-config.</div>
+            </div>
+        </div>
+        <div class="admin-card-body">
+            <form method="post" action="/Payment/Update"
+                  style="display:flex;flex-direction:column;gap:14px;max-width:560px;">
+                <div class="form-group">
+                    <label class="form-label">Deep link host</label>
+                    <input type="text" name="DeepLinkName" class="form-control-admin" maxlength="50"
+                           value="@Model.DeepLinkName" placeholder="pay" />
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Số tiền mặc định (VND)</label>
+                        <input type="number" name="DefaultAmountVnd" min="0" step="1000" class="form-control-admin"
+                               value="@Model.DefaultAmountVnd" />
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Thời hạn QR (phút)</label>
+                        <input type="number" name="QrTtlMinutes" min="1" max="1440" class="form-control-admin"
+                               value="@Model.QrTtlMinutes" />
+                    </div>
+
+                    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                        <button type="submit" class="btn-primary-admin">
+                            <i class="fa-solid fa-floppy-disk"></i> Lưu cấu hình
+                        </button>
+                        <a href="/Payment" class="btn-secondary-admin">
+                            <i class="fa-solid fa-rotate-right"></i> Tải lại
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="admin-card">
+            <div class="admin-card-header">
+                <div>
+                    <div class="admin-card-title">QR</div>
+                </div>
+            </div>
+            <div class="admin-card-body" style="display:flex;flex-direction:column;gap:12px;align-items:flex-start;">
+                <img src="@qrImageUrl" alt="QR thanh toán"
+                     style="width:170px;height:170px;padding:8px;border-radius:10px;border:1px solid var(--border-color);background:#fff;object-fit:contain;" />
+                <code
+                style="font-size:13px;background:var(--bg-input);border:1px solid var(--border-color);border-radius:8px;padding:10px 12px;display:block;word-break:break-all;">@qrTargetUrl</code>
+                <a href="@qrImageUrl" class="btn-secondary-admin" download="vkstreetfood-pay-qr.png" target="_blank"
+                       rel="noopener noreferrer" style="padding:8px 14px;">
+                    <i class="fa-solid fa-download"></i> Tải QR
+                </a>
+            </div>
+        </div>
+    </div>
