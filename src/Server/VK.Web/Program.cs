@@ -51,7 +51,11 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
-app.UseHttpsRedirection();
+var enableHttpsRedirection = builder.Configuration.GetValue("EnableHttpsRedirection", !app.Environment.IsProduction());
+if (enableHttpsRedirection)
+{
+    app.UseHttpsRedirection();
+}
 app.UseRouting();
 
 app.UseSession();

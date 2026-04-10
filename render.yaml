@@ -7,7 +7,7 @@ services:
     dockerfilePath: Dockerfile.api
     dockerContext: .
     autoDeploy: true
-    healthCheckPath: /swagger
+    healthCheckPath: /healthz
     envVars:
       - key: ASPNETCORE_ENVIRONMENT
         value: Production
@@ -21,6 +21,8 @@ services:
         value: Warning
       - key: Logging__LogLevel__Microsoft__EntityFrameworkCore__Database__Command
         value: Warning
+      - key: EnableHttpsRedirection
+        value: "false"
       - key: ConnectionStrings__DefaultConnection
         sync: false
 
@@ -45,6 +47,8 @@ services:
         value: Warning
       - key: Logging__LogLevel__Microsoft__EntityFrameworkCore__Database__Command
         value: Warning
+      - key: EnableHttpsRedirection
+        value: "false"
       - key: ConnectionStrings__DefaultConnection
         sync: false
       - key: ApiSettings__BaseUrl

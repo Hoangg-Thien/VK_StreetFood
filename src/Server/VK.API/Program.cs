@@ -82,10 +82,14 @@ app.UseStaticFiles(new StaticFileOptions
 // Serve static files from wwwroot.
 app.UseStaticFiles();
 
-if (!app.Environment.IsDevelopment())
+var enableHttpsRedirection = builder.Configuration.GetValue("EnableHttpsRedirection", !app.Environment.IsProduction());
+if (enableHttpsRedirection)
 {
     app.UseHttpsRedirection();
 }
+
+// Dedicated health endpoint for container/platform probes.
+app.MapGet("/healthz", () => Results.Ok(new { status = "ok" }));
 
 app.MapControllers();
 
