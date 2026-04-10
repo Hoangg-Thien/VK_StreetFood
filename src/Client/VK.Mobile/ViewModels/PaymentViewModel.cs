@@ -1,0 +1,207 @@
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using Microsoft.Extensions.Logging;
+using VK.Mobile.Services;
+
+namespace VK.Mobile.ViewModels;
+
+public partial class PaymentViewModel : ObservableObject, IQueryAttributable
+{
+    private readonly IApiService _apiService;
+    private readonly StorageService _storageService;
+    private readonly ILocationService _locationService;
+    private readonly ILogger<PaymentViewModel> _logger;
+
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(PayCommand))]
+    private int _poiId;
+
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(PayCommand))]
+    private bool _isProcessing;
+
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(PayCommand))]
+    private bool _isPaid;
+
+    [ObservableProperty]
+    private string _statusMessage = "Vui lòng xác nhận thanh toán để tiếp tục.";
+
+    [ObservableProperty]
+    private decimal _amountVnd;
+
+    [ObservableProperty]
+    private int _qrTtlMinutes = 15;
+
+    [ObservableProperty]
+    private string _deepLinkName = "pay";
+
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(PayCommand))]
+    private bool _isQrExpired;
+
+    public string AmountText => string.Format(
+        System.Globalization.CultureInfo.GetCultureInfo("vi-VN"),
+        "{0:N0} VND",
+        AmountVnd);
+
+    public bool CanPay => PoiId > 0 && !IsProcessing && !IsPaid && !IsQrExpired;
+
+    partial void OnAmountVndChanged(decimal value) => OnPropertyChanged(nameof(AmountText));
+
+    public PaymentViewModel(
+        IApiService apiService,
+        StorageService storageService,
+        ILocationService locationService,
+        ILogger<PaymentViewModel> logger)
+    {
+        _apiService = apiService;
+        _storageService = storageService;
+        _locationService = locationService;
+        _logger = logger;
+    }
+
+    public void ApplyQueryAttributes(IDictionary<string, object> query)
+    {
+        if (query.TryGetValue("poiId", out var poiVal))
+        {
+            PoiId = poiVal is int i
+                ? i
+                : int.TryParse(poiVal?.ToString(), out var parsed) ? parsed : 0;
+        }
+        else if (App.PendingPoiId is int pendingPoiId)
+        {
+            PoiId = pendingPoiId;
+        }
+
+        StatusMessage = PoiId > 0
+            ? "Nhấn Thanh toán để bắt đầu khám phá"
+            : "Không tìm thấy. Vui lòng quét lại mã QR.";
+
+        _ = LoadQrPaymentConfigAsync();
+    }
+
+    private async Task LoadQrPaymentConfigAsync()
+    {
+        var config = await _apiService.GetQrPaymentConfigAsync();
+        AmountVnd = config?.DefaultAmountVnd ?? 0;
+        QrTtlMinutes = config?.QrTtlMinutes is > 0 ? config.QrTtlMinutes : 15;
+        DeepLinkName = string.IsNullOrWhiteSpace(config?.DeepLinkName) ? "pay" : config.DeepLinkName.Trim().ToLowerInvariant();
+
+        ValidateQrExpiry();
+    }
+
+    private void ValidateQrExpiry()
+    {
+        var issuedAt = App.PendingQrIssuedAtUtc;
+        if (!issuedAt.HasValue)
+        {
+            IsQrExpired = false;
+            return;
+        }
+
+        var expiresAt = issuedAt.Value.AddMinutes(QrTtlMinutes);
+        IsQrExpired = DateTimeOffset.UtcNow > expiresAt;
+
+        if (IsQrExpired)
+        {
+            StatusMessage = "QR đã hết hạn. Vui lòng quét lại mã mới.";
+        }
+    }
+
+    [RelayCommand(CanExecute = nameof(CanPay))]
+    private async Task PayAsync()
+    {
+        try
+        {
+            IsProcessing = true;
+            StatusMessage = "Đang xử lý thanh toán...";
+
+            await Task.Delay(1200);
+
+            ValidateQrExpiry();
+            if (IsQrExpired)
+            {
+                return;
+            }
+
+            var touristId = await EnsureTouristIdAsync();
+
+            if (touristId.HasValue && PoiId > 0)
+            {
+                var location = await _locationService.GetCurrentLocationAsync();
+
+                await _apiService.LogVisitAsync(
+                    touristId.Value,
+                    PoiId,
+                    "qr_payment",
+                    location?.Latitude,
+                    location?.Longitude);
+
+                await _apiService.TrackEventAsync(
+                    touristId.Value,
+                    PoiId,
+                    "qr_payment_success",
+                    LocalizationResourceManager.Instance.CurrentLanguage);
+            }
+
+            IsPaid = true;
+            App.MarkPendingPaymentCompleted();
+            StatusMessage = "Thanh toán thành công. Bạn đã được mở khóa vào app.";
+
+            await Shell.Current.DisplayAlert("Thanh toán", "Thanh toán thành công", "OK");
+            await Shell.Current.GoToAsync("//Welcome");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Payment flow failed for POI {PoiId}", PoiId);
+            StatusMessage = "Thanh toán thất bại. Vui lòng thử lại.";
+        }
+        finally
+        {
+            IsProcessing = false;
+        }
+    }
+
+    [RelayCommand]
+    private Task BackToWelcomeAsync()
+        => Shell.Current.GoToAsync("//Welcome");
+
+    private async Task<int?> EnsureTouristIdAsync()
+    {
+        var touristId = await _storageService.GetTouristIdAsync();
+        if (touristId.HasValue)
+        {
+            return touristId;
+        }
+
+        var deviceId = await _storageService.GetDeviceIdAsync();
+        if (string.IsNullOrWhiteSpace(deviceId))
+        {
+            deviceId = Guid.NewGuid().ToString();
+            await _storageService.SetDeviceIdAsync(deviceId);
+        }
+
+        var language = LocalizationResourceManager.Instance.CurrentLanguage;
+        if (string.IsNullOrWhiteSpace(language))
+        {
+            language = "vi";
+        }
+
+        var location = await _locationService.GetCurrentLocationAsync();
+        var tourist = await _apiService.RegisterTouristAsync(
+            deviceId,
+            language,
+            location?.Latitude,
+            location?.Longitude);
+
+        if (tourist == null)
+        {
+            return null;
+        }
+
+        await _storageService.SetTouristIdAsync(tourist.Id);
+        await _storageService.SetTouristAsync(tourist);
+        return tourist.Id;
+    }
+}

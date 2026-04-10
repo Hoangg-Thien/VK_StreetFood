@@ -9,4 +9,10 @@ public partial class WelcomePage : ContentPage
         InitializeComponent();
         BindingContext = viewModel;
     }
+
+    protected override async void OnAppearing()
+    {
+        base.OnAppearing();
+        await App.TryOpenPendingPaymentAsync();
+    }
 }

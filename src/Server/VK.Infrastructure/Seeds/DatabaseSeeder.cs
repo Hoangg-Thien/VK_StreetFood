@@ -381,26 +381,6 @@ public static class DatabaseSeeder
         context.Vendors.AddRange(vendors);
         await context.SaveChangesAsync();
 
-        // Seed Products
-        context.Products.AddRange(new[]
-        {
-            // Ốc Vũ products (VendorId = 1)
-            new Product { Name = "Ốc hương rang muối ớt", Description = "Món đặc trưng của quán", Price = 50000, VendorId = 1, IsAvailable = true, ImageUrl = "/images/products/oc-huong.jpg" },
-            new Product { Name = "Sò điệp nướng mỡ hành", Description = "Tươi ngon mỗi ngày", Price = 80000, VendorId = 1, IsAvailable = true, ImageUrl = "/images/products/so-diep.jpg" },
-            new Product { Name = "Nghêu hấp sả", Description = "Thanh ngọt tự nhiên", Price = 45000, VendorId = 1, IsAvailable = true },
-
-            // Ốc Oanh products (VendorId = 2)
-            new Product { Name = "Ốc hương xào bơ tỏi", Description = "Món làm nên tên tuổi - Michelin recommended", Price = 70000, VendorId = 2, IsAvailable = true, ImageUrl = "/images/products/oc-bo-toi.jpg" },
-            new Product { Name = "Cang ghẹ rang muối", Description = "Tươi sống mỗi ngày", Price = 150000, VendorId = 2, IsAvailable = true },
-            new Product { Name = "Ốc len xào dừa", Description = "Đặc sản miền Tây", Price = 55000, VendorId = 2, IsAvailable = true },
-
-            // A Fat products (VendorId = 3)
-            new Product { Name = "Lẩu Trường Thọ (xanh)", Description = "Signature hotpot", Price = 250000, VendorId = 3, IsAvailable = true, ImageUrl = "/images/products/lau-xanh.jpg" },
-            new Product { Name = "Lẩu Collagen", Description = "Bổ dưỡng, đẹp da", Price = 280000, VendorId = 3, IsAvailable = true },
-            new Product { Name = "Combo hải sản tươi", Description = "Tự chọn topping", Price = 350000, VendorId = 3, IsAvailable = true }
-        });
-        await context.SaveChangesAsync();
-
         // Seed Opening Hours
         foreach (var vendor in vendors)
         {

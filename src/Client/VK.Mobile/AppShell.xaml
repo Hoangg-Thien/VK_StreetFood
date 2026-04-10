@@ -16,6 +16,12 @@
         Shell.TabBarIsVisible="False"
         Shell.NavBarIsVisible="False"/>
 
+    <ShellContent
+        Route="Payment"
+        ContentTemplate="{DataTemplate local:PaymentPage}"
+        Shell.TabBarIsVisible="False"
+        Shell.NavBarIsVisible="False"/>
+
     <!-- Main TabBar -->
     <TabBar>
         <!-- Bản đồ -->

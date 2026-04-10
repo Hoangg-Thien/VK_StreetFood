@@ -71,6 +71,7 @@ public static class MauiProgram
 		builder.Services.AddTransient<MenuViewModel>();
 		builder.Services.AddTransient<TourViewModel>();
 		builder.Services.AddTransient<NowPlayingViewModel>();
+		builder.Services.AddTransient<PaymentViewModel>();
 
 		// Register Views
 		builder.Services.AddTransient<WelcomePage>();
@@ -82,6 +83,7 @@ public static class MauiProgram
 		builder.Services.AddTransient<MenuPage>();
 		builder.Services.AddTransient<TourPage>();
 		builder.Services.AddTransient<NowPlayingPage>();
+		builder.Services.AddTransient<PaymentPage>();
 
 		return builder.Build();
 	}

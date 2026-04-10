@@ -160,8 +160,6 @@ public class POIAppService : IPOIAppService
             .Include(p => p.AudioContents)
             .Include(p => p.Translations)
             .Include(p => p.Vendors)
-                .ThenInclude(v => v.Products)
-            .Include(p => p.Vendors)
                 .ThenInclude(v => v.OpeningHours)
             .Include(p => p.Tags)
             .Include(p => p.Ratings)
@@ -207,14 +205,6 @@ public class POIAppService : IPOIAppService
                 AverageRating = v.AverageRating,
                 TotalReviews = v.TotalReviews,
                 ImageUrl = FullUrl(v.ImageUrl),
-                Products = v.Products.Where(p => p.IsAvailable).Select(p => new ProductDto
-                {
-                    ProductId = p.Id,
-                    Name = p.Name,
-                    Description = p.Description,
-                    Price = p.Price,
-                    ImageUrl = FullUrl(p.ImageUrl)
-                }).ToList(),
                 OpeningHours = v.OpeningHours.Select(oh => new OpeningHoursDto
                 {
                     DayOfWeek = oh.DayOfWeek,

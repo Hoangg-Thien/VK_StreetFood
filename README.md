@@ -938,6 +938,58 @@ Coverage report được tạo tại:
 
 ### Deploy to Azure (Example)
 
+### Deploy to Render with Docker (Recommended)
+
+Repo đã có sẵn cấu hình Docker + Render Blueprint:
+
+- `src/Server/VK.API/Dockerfile`
+- `src/Server/VK.Web/Dockerfile`
+- `render.yaml`
+
+#### Bước 1: Push branch lên GitHub
+
+```bash
+git add .
+git commit -m "chore(deploy): add Docker + Render blueprint"
+git push origin qr_pay
+```
+
+#### Bước 2: Tạo Blueprint trên Render
+
+1. Vào Render Dashboard → **New** → **Blueprint**
+2. Kết nối repo `Hoangg-Thien/VK_StreetFood`
+3. Chọn branch cần deploy (vd: `qr_pay`)
+4. Render sẽ tự đọc file `render.yaml` và tạo 2 services:
+
+- `vk-api`
+- `vk-web`
+
+#### Bước 3: Cấu hình Environment Variables bắt buộc
+
+`vk-api`:
+
+- `ConnectionStrings__DefaultConnection`
+
+`vk-web`:
+
+- `ConnectionStrings__DefaultConnection`
+- `ApiSettings__BaseUrl` (ví dụ: `https://vk-api.onrender.com/api/`)
+- `AdminAuth__Email`
+- `AdminAuth__Password`
+
+> Lưu ý: Không dùng credentials production trong `appsettings.json`. Luôn set qua Render Environment Variables.
+
+#### Bước 4: Verify sau deploy
+
+- API Swagger: `https://<api-service>.onrender.com/swagger`
+- Web Admin: `https://<web-service>.onrender.com`
+
+#### Bước 5: Trỏ QR về domain deploy
+
+- QR nên trỏ vào URL web public (Render domain/custom domain)
+- Trong trang web fallback, nếu mở được app thì chuyển deep link
+- Nếu chưa có app thì hiển thị nút tải app + Add to Home Screen
+
 #### API Backend
 
 ```bash

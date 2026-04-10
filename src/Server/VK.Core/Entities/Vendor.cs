@@ -35,7 +35,6 @@ public class Vendor : BaseEntity
 
     // Navigation properties
     public virtual PointOfInterest PointOfInterest { get; set; } = null!;
-    public virtual ICollection<Product> Products { get; set; } = new List<Product>();
     public virtual ICollection<OpeningHours> OpeningHours { get; set; } = new List<OpeningHours>();
     public virtual ICollection<User> Users { get; set; } = new List<User>();
 }

@@ -14,6 +14,7 @@ public partial class AppShell : Shell
 		Routing.RegisterRoute("poidetail", typeof(POIDetailPage));
 		Routing.RegisterRoute("NowPlaying", typeof(NowPlayingPage));
 		Routing.RegisterRoute("FavoritesPage", typeof(FavoritesPage));
+		Routing.RegisterRoute("Payment", typeof(PaymentPage));
 
 		// Lắng nghe thay đổi ngôn ngữ để cập nhật tab titles
 		LocalizationResourceManager.Instance.PropertyChanged += (_, _) => UpdateTabTitles();
