@@ -329,12 +329,13 @@ public class PoiController : Controller
 
         try
         {
-            // Use ContentRootPath to avoid wrong relative paths when app is launched from solution root.
-            var apiImageRoot = Path.GetFullPath(Path.Combine(
-                _environment.ContentRootPath,
-                "..", "VK.API", "wwwroot", "images", "poi"));
+            // In production Web and API run as separate services; store images in Web static folder.
+            var webRoot = _environment.WebRootPath;
+            if (string.IsNullOrWhiteSpace(webRoot))
+                webRoot = Path.Combine(_environment.ContentRootPath, "wwwroot");
 
-            Directory.CreateDirectory(apiImageRoot);
+            var imageRoot = Path.Combine(webRoot, "images", "poi");
+            Directory.CreateDirectory(imageRoot);
 
             var safeName = Path.GetFileNameWithoutExtension(file.FileName)
                 .ToLowerInvariant()
@@ -344,13 +345,17 @@ public class PoiController : Controller
                 safeName = $"poi-{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}";
             }
 
-            var fileName = $"{safeName}{ext}";
-            var destPath = Path.Combine(apiImageRoot, fileName);
+            var timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            var randomSuffix = Guid.NewGuid().ToString("N")[..8];
+            var fileName = $"{safeName}-{timestamp}-{randomSuffix}{ext}";
+            var destPath = Path.Combine(imageRoot, fileName);
 
             await using (var stream = new FileStream(destPath, FileMode.Create))
                 await file.CopyToAsync(stream);
 
-            return Ok(new { url = $"/images/poi/{fileName}" });
+            var relativeUrl = $"/images/poi/{fileName}";
+            var absoluteUrl = $"{Request.Scheme}://{Request.Host}{relativeUrl}";
+            return Ok(new { url = absoluteUrl });
         }
         catch (Exception ex)
         {

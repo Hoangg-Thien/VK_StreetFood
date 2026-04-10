@@ -25,6 +25,7 @@ public partial class POIDetailViewModel : ObservableObject, IQueryAttributable
     private bool _hasTrackedAudioPlayForSession;
     private bool _hasTrackedAudioCompleteForSession;
     private DateTime _audioSessionStartedAtUtc;
+    private bool _hasTriggeredMp3Fallback;
 
     [ObservableProperty]
     private POIDetailModel? _poi;
@@ -92,6 +93,7 @@ public partial class POIDetailViewModel : ObservableObject, IQueryAttributable
         _hasTrackedAudioPlayForSession = false;
         _hasTrackedAudioCompleteForSession = false;
         _audioSessionStartedAtUtc = DateTime.UtcNow;
+        _hasTriggeredMp3Fallback = false;
         OnPropertyChanged(nameof(AudioStatusText));
     }
 
@@ -116,6 +118,8 @@ public partial class POIDetailViewModel : ObservableObject, IQueryAttributable
         };
         _audioService.PlaybackCompleted += (_, _) =>
             MainThread.BeginInvokeOnMainThread(() => _ = HandlePlaybackCompletedAsync());
+        _audioService.PlaybackError += (_, error) =>
+            MainThread.BeginInvokeOnMainThread(() => _ = HandlePlaybackErrorAsync(error));
     }
 
     // ── Progress timer (fake elapsed based on word-count estimate) ────────
@@ -346,6 +350,7 @@ public partial class POIDetailViewModel : ObservableObject, IQueryAttributable
                 IsPlayingAudio = true;
                 _ = _audioService.PlayAudioAsync(audioUrl, Poi?.Id);
                 _audioSessionStartedAtUtc = DateTime.UtcNow;
+                _hasTriggeredMp3Fallback = false;
             }
             else
             {
@@ -571,6 +576,56 @@ public partial class POIDetailViewModel : ObservableObject, IQueryAttributable
         IsPlayingAudio = false;
         StopProgressTimer();
         await TrackAudioCompleteIfNeededAsync();
+    }
+
+    private async Task HandlePlaybackErrorAsync(string error)
+    {
+        if (!_usingAudioService || _hasTriggeredMp3Fallback)
+            return;
+
+        _logger.LogWarning("POI detail MP3 playback failed, fallback to TTS. Error: {Error}", error);
+        _hasTriggeredMp3Fallback = true;
+        _usingAudioService = false;
+
+        var text = SelectedAudio?.TextContent;
+        if (string.IsNullOrWhiteSpace(text))
+            text = Poi != null ? $"{Poi.Name}. {Poi.Description}" : string.Empty;
+
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            IsPlayingAudio = false;
+            StopProgressTimer();
+            return;
+        }
+
+        _fullText = text;
+        if (_elapsedSeconds == 0)
+        {
+            _totalSeconds = EstimateDurationFromTranscript(text);
+            AudioDurationText = FormatTime(_totalSeconds);
+            AudioPositionRatio = 0;
+            AudioPositionText = "0:00";
+        }
+
+        _ttsCts?.Cancel();
+        _ttsCts = new CancellationTokenSource();
+        IsPlayingAudio = true;
+        _audioSessionStartedAtUtc = DateTime.UtcNow;
+
+        try
+        {
+            var speakText = GetTextFromPosition(_fullText, _elapsedSeconds, _totalSeconds);
+            await _ttsService.SpeakTextAsync(speakText, SelectedLanguage, _ttsCts.Token);
+            IsPlayingAudio = false;
+            StopProgressTimer();
+            await TrackAudioCompleteIfNeededAsync();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Fallback TTS failed in POI detail");
+            IsPlayingAudio = false;
+            StopProgressTimer();
+        }
     }
 
     private async Task TrackAudioCompleteIfNeededAsync()

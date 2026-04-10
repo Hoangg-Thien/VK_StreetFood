@@ -1,6 +1,8 @@
 using Plugin.Maui.Audio;
 using VK.Mobile.Models;
 using Microsoft.Extensions.Logging;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace VK.Mobile.Services;
 
@@ -195,13 +197,32 @@ public class AudioService : IAudioService
     {
         try
         {
-            // Cache theo URL để không download lại
-            var safeHash = Math.Abs(audioUrl.GetHashCode()).ToString();
+            var absoluteUrl = ToAbsoluteUrl(audioUrl);
+
+            // Cache theo SHA256 URL để tránh collision từ GetHashCode.
+            var safeHash = ComputeStableHash(absoluteUrl);
             var tempPath = Path.Combine(FileSystem.CacheDirectory, $"audio_{safeHash}.mp3");
+
+            // Nếu cache file rỗng/hỏng thì buộc tải lại.
+            if (File.Exists(tempPath))
+            {
+                var length = new FileInfo(tempPath).Length;
+                if (length <= 1024)
+                {
+                    _logger.LogWarning("Invalid cached audio (size={Size}) at {Path}, re-downloading", length, tempPath);
+                    File.Delete(tempPath);
+                }
+            }
 
             if (!File.Exists(tempPath))
             {
-                var bytes = await _httpClient.GetByteArrayAsync(audioUrl);
+                var bytes = await _httpClient.GetByteArrayAsync(absoluteUrl);
+                if (bytes.Length <= 1024)
+                {
+                    _logger.LogWarning("Downloaded audio too small ({Size} bytes): {Url}", bytes.Length, absoluteUrl);
+                    return null;
+                }
+
                 await File.WriteAllBytesAsync(tempPath, bytes);
             }
             else
@@ -216,6 +237,25 @@ public class AudioService : IAudioService
             _logger.LogError(ex, "Failed to download audio: {Url}", audioUrl);
             return null;
         }
+    }
+
+    private static string ToAbsoluteUrl(string url)
+    {
+        if (Uri.TryCreate(url, UriKind.Absolute, out var absolute))
+            return absolute.ToString();
+
+        var baseUrl = AppSettings.AudioBaseUrl.TrimEnd('/');
+        if (url.StartsWith('/'))
+            return baseUrl + url;
+
+        return $"{baseUrl}/{url}";
+    }
+
+    private static string ComputeStableHash(string input)
+    {
+        var bytes = System.Text.Encoding.UTF8.GetBytes(input);
+        var hash = SHA256.HashData(bytes);
+        return Convert.ToHexString(hash).ToLowerInvariant();
     }
 
     public async Task StopAsync()

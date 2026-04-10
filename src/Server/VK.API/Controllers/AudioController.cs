@@ -173,7 +173,25 @@ public class AudioController : ControllerBase
             return null;
 
         if (Uri.TryCreate(audioPath, UriKind.Absolute, out var absolute))
-            return absolute.ToString();
+        {
+            if (absolute.Scheme.Equals(Uri.UriSchemeHttp, StringComparison.OrdinalIgnoreCase)
+                || absolute.Scheme.Equals(Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase))
+            {
+                return absolute.ToString();
+            }
+
+            if (absolute.Scheme.Equals(Uri.UriSchemeFile, StringComparison.OrdinalIgnoreCase))
+            {
+                var filePath = absolute.AbsolutePath;
+                if (string.IsNullOrWhiteSpace(filePath))
+                    return null;
+
+                var normalizedFilePath = filePath.StartsWith('/') ? filePath : "/" + filePath;
+                return $"{Request.Scheme}://{Request.Host}{normalizedFilePath}";
+            }
+
+            return null;
+        }
 
         var normalized = audioPath.StartsWith('/') ? audioPath : "/" + audioPath;
         return $"{Request.Scheme}://{Request.Host}{normalized}";

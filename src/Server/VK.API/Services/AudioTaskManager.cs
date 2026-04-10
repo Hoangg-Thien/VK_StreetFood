@@ -107,10 +107,26 @@ public class AudioTaskManager : IAudioTaskManager
         if (string.IsNullOrWhiteSpace(audioFileUrl))
             return false;
 
-        if (Uri.TryCreate(audioFileUrl, UriKind.Absolute, out _))
-            return true;
+        string normalized = audioFileUrl.Replace('\\', '/').Trim();
 
-        var normalized = audioFileUrl.Replace('\\', '/').Trim();
+        if (Uri.TryCreate(audioFileUrl, UriKind.Absolute, out var absolute))
+        {
+            if (absolute.Scheme.Equals(Uri.UriSchemeHttp, StringComparison.OrdinalIgnoreCase)
+                || absolute.Scheme.Equals(Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+
+            if (absolute.Scheme.Equals(Uri.UriSchemeFile, StringComparison.OrdinalIgnoreCase))
+            {
+                normalized = absolute.AbsolutePath;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
         if (normalized.StartsWith("/audio/", StringComparison.OrdinalIgnoreCase))
             normalized = normalized["/audio/".Length..];
         else if (normalized.StartsWith("audio/", StringComparison.OrdinalIgnoreCase))

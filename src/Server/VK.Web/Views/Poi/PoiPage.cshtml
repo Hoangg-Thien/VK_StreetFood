@@ -483,17 +483,24 @@ Uri.EscapeDataString(sharedQrTargetUrl);
                                 var formData = new FormData();
                                 formData.append('file', _pendingAddImgFile);
                                 fetch('/Poi/UploadImage', { method: 'POST', body: formData })
-                                    .then(function (r) { return r.json(); })
+                                    .then(function (r) {
+                                        return r.json().then(function (payload) {
+                                            if (!r.ok) {
+                                                throw new Error(payload && payload.error ? payload.error : 'Upload failed');
+                                            }
+                                            return payload;
+                                        });
+                                    })
                                     .then(function (data) {
                                         if (data.url) {
                                             document.getElementById('addPoiImageUrl').value = data.url;
                                         }
                                         document.getElementById('addPoiForm').submit();
                                     })
-                                    .catch(function () {
+                                    .catch(function (err) {
                                         btn.disabled = false;
                                         btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Lưu địa điểm';
-                                        alert('Upload ảnh thất bại. Vui lòng thử lại hoặc dán URL thủ công.');
+                                        alert('Upload ảnh thất bại: ' + (err && err.message ? err.message : 'Lỗi không xác định'));
                                     });
                             } else {
                                 document.getElementById('addPoiForm').submit();
@@ -599,20 +606,27 @@ Uri.EscapeDataString(sharedQrTargetUrl);
                                 var formData = new FormData();
                                 formData.append('file', _pendingImgFile);
                                 fetch('/Poi/UploadImage', { method: 'POST', body: formData })
-                                    .then(function (r) { return r.json(); })
+                                    .then(function (r) {
+                                        return r.json().then(function (payload) {
+                                            if (!r.ok) {
+                                                throw new Error(payload && payload.error ? payload.error : 'Upload failed');
+                                            }
+                                            return payload;
+                                        });
+                                    })
                                     .then(function (data) {
                                         if (data.url) {
                                             document.getElementById('editPoiImageUrl').value = data.url;
                                         }
                                         document.getElementById('editPoiForm').submit();
                                     })
-                                    .catch(function () {
+                                    .catch(function (err) {
                                         btn.disabled = false;
                                         btn.innerHTML = @(isOwner
                                                                     ? Html.Raw("'<i class=\"fa-solid fa-floppy-disk\"></i> Gửi duyệt chỉnh sửa'")
                                                                 : Html.Raw("'<i class=\"fa-solid fa-floppy-disk\"></i> Cập nhật'")
                                                                 );
-                                        alert('Upload ảnh thất bại. Vui lòng thử lại hoặc dán URL thủ công.');
+                                        alert('Upload ảnh thất bại: ' + (err && err.message ? err.message : 'Lỗi không xác định'));
                                     });
                             } else {
                                 document.getElementById('editPoiForm').submit();
