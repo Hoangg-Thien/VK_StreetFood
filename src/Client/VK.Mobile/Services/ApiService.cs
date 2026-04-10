@@ -30,6 +30,7 @@ public interface IApiService
 
     Task<List<TourModel>> GetToursAsync(string languageCode = "vi");
     Task<TourModel?> GetTourByIdAsync(int tourId, string languageCode = "vi");
+    Task<QrPaymentConfigModel?> GetQrPaymentConfigAsync();
 
     Task PrepareHotsetAsync(IEnumerable<int> poiIds, string languageCode = "vi", CancellationToken ct = default);
     Task WarmupAsync(string languageCode = "vi", CancellationToken ct = default);
@@ -116,6 +117,9 @@ public class ApiService : IApiService
 
     public Task<TourModel?> GetTourByIdAsync(int tourId, string languageCode = "vi")
         => _tourClient.GetTourByIdAsync(tourId, languageCode);
+
+    public Task<QrPaymentConfigModel?> GetQrPaymentConfigAsync()
+        => _touristClient.GetQrPaymentConfigAsync();
 
     public Task PrepareHotsetAsync(IEnumerable<int> poiIds, string languageCode = "vi", CancellationToken ct = default)
         => _localizationClient.PrepareHotsetAsync(poiIds, languageCode, ct);

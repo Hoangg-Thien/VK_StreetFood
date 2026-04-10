@@ -11,12 +11,12 @@
         <VerticalStackLayout Padding="24,40"
                              Spacing="18">
 
-            <Label Text="Thanh toan QR"
+            <Label Text="Thanh toán"
                    FontSize="28"
                    FontAttributes="Bold"
                    TextColor="#2D2D2D"/>
 
-            <Label Text="Hoan tat thanh toan de mo khoa trai nghiem trong app."
+            <Label Text="Hoàn tất thanh toán để mở khóa trải nghiệm trong app"
                    FontSize="15"
                    TextColor="#666"/>
 
@@ -24,7 +24,7 @@
                     BackgroundColor="White"
                     Padding="16">
                 <VerticalStackLayout Spacing="10">
-                    <Label Text="Thong tin giao dich"
+                    <Label Text="Thông tin giao dịch"
                            FontSize="16"
                            FontAttributes="Bold"
                            TextColor="#333"/>
@@ -39,13 +39,23 @@
                     </Grid>
 
                     <Grid ColumnDefinitions="*,Auto">
-                        <Label Text="So tien"
+                        <Label Text="Số tiền"
                                TextColor="#666"/>
                         <Label Grid.Column="1"
                                Text="{Binding AmountText}"
                                FontAttributes="Bold"
                                TextColor="#FF6B35"/>
                     </Grid>
+
+                    <Grid ColumnDefinitions="*,Auto">
+                        <Label Text="Liên kết QR"
+                               TextColor="#666"/>
+                        <Label Grid.Column="1"
+                               Text="{Binding DeepLinkName}"
+                               FontAttributes="Bold"
+                               TextColor="#222"/>
+                    </Grid>
+
                 </VerticalStackLayout>
             </Border>
 
@@ -53,7 +63,7 @@
                    TextColor="#444"
                    FontSize="14"/>
 
-            <Button Text="Thanh toan"
+            <Button Text="Thanh toán"
                     Command="{Binding PayCommand}"
                     IsEnabled="{Binding CanPay}"
                     BackgroundColor="#FF6B35"
@@ -67,13 +77,6 @@
                                IsRunning="{Binding IsProcessing}"
                                Color="#FF6B35"
                                HorizontalOptions="Center"/>
-
-            <Button Text="Ve trang chao"
-                    Command="{Binding BackToWelcomeCommand}"
-                    BackgroundColor="#EFEFEF"
-                    TextColor="#333"
-                    HeightRequest="48"
-                    CornerRadius="12"/>
 
         </VerticalStackLayout>
     </ScrollView>

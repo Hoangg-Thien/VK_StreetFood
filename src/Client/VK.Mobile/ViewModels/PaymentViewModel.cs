@@ -25,11 +25,29 @@ public partial class PaymentViewModel : ObservableObject, IQueryAttributable
     private bool _isPaid;
 
     [ObservableProperty]
-    private string _statusMessage = "Vui long xac nhan thanh toan de tiep tuc.";
+    private string _statusMessage = "Vui lòng xác nhận thanh toán để tiếp tục.";
 
-    public string AmountText => "20.000 VND";
+    [ObservableProperty]
+    private decimal _amountVnd;
 
-    public bool CanPay => PoiId > 0 && !IsProcessing && !IsPaid;
+    [ObservableProperty]
+    private int _qrTtlMinutes = 15;
+
+    [ObservableProperty]
+    private string _deepLinkName = "pay";
+
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(PayCommand))]
+    private bool _isQrExpired;
+
+    public string AmountText => string.Format(
+        System.Globalization.CultureInfo.GetCultureInfo("vi-VN"),
+        "{0:N0} VND",
+        AmountVnd);
+
+    public bool CanPay => PoiId > 0 && !IsProcessing && !IsPaid && !IsQrExpired;
+
+    partial void OnAmountVndChanged(decimal value) => OnPropertyChanged(nameof(AmountText));
 
     public PaymentViewModel(
         IApiService apiService,
@@ -57,8 +75,38 @@ public partial class PaymentViewModel : ObservableObject, IQueryAttributable
         }
 
         StatusMessage = PoiId > 0
-            ? "Nhan Thanh toan de mo khoa va bat dau tu Welcome."
-            : "Khong tim thay POI tu QR. Vui long quet lai ma QR.";
+            ? "Nhấn Thanh toán để bắt đầu khám phá"
+            : "Không tìm thấy. Vui lòng quét lại mã QR.";
+
+        _ = LoadQrPaymentConfigAsync();
+    }
+
+    private async Task LoadQrPaymentConfigAsync()
+    {
+        var config = await _apiService.GetQrPaymentConfigAsync();
+        AmountVnd = config?.DefaultAmountVnd ?? 0;
+        QrTtlMinutes = config?.QrTtlMinutes is > 0 ? config.QrTtlMinutes : 15;
+        DeepLinkName = string.IsNullOrWhiteSpace(config?.DeepLinkName) ? "pay" : config.DeepLinkName.Trim().ToLowerInvariant();
+
+        ValidateQrExpiry();
+    }
+
+    private void ValidateQrExpiry()
+    {
+        var issuedAt = App.PendingQrIssuedAtUtc;
+        if (!issuedAt.HasValue)
+        {
+            IsQrExpired = false;
+            return;
+        }
+
+        var expiresAt = issuedAt.Value.AddMinutes(QrTtlMinutes);
+        IsQrExpired = DateTimeOffset.UtcNow > expiresAt;
+
+        if (IsQrExpired)
+        {
+            StatusMessage = "QR đã hết hạn. Vui lòng quét lại mã mới.";
+        }
     }
 
     [RelayCommand(CanExecute = nameof(CanPay))]
@@ -67,9 +115,15 @@ public partial class PaymentViewModel : ObservableObject, IQueryAttributable
         try
         {
             IsProcessing = true;
-            StatusMessage = "Dang xu ly thanh toan...";
+            StatusMessage = "Đang xử lý thanh toán...";
 
             await Task.Delay(1200);
+
+            ValidateQrExpiry();
+            if (IsQrExpired)
+            {
+                return;
+            }
 
             var touristId = await EnsureTouristIdAsync();
 
@@ -93,15 +147,15 @@ public partial class PaymentViewModel : ObservableObject, IQueryAttributable
 
             IsPaid = true;
             App.MarkPendingPaymentCompleted();
-            StatusMessage = "Thanh toan thanh cong. Ban da duoc mo khoa vao app.";
+            StatusMessage = "Thanh toán thành công. Bạn đã được mở khóa vào app.";
 
-            await Shell.Current.DisplayAlert("Thanh toan", "Thanh toan thanh cong", "OK");
+            await Shell.Current.DisplayAlert("Thanh toán", "Thanh toán thành công", "OK");
             await Shell.Current.GoToAsync("//Welcome");
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Payment flow failed for POI {PoiId}", PoiId);
-            StatusMessage = "Thanh toan that bai. Vui long thu lai.";
+            StatusMessage = "Thanh toán thất bại. Vui lòng thử lại.";
         }
         finally
         {

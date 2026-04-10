@@ -8,6 +8,7 @@ public partial class App : Application
 	private static bool _pendingAutoPlay;
 	private static bool _pendingPaymentRequired;
 	private static bool _pendingPaymentCompleted;
+	private static DateTimeOffset? _pendingQrIssuedAtUtc;
 	private static readonly SemaphoreSlim _pendingNavigationGate = new(1, 1);
 
 	public App()
@@ -38,6 +39,7 @@ public partial class App : Application
 		_pendingAutoPlay = autoplay;
 		_pendingPaymentRequired = true;
 		_pendingPaymentCompleted = false;
+		_pendingQrIssuedAtUtc = ResolveQrIssuedAt(uri) ?? DateTimeOffset.UtcNow;
 		return true;
 	}
 
@@ -45,6 +47,7 @@ public partial class App : Application
 		=> _pendingPoiId is int poiId && poiId > 0 && _pendingPaymentRequired && !_pendingPaymentCompleted;
 
 	public static int? PendingPoiId => _pendingPoiId;
+	public static DateTimeOffset? PendingQrIssuedAtUtc => _pendingQrIssuedAtUtc;
 
 	public static void MarkPendingPaymentCompleted()
 	{
@@ -203,14 +206,15 @@ public partial class App : Application
 		if (uri.Host.Equals(".", StringComparison.OrdinalIgnoreCase))
 		{
 			var segments = trimmed.Split('/', StringSplitOptions.RemoveEmptyEntries);
-			if (segments.Length < 2 || !segments[0].Equals("poi", StringComparison.OrdinalIgnoreCase))
+			if (segments.Length < 2 || !segments[0].Equals("pay", StringComparison.OrdinalIgnoreCase))
 			{
 				return false;
 			}
 
 			trimmed = segments[1];
 		}
-		else if (!uri.Host.Equals("poi", StringComparison.OrdinalIgnoreCase)
+		else if (!uri.Host.Equals("pay", StringComparison.OrdinalIgnoreCase)
+			&& !uri.Host.Equals("poi", StringComparison.OrdinalIgnoreCase)
 			&& !uri.Host.Equals("open", StringComparison.OrdinalIgnoreCase))
 		{
 			return false;
@@ -227,6 +231,32 @@ public partial class App : Application
 
 		autoplay = GetQueryValue(uri.Query, "autoplay") is "1" or "true";
 		return true;
+	}
+
+	private static DateTimeOffset? ResolveQrIssuedAt(Uri? uri)
+	{
+		if (uri == null)
+		{
+			return null;
+		}
+
+		var unixRaw = GetQueryValue(uri.Query, "ts")
+			?? GetQueryValue(uri.Query, "iat")
+			?? GetQueryValue(uri.Query, "issuedAt");
+
+		if (!long.TryParse(unixRaw, out var unixSeconds) || unixSeconds <= 0)
+		{
+			return null;
+		}
+
+		try
+		{
+			return DateTimeOffset.FromUnixTimeSeconds(unixSeconds);
+		}
+		catch
+		{
+			return null;
+		}
 	}
 
 	private static string? GetQueryValue(string query, string key)

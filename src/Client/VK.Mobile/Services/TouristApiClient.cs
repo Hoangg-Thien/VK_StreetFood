@@ -131,4 +131,17 @@ public class TouristApiClient : ITouristApiClient
             return false;
         }
     }
+
+    public async Task<QrPaymentConfigModel?> GetQrPaymentConfigAsync()
+    {
+        try
+        {
+            return await _httpClient.GetFromJsonAsync<QrPaymentConfigModel>("payment/qr-config", ApiClientJson.Options);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting QR payment config");
+            return null;
+        }
+    }
 }

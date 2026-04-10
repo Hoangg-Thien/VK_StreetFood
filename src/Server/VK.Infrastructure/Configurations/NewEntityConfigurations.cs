@@ -234,3 +234,25 @@ public class PoiContentChangeRequestConfiguration : IEntityTypeConfiguration<Poi
         builder.HasIndex(r => r.PointOfInterestId);
     }
 }
+
+public class QrPaymentConfigConfiguration : IEntityTypeConfiguration<QrPaymentConfig>
+{
+    public void Configure(EntityTypeBuilder<QrPaymentConfig> builder)
+    {
+        builder.ToTable("QrPaymentConfigs");
+        builder.HasKey(c => c.Id);
+
+        builder.Property(c => c.DefaultAmountVnd)
+            .HasPrecision(12, 0)
+            .HasDefaultValue(0);
+
+        builder.Property(c => c.DeepLinkName)
+            .IsRequired()
+            .HasMaxLength(50)
+            .HasDefaultValue("pay");
+
+        builder.Property(c => c.QrTtlMinutes)
+            .IsRequired()
+            .HasDefaultValue(15);
+    }
+}

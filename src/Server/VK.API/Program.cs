@@ -39,6 +39,7 @@ builder.Services.AddScoped<IPOIAppService, POIAppService>();
 builder.Services.AddScoped<ITourAppService, TourAppService>();
 builder.Services.AddScoped<ITouristAppService, TouristAppService>();
 builder.Services.AddScoped<IAnalyticsAppService, AnalyticsAppService>();
+builder.Services.AddScoped<IPaymentAppService, PaymentAppService>();
 
 // Add Swagger
 builder.Services.AddSwaggerGen(c =>

@@ -28,6 +28,7 @@ public class VKStreetFoodDbContext : DbContext
     public DbSet<Tour> Tours { get; set; }
     public DbSet<TourTranslation> TourTranslations { get; set; }
     public DbSet<TourPointOfInterest> TourPointsOfInterest { get; set; }
+    public DbSet<QrPaymentConfig> QrPaymentConfigs { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -55,6 +56,7 @@ public class VKStreetFoodDbContext : DbContext
         modelBuilder.Entity<Tour>().HasQueryFilter(t => !t.IsDeleted);
         modelBuilder.Entity<TourTranslation>().HasQueryFilter(t => !t.IsDeleted);
         modelBuilder.Entity<TourPointOfInterest>().HasQueryFilter(tp => !tp.IsDeleted);
+        modelBuilder.Entity<QrPaymentConfig>().HasQueryFilter(c => !c.IsDeleted);
 
         modelBuilder.Entity<PoiOwnerRegistration>()
             .HasOne(r => r.User)

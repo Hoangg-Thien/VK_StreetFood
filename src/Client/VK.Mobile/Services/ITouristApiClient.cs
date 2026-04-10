@@ -12,4 +12,5 @@ public interface ITouristApiClient
     Task<bool> RemoveFavoriteAsync(int touristId, int poiId);
     Task<List<POIModel>> GetFavoritesAsync(int touristId, string languageCode = "vi");
     Task<bool> SubmitRatingAsync(int touristId, int poiId, int rating, string? comment = null);
+    Task<QrPaymentConfigModel?> GetQrPaymentConfigAsync();
 }
