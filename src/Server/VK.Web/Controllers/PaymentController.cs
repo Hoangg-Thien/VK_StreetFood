@@ -9,28 +9,73 @@ namespace VK.Web.Controllers;
 public class PaymentController : AdminBaseController
 {
     private readonly IRepository<QrPaymentConfig> _paymentConfigRepository;
+    private readonly IRepository<Analytics> _analyticsRepository;
     private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<PaymentController> _logger;
 
     public PaymentController(
         IRepository<QrPaymentConfig> paymentConfigRepository,
+        IRepository<Analytics> analyticsRepository,
         IUnitOfWork unitOfWork,
         ILogger<PaymentController> logger)
     {
         _paymentConfigRepository = paymentConfigRepository;
+        _analyticsRepository = analyticsRepository;
         _unitOfWork = unitOfWork;
         _logger = logger;
     }
 
-    public async Task<IActionResult> Index()
+    public async Task<IActionResult> Index(string? status, DateTime? fromDate, DateTime? toDate)
     {
         var config = await EnsureConfigAsync();
+
+        var normalizedStatus = NormalizeStatusFilter(status);
+        var fromUtc = fromDate?.Date.ToUniversalTime();
+        var toExclusiveUtc = toDate?.Date.AddDays(1).ToUniversalTime();
+
+        var paymentEventsQuery = _analyticsRepository.Query()
+            .AsNoTracking()
+            .Include(a => a.Tourist)
+            .Include(a => a.PointOfInterest)
+            .Where(a => a.EventType == "qr_payment" || a.EventType == "qr_payment_success" || a.EventType == "qr_payment_failed");
+
+        if (!string.IsNullOrWhiteSpace(normalizedStatus))
+        {
+            paymentEventsQuery = paymentEventsQuery.Where(a => a.EventType == normalizedStatus);
+        }
+
+        if (fromUtc.HasValue)
+        {
+            paymentEventsQuery = paymentEventsQuery.Where(a => a.EventTimestamp >= fromUtc.Value);
+        }
+
+        if (toExclusiveUtc.HasValue)
+        {
+            paymentEventsQuery = paymentEventsQuery.Where(a => a.EventTimestamp < toExclusiveUtc.Value);
+        }
+
+        var transactions = await paymentEventsQuery
+            .OrderByDescending(a => a.EventTimestamp)
+            .Take(150)
+            .Select(a => new PaymentHistoryItemViewModel
+            {
+                OccurredAt = a.EventTimestamp,
+                DeviceId = a.Tourist != null ? a.Tourist.DeviceId : string.Empty,
+                Status = MapStatusLabel(a.EventType),
+                StatusCode = a.EventType,
+                PoiName = a.PointOfInterest != null ? a.PointOfInterest.Name : string.Empty
+            })
+            .ToListAsync();
 
         var model = new PaymentConfigEditViewModel
         {
             DefaultAmountVnd = config.DefaultAmountVnd,
             DeepLinkName = string.IsNullOrWhiteSpace(config.DeepLinkName) ? "pay" : config.DeepLinkName,
-            QrTtlMinutes = config.QrTtlMinutes > 0 ? config.QrTtlMinutes : 15
+            QrTtlMinutes = config.QrTtlMinutes > 0 ? config.QrTtlMinutes : 15,
+            SelectedStatus = normalizedStatus,
+            FromDate = fromDate,
+            ToDate = toDate,
+            PaymentHistory = transactions
         };
 
         return View("PaymentPage", model);
@@ -132,4 +177,29 @@ public class PaymentController : AdminBaseController
 
         return normalized;
     }
+
+    private static string NormalizeStatusFilter(string? status)
+    {
+        if (string.IsNullOrWhiteSpace(status))
+        {
+            return string.Empty;
+        }
+
+        return status.Trim().ToLowerInvariant() switch
+        {
+            "qr_payment" => "qr_payment",
+            "qr_payment_success" => "qr_payment_success",
+            "qr_payment_failed" => "qr_payment_failed",
+            _ => string.Empty
+        };
+    }
+
+    private static string MapStatusLabel(string eventType)
+        => eventType switch
+        {
+            "qr_payment_success" => "Thành công",
+            "qr_payment_failed" => "Thất bại",
+            "qr_payment" => "Khởi tạo",
+            _ => "Không xác định"
+        };
 }

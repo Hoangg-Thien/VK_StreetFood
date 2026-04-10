@@ -26,7 +26,7 @@
     style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:24px;gap:14px;flex-wrap:wrap;">
     <div>
         <div class="page-title">Quản lý thanh toán</div>
-        <div class="page-subtitle">Cấu hình link QR, số tiền mặc định và thời hạn hiệu lực QR cho mobile app.</div>
+        <div class="page-subtitle">Cấu hình QR và theo dõi lịch sử thanh toán theo ngày, thiết bị, trạng thái.</div>
     </div>
 </div>
 
@@ -45,47 +45,123 @@
                     <label class="form-label">Deep link host</label>
                     <input type="text" name="DeepLinkName" class="form-control-admin" maxlength="50"
                            value="@Model.DeepLinkName" placeholder="pay" />
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">Số tiền mặc định (VND)</label>
-                        <input type="number" name="DefaultAmountVnd" min="0" step="1000" class="form-control-admin"
-                               value="@Model.DefaultAmountVnd" />
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">Thời hạn QR (phút)</label>
-                        <input type="number" name="QrTtlMinutes" min="1" max="1440" class="form-control-admin"
-                               value="@Model.QrTtlMinutes" />
-                    </div>
-
-                    <div style="display:flex;gap:10px;flex-wrap:wrap;">
-                        <button type="submit" class="btn-primary-admin">
-                            <i class="fa-solid fa-floppy-disk"></i> Lưu cấu hình
-                        </button>
-                        <a href="/Payment" class="btn-secondary-admin">
-                            <i class="fa-solid fa-rotate-right"></i> Tải lại
-                        </a>
-                    </div>
-                </form>
-            </div>
-        </div>
-
-        <div class="admin-card">
-            <div class="admin-card-header">
-                <div>
-                    <div class="admin-card-title">QR</div>
                 </div>
-            </div>
-            <div class="admin-card-body" style="display:flex;flex-direction:column;gap:12px;align-items:flex-start;">
-                <img src="@qrImageUrl" alt="QR thanh toán"
-                     style="width:170px;height:170px;padding:8px;border-radius:10px;border:1px solid var(--border-color);background:#fff;object-fit:contain;" />
-                <code
-                style="font-size:13px;background:var(--bg-input);border:1px solid var(--border-color);border-radius:8px;padding:10px 12px;display:block;word-break:break-all;">@qrTargetUrl</code>
-                <a href="@qrImageUrl" class="btn-secondary-admin" download="vkstreetfood-pay-qr.png" target="_blank"
-                       rel="noopener noreferrer" style="padding:8px 14px;">
-                    <i class="fa-solid fa-download"></i> Tải QR
-                </a>
-            </div>
+
+                <div class="form-group">
+                    <label class="form-label">Số tiền mặc định (VND)</label>
+                    <input type="number" name="DefaultAmountVnd" min="0" step="1000" class="form-control-admin"
+                           value="@Model.DefaultAmountVnd" />
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Thời hạn QR (phút)</label>
+                    <input type="number" name="QrTtlMinutes" min="1" max="1440" class="form-control-admin"
+                           value="@Model.QrTtlMinutes" />
+                </div>
+
+                <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                    <button type="submit" class="btn-primary-admin">
+                        <i class="fa-solid fa-floppy-disk"></i> Lưu cấu hình
+                    </button>
+                    <a href="/Payment" class="btn-secondary-admin">
+                        <i class="fa-solid fa-rotate-right"></i> Tải lại
+                    </a>
+                </div>
+            </form>
         </div>
     </div>
+
+    <div class="admin-card">
+        <div class="admin-card-header">
+            <div>
+                <div class="admin-card-title">QR</div>
+            </div>
+        </div>
+        <div class="admin-card-body" style="display:flex;flex-direction:column;gap:12px;align-items:flex-start;">
+            <img src="@qrImageUrl" alt="QR thanh toán"
+                 style="width:170px;height:170px;padding:8px;border-radius:10px;border:1px solid var(--border-color);background:#fff;object-fit:contain;" />
+            <a href="@qrImageUrl" class="btn-secondary-admin" download="vkstreetfood-pay-qr.png" target="_blank"
+                   rel="noopener noreferrer" style="padding:8px 14px;">
+                <i class="fa-solid fa-download"></i> Tải QR
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="admin-card" style="margin-top:18px;">
+    <form method="get" action="/Payment" class="filter-bar">
+        <select name="status">
+            <option value="" selected="@(string.IsNullOrWhiteSpace(Model.SelectedStatus) ? "selected" : null)">Tất cả
+                trạng thái</option>
+                <option value="qr_payment" selected="@(Model.SelectedStatus == "qr_payment" ? "selected" : null)">Khởi tạo
+                </option>
+                <option value="qr_payment_success"
+                        selected="@(Model.SelectedStatus == "qr_payment_success" ? "selected" : null)">Thành công</option>
+                <option value="qr_payment_failed"
+                        selected="@(Model.SelectedStatus == "qr_payment_failed" ? "selected" : null)">Thất bại</option>
+            </select>
+            <input type="date" name="fromDate" class="form-control-admin" style="width:auto;padding:8px 12px;"
+                   value="@(Model.FromDate?.ToString("yyyy-MM-dd"))" placeholder="Từ ngày" />
+            <input type="date" name="toDate" class="form-control-admin" style="width:auto;padding:8px 12px;"
+                   value="@(Model.ToDate?.ToString("yyyy-MM-dd"))" placeholder="Đến ngày" />
+            <button type="submit" class="btn-primary-admin" style="padding:8px 14px;">
+                <i class="fa-solid fa-filter"></i> Lọc
+            </button>
+            <a href="/Payment" class="btn-secondary-admin" style="padding:8px 14px;">
+                <i class="fa-solid fa-rotate-right"></i> Đặt lại
+            </a>
+        </form>
+
+        <div class="admin-table-wrap">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>Ngày thanh toán</th>
+                        <th>Thiết bị</th>
+                        <th>Trạng thái</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.PaymentHistory.Any())
+                    {
+                        @foreach (var item in Model.PaymentHistory)
+                        {
+                            var statusColor = item.StatusCode switch
+                            {
+                                "qr_payment_success" => "#16A34A",
+                                "qr_payment_failed" => "#DC2626",
+                                _ => "#D97706"
+                            };
+
+                            <tr>
+                                <td style="white-space:nowrap;color:var(--text-secondary);">
+                                    @item.OccurredAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm:ss")</td>
+                                    <td
+                                        style="font-family:Consolas, monospace;max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+                                        @(string.IsNullOrWhiteSpace(item.DeviceId) ? "Ẩn danh" : item.DeviceId)
+                                    </td>
+                                    <td>
+                                        <span
+                                            style="display:inline-flex;align-items:center;gap:6px;background:rgba(0,0,0,0.03);border:1px solid rgba(0,0,0,0.08);padding:4px 10px;border-radius:999px;font-size:12px;font-weight:600;color:@statusColor;">
+                                            <span style="width:8px;height:8px;border-radius:999px;background:@statusColor;"></span>
+                                            @item.Status
+                                        </span>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                else
+                        {
+                            <tr>
+                                <td colspan="4">
+                                    <div class="empty-state" style="padding:20px 0;">
+                                        <i class="fa-solid fa-receipt"></i>
+                                        <p>Chưa có dữ liệu thanh toán.</p>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
