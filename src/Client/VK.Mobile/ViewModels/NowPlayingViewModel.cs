@@ -64,6 +64,7 @@ public partial class NowPlayingViewModel : ObservableObject, IQueryAttributable
     private DateTime _playbackStartedAtUtc;
     private bool _shouldAutoplayFromQuery;
     private bool _hasAutoStartedFromQuery;
+    private bool _hasTriggeredMp3Fallback;
 
     public NowPlayingViewModel(
         ITTSService ttsService,
@@ -78,6 +79,7 @@ public partial class NowPlayingViewModel : ObservableObject, IQueryAttributable
         _storageService = storageService;
         _offlineContentService = offlineContentService;
         _audioService.PlaybackCompleted += OnAudioServicePlaybackCompleted;
+        _audioService.PlaybackError += OnAudioServicePlaybackError;
 
         if (string.IsNullOrWhiteSpace(PoiAddress))
             PoiAddress = L["NowPlayingDefaultAddress"];
@@ -137,6 +139,7 @@ public partial class NowPlayingViewModel : ObservableObject, IQueryAttributable
         _hasTrackedAudioComplete = false;
         _playbackStartedAtUtc = DateTime.UtcNow;
         _hasAutoStartedFromQuery = false;
+        _hasTriggeredMp3Fallback = false;
     }
 
     public void ApplyQueryAttributes(IDictionary<string, object> query)
@@ -511,6 +514,42 @@ public partial class NowPlayingViewModel : ObservableObject, IQueryAttributable
             IsPlaying = false;
             StopTimer();
             _ = TrackAudioCompleteIfNeededAsync();
+        });
+    }
+
+    private void OnAudioServicePlaybackError(object? sender, string error)
+    {
+        MainThread.BeginInvokeOnMainThread(async () =>
+        {
+            if (!_usingAudioService || _hasTriggeredMp3Fallback || string.IsNullOrWhiteSpace(AudioText))
+            {
+                IsPlaying = false;
+                StopTimer();
+                return;
+            }
+
+            // MP3 online lỗi: fallback sang TTS local để không bị im tiếng.
+            _hasTriggeredMp3Fallback = true;
+            _usingAudioService = false;
+            _elapsedSeconds = 0;
+            UpdateProgress();
+
+            _ttsCts?.Cancel();
+            _ttsCts?.Dispose();
+            _ttsCts = new CancellationTokenSource();
+
+            try
+            {
+                await _ttsService.SpeakTextAsync(AudioText, Language, _ttsCts.Token);
+                IsPlaying = false;
+                StopTimer();
+                await TrackAudioCompleteIfNeededAsync();
+            }
+            catch
+            {
+                IsPlaying = false;
+                StopTimer();
+            }
         });
     }
 
