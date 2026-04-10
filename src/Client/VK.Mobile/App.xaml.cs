@@ -4,10 +4,14 @@ namespace VK.Mobile;
 
 public partial class App : Application
 {
+	private const string PaymentUnlockedKey = "payment_unlocked";
 	private static int? _pendingPoiId;
 	private static bool _pendingPaymentRequired;
 	private static bool _pendingPaymentCompleted;
 	private static DateTimeOffset? _pendingQrIssuedAtUtc;
+
+	public static bool IsPaymentUnlocked
+		=> Preferences.Default.Get(PaymentUnlockedKey, false);
 
 	public App()
 	{
@@ -33,6 +37,15 @@ public partial class App : Application
 			return false;
 		}
 
+		if (IsPaymentUnlocked)
+		{
+			_pendingPoiId = poiId;
+			_pendingPaymentRequired = false;
+			_pendingPaymentCompleted = true;
+			_pendingQrIssuedAtUtc = null;
+			return true;
+		}
+
 		_pendingPoiId = poiId;
 		_pendingPaymentRequired = true;
 		_pendingPaymentCompleted = false;
@@ -48,6 +61,7 @@ public partial class App : Application
 
 	public static void MarkPendingPaymentCompleted()
 	{
+		Preferences.Default.Set(PaymentUnlockedKey, true);
 		_pendingPaymentCompleted = true;
 		_pendingPaymentRequired = false;
 		_pendingPoiId = null;

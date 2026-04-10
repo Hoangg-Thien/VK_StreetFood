@@ -426,7 +426,7 @@ Uri.EscapeDataString(sharedQrTargetUrl);
                             if (!wrap || !img) return;
 
                             if (url) {
-                                var src = url.startsWith('http') ? url : 'http://localhost:5089' + url;
+                                var src = url.startsWith('http') ? url : '@apiBaseUrl' + url;
                                 img.src = src;
                                 wrap.style.display = 'block';
                             } else {
@@ -550,7 +550,7 @@ Uri.EscapeDataString(sharedQrTargetUrl);
                             var wrap = document.getElementById('editImgPreviewWrap');
                             var img = document.getElementById('editImgPreview');
                             if (url) {
-                                var src = url.startsWith('http') ? url : 'http://localhost:5089' + url;
+                                var src = url.startsWith('http') ? url : '@apiBaseUrl' + url;
                                 img.src = src;
                                 wrap.style.display = 'block';
                             } else {

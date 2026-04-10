@@ -31,6 +31,7 @@ builder.Services.AddScoped<ITourManagementRepository, TourManagementRepository>(
 builder.Services.AddHttpClient("VKAPI", client =>
 {
     var apiBaseUrl = builder.Configuration["ApiSettings:BaseUrl"] ?? "http://localhost:5089/api/";
+    apiBaseUrl = NormalizeApiBaseUrl(apiBaseUrl);
     client.BaseAddress = new Uri(apiBaseUrl);
     client.Timeout = TimeSpan.FromSeconds(30);
 });
@@ -69,3 +70,14 @@ app.MapControllerRoute(
     .WithStaticAssets();
 
 app.Run();
+
+static string NormalizeApiBaseUrl(string value)
+{
+    var normalized = value.Trim().TrimEnd('/');
+    if (!normalized.EndsWith("/api", StringComparison.OrdinalIgnoreCase))
+    {
+        normalized += "/api";
+    }
+
+    return normalized + "/";
+}
