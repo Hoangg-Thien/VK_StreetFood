@@ -3,7 +3,8 @@ services:
     name: vk-api
     env: docker
     plan: free
-    dockerfilePath: ./src/Server/VK.API/Dockerfile
+    rootDir: .
+    dockerfilePath: src/Server/VK.API/Dockerfile
     dockerContext: .
     autoDeploy: true
     healthCheckPath: /swagger
@@ -19,7 +20,8 @@ services:
     name: vk-web
     env: docker
     plan: free
-    dockerfilePath: ./src/Server/VK.Web/Dockerfile
+    rootDir: .
+    dockerfilePath: src/Server/VK.Web/Dockerfile
     dockerContext: .
     autoDeploy: true
     envVars:
