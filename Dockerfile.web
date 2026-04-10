@@ -1,7 +1,6 @@
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
-COPY ["Directory.Build.props", "./"]
 COPY ["src/Server/VK.Web/VK.Web.csproj", "src/Server/VK.Web/"]
 COPY ["src/Server/VK.Core/VK.Core.csproj", "src/Server/VK.Core/"]
 COPY ["src/Server/VK.Infrastructure/VK.Infrastructure.csproj", "src/Server/VK.Infrastructure/"]
