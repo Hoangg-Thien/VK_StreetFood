@@ -86,6 +86,12 @@ public partial class WelcomeViewModel : ObservableObject
     [RelayCommand]
     async Task GetStarted()
     {
+        if (App.HasPendingPayment)
+        {
+            await Shell.Current.GoToAsync("Payment");
+            return;
+        }
+
         await Shell.Current.GoToAsync("//MainMap");
 
         if (!await App.TryOpenPendingNarrationAsync(forceFromWelcome: true))

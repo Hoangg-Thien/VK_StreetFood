@@ -6,6 +6,8 @@ public partial class App : Application
 {
 	private static int? _pendingPoiId;
 	private static bool _pendingAutoPlay;
+	private static bool _pendingPaymentRequired;
+	private static bool _pendingPaymentCompleted;
 	private static readonly SemaphoreSlim _pendingNavigationGate = new(1, 1);
 
 	public App()
@@ -22,7 +24,7 @@ public partial class App : Application
 	{
 		base.OnAppLinkRequestReceived(uri);
 		TryCapturePendingFromUri(uri);
-		_ = TryOpenPendingNarrationAsync();
+		_ = TryOpenPendingPaymentAsync();
 	}
 
 	public static bool TryCapturePendingFromUri(Uri? uri)
@@ -34,7 +36,53 @@ public partial class App : Application
 
 		_pendingPoiId = poiId;
 		_pendingAutoPlay = autoplay;
+		_pendingPaymentRequired = true;
+		_pendingPaymentCompleted = false;
 		return true;
+	}
+
+	public static bool HasPendingPayment
+		=> _pendingPoiId is int poiId && poiId > 0 && _pendingPaymentRequired && !_pendingPaymentCompleted;
+
+	public static int? PendingPoiId => _pendingPoiId;
+
+	public static void MarkPendingPaymentCompleted()
+	{
+		_pendingPaymentCompleted = true;
+	}
+
+	public static Task<bool> TryOpenPendingPaymentAsync()
+	{
+		if (!HasPendingPayment || Shell.Current == null)
+		{
+			return Task.FromResult(false);
+		}
+
+		return MainThread.InvokeOnMainThreadAsync(async () =>
+		{
+			try
+			{
+				var currentRoute = Shell.Current.CurrentState?.Location?.OriginalString ?? string.Empty;
+				if (currentRoute.Contains("Payment", StringComparison.OrdinalIgnoreCase))
+				{
+					return true;
+				}
+
+				var query = new Dictionary<string, object>
+				{
+					["poiId"] = _pendingPoiId!.Value,
+					["fromQr"] = "1"
+				};
+
+				await Shell.Current.GoToAsync("Payment", query);
+				return true;
+			}
+			catch (Exception ex)
+			{
+				System.Diagnostics.Debug.WriteLine($"[DeepLink] Open Payment failed: {ex.Message}");
+				return false;
+			}
+		});
 	}
 
 	public static Task<bool> TryOpenPendingNarrationAsync()
@@ -44,6 +92,11 @@ public partial class App : Application
 
 	public static async Task<bool> TryOpenPendingNarrationAsync(bool forceFromWelcome)
 	{
+		if (HasPendingPayment)
+		{
+			return false;
+		}
+
 		if (_pendingPoiId is not int poiId || poiId <= 0)
 		{
 			return false;
