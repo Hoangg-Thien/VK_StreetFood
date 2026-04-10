@@ -13,6 +13,14 @@ services:
         value: Production
       - key: ASPNETCORE_FORWARDEDHEADERS_ENABLED
         value: "true"
+      - key: Logging__LogLevel__Default
+        value: Warning
+      - key: Logging__LogLevel__Microsoft__AspNetCore
+        value: Warning
+      - key: Logging__LogLevel__Microsoft__EntityFrameworkCore
+        value: Warning
+      - key: Logging__LogLevel__Microsoft__EntityFrameworkCore__Database__Command
+        value: Warning
       - key: ConnectionStrings__DefaultConnection
         sync: false
 
@@ -29,6 +37,14 @@ services:
         value: Production
       - key: ASPNETCORE_FORWARDEDHEADERS_ENABLED
         value: "true"
+      - key: Logging__LogLevel__Default
+        value: Warning
+      - key: Logging__LogLevel__Microsoft__AspNetCore
+        value: Warning
+      - key: Logging__LogLevel__Microsoft__EntityFrameworkCore
+        value: Warning
+      - key: Logging__LogLevel__Microsoft__EntityFrameworkCore__Database__Command
+        value: Warning
       - key: ConnectionStrings__DefaultConnection
         sync: false
       - key: ApiSettings__BaseUrl

@@ -7,10 +7,10 @@ COPY ["src/Server/VK.Infrastructure/VK.Infrastructure.csproj", "src/Server/VK.In
 COPY ["src/Shared/VK.Shared/VK.Shared.csproj", "src/Shared/VK.Shared/"]
 COPY ["src/Shared/VK.Contracts/VK.Contracts.csproj", "src/Shared/VK.Contracts/"]
 
-RUN dotnet restore "src/Server/VK.API/VK.API.csproj"
+RUN dotnet restore "src/Server/VK.API/VK.API.csproj" -v minimal
 
 COPY . .
-RUN dotnet publish "src/Server/VK.API/VK.API.csproj" -c Release -o /app/publish /p:UseAppHost=false
+RUN dotnet publish "src/Server/VK.API/VK.API.csproj" -c Release -o /app/publish /p:UseAppHost=false -v minimal
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
 WORKDIR /app
