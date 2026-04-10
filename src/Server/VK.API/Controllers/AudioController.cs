@@ -32,7 +32,10 @@ public class AudioController : ControllerBase
     /// Fallback về tiếng Việt nếu chưa có bản dịch.
     /// </summary>
     [HttpGet("poi/{poiId}")]
-    public async Task<ActionResult> GetAudioByPOI(int poiId, [FromQuery] string languageCode = "vi")
+    public async Task<ActionResult> GetAudioByPOI(
+        int poiId,
+        [FromQuery] string languageCode = "vi",
+        CancellationToken ct = default)
     {
         var audio = await _context.AudioContents
             .FirstOrDefaultAsync(a =>
@@ -53,8 +56,19 @@ public class AudioController : ControllerBase
         if (audio == null)
             return NotFound(new { message = "Không có nội dung thuyết minh cho điểm này" });
 
-        _logger.LogInformation("Audio served: POI {Id}, lang={Lang}, generated={Gen}",
-            poiId, audio.LanguageCode, audio.IsGenerated);
+        var ensuredAudioPath = await _taskManager.GetOrGenerateAsync(
+            audio.PointOfInterestId,
+            audio.LanguageCode,
+            ct);
+
+        var effectiveAudioPath = !string.IsNullOrWhiteSpace(ensuredAudioPath)
+            ? ensuredAudioPath
+            : audio.AudioFileUrl;
+
+        var publicAudioUrl = BuildPublicAudioUrl(effectiveAudioPath);
+
+        _logger.LogInformation("Audio served: POI {Id}, lang={Lang}, generated={Gen}, hasMp3={HasMp3}",
+            poiId, audio.LanguageCode, audio.IsGenerated, !string.IsNullOrWhiteSpace(publicAudioUrl));
 
         return Ok(new
         {
@@ -62,9 +76,7 @@ public class AudioController : ControllerBase
             poiId = audio.PointOfInterestId,
             languageCode = audio.LanguageCode,
             textContent = audio.TextContent,
-            audioFileUrl = audio.AudioFileUrl != null
-                                ? $"{Request.Scheme}://{Request.Host}{audio.AudioFileUrl}"
-                                : null,
+            audioFileUrl = publicAudioUrl,
             isGenerated = audio.IsGenerated,
             durationSeconds = audio.DurationSeconds,
             isFallback = !audio.LanguageCode.Equals(
@@ -125,14 +137,18 @@ public class AudioController : ControllerBase
         if (audio == null)
             return NotFound(new { message = "Không có nội dung thuyết minh cho điểm này" });
 
-        // Nếu chưa có file → dùng AudioTaskManager (deduplicates concurrent requests)
-        if (!audio.IsGenerated || string.IsNullOrEmpty(audio.AudioFileUrl))
-        {
-            var generatedUrl = await _taskManager.GetOrGenerateAsync(
-                audio.PointOfInterestId, audio.LanguageCode, ct);
-            if (generatedUrl != null)
-                await _context.Entry(audio).ReloadAsync(ct);
-        }
+        var generatedOrExistingPath = await _taskManager.GetOrGenerateAsync(
+            audio.PointOfInterestId,
+            audio.LanguageCode,
+            ct);
+        if (generatedOrExistingPath != null)
+            await _context.Entry(audio).ReloadAsync(ct);
+
+        var effectiveAudioPath = !string.IsNullOrWhiteSpace(generatedOrExistingPath)
+            ? generatedOrExistingPath
+            : audio.AudioFileUrl;
+
+        var publicAudioUrl = BuildPublicAudioUrl(effectiveAudioPath);
 
         _logger.LogInformation(
             "On-demand TTS: POI {Id} [{Lang}] → generated={Gen}",
@@ -144,13 +160,23 @@ public class AudioController : ControllerBase
             poiId = audio.PointOfInterestId,
             languageCode = audio.LanguageCode,
             textContent = audio.TextContent,
-            audioFileUrl = audio.AudioFileUrl != null
-                                ? $"{Request.Scheme}://{Request.Host}{audio.AudioFileUrl}"
-                                : null,
+            audioFileUrl = publicAudioUrl,
             isGenerated = audio.IsGenerated,
             durationSeconds = audio.DurationSeconds,
             isFallback = !audio.LanguageCode.Equals(lang, StringComparison.OrdinalIgnoreCase)
         });
+    }
+
+    private string? BuildPublicAudioUrl(string? audioPath)
+    {
+        if (string.IsNullOrWhiteSpace(audioPath))
+            return null;
+
+        if (Uri.TryCreate(audioPath, UriKind.Absolute, out var absolute))
+            return absolute.ToString();
+
+        var normalized = audioPath.StartsWith('/') ? audioPath : "/" + audioPath;
+        return $"{Request.Scheme}://{Request.Host}{normalized}";
     }
 
     /// <summary>

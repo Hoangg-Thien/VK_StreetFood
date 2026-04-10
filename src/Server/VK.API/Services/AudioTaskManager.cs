@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using VK.Core.Entities;
 using VK.Core.Interfaces;
 
@@ -23,14 +24,19 @@ public class AudioTaskManager : IAudioTaskManager
 {
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger<AudioTaskManager> _logger;
+    private readonly string _audioRootPath;
 
     // Key = "poiId_languageCode" → Task đang chạy (sẽ remove khi xong)
     private readonly ConcurrentDictionary<string, Task<string?>> _pending = new();
 
-    public AudioTaskManager(IServiceScopeFactory scopeFactory, ILogger<AudioTaskManager> logger)
+    public AudioTaskManager(
+        IServiceScopeFactory scopeFactory,
+        ILogger<AudioTaskManager> logger,
+        IOptions<AudioStorageOptions> audioStorageOptions)
     {
         _scopeFactory = scopeFactory;
         _logger = logger;
+        _audioRootPath = audioStorageOptions.Value.RootPath;
     }
 
     public Task<string?> GetOrGenerateAsync(int poiId, string languageCode, CancellationToken ct = default)
@@ -70,11 +76,21 @@ public class AudioTaskManager : IAudioTaskManager
             return null;
         }
 
-        // Đã có file → trả ngay, không cần generate
+        // Đã có file và file còn tồn tại trên storage → trả ngay.
+        // Trường hợp deploy/restart làm mất App_Data nhưng DB còn URL cũ, sẽ generate lại.
         if (audio.IsGenerated && !string.IsNullOrEmpty(audio.AudioFileUrl))
         {
-            _logger.LogDebug("AudioTaskManager: cache hit POI {Id} [{Lang}]", poiId, languageCode);
-            return audio.AudioFileUrl;
+            if (IsStoredAudioPresent(audio.AudioFileUrl))
+            {
+                _logger.LogDebug("AudioTaskManager: cache hit POI {Id} [{Lang}]", poiId, languageCode);
+                return audio.AudioFileUrl;
+            }
+
+            _logger.LogWarning(
+                "AudioTaskManager: stale audio path for POI {Id} [{Lang}] at {Path}, regenerating",
+                poiId,
+                languageCode,
+                audio.AudioFileUrl);
         }
 
         _logger.LogInformation("AudioTaskManager: generating POI {Id} [{Lang}]", poiId, languageCode);
@@ -84,5 +100,30 @@ public class AudioTaskManager : IAudioTaskManager
             _logger.LogWarning("AudioTaskManager: generation failed POI {Id} [{Lang}]: {Err}", poiId, languageCode, result.Error);
 
         return result.Success ? result.AudioFileUrl : null;
+    }
+
+    private bool IsStoredAudioPresent(string? audioFileUrl)
+    {
+        if (string.IsNullOrWhiteSpace(audioFileUrl))
+            return false;
+
+        if (Uri.TryCreate(audioFileUrl, UriKind.Absolute, out _))
+            return true;
+
+        var normalized = audioFileUrl.Replace('\\', '/').Trim();
+        if (normalized.StartsWith("/audio/", StringComparison.OrdinalIgnoreCase))
+            normalized = normalized["/audio/".Length..];
+        else if (normalized.StartsWith("audio/", StringComparison.OrdinalIgnoreCase))
+            normalized = normalized["audio/".Length..];
+
+        if (string.IsNullOrWhiteSpace(normalized))
+            return false;
+
+        var relativePath = normalized
+            .TrimStart('/')
+            .Replace('/', Path.DirectorySeparatorChar);
+
+        var fullPath = Path.Combine(_audioRootPath, relativePath);
+        return File.Exists(fullPath);
     }
 }
