@@ -5,10 +5,33 @@ namespace VK.Mobile.Models;
 public class AppSettings
 {
     private const int DevServerPort = 5089;
+    private const string ProductionApiBaseUrl = "https://vk-api-51j1.onrender.com/api/";
+    private const string ProductionAudioBaseUrl = "https://vk-api-51j1.onrender.com/";
 
     // Android emulator uses 10.0.2.2, physical device can use adb reverse + 127.0.0.1.
-    public static string ApiBaseUrl => $"http://{GetDevServerHost()}:{DevServerPort}/api/";
-    public static string AudioBaseUrl => $"http://{GetDevServerHost()}:{DevServerPort}/";
+    public static string ApiBaseUrl
+    {
+        get
+        {
+#if DEBUG
+            return $"http://{GetDevServerHost()}:{DevServerPort}/api/";
+#else
+            return ProductionApiBaseUrl;
+#endif
+        }
+    }
+
+    public static string AudioBaseUrl
+    {
+        get
+        {
+#if DEBUG
+            return $"http://{GetDevServerHost()}:{DevServerPort}/";
+#else
+            return ProductionAudioBaseUrl;
+#endif
+        }
+    }
     public const string OsrmBaseUrl = "https://router.project-osrm.org";
     public const string OfflineRoutePackageRelativeUrl = "offline/route-package";
     public const string OfflineRoutePackageFileName = "vkstreetfood.routes.json";

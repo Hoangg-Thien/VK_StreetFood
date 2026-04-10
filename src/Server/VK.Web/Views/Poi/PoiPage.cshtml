@@ -40,8 +40,17 @@ List<VK.Core.Entities.PointOfInterest>();
     }
 </div>
 
+@inject IConfiguration Configuration
+
 @{
-    var sharedQrTargetUrl = "vkstreetfood://pay";
+    var publicBaseUrl = Configuration["MobileAppLinks:PublicBaseUrl"];
+    if (string.IsNullOrWhiteSpace(publicBaseUrl))
+    {
+        publicBaseUrl = $"{Context.Request.Scheme}://{Context.Request.Host}";
+    }
+
+    publicBaseUrl = publicBaseUrl.TrimEnd('/');
+    var sharedQrTargetUrl = $"{publicBaseUrl}/open-app?target=pay";
     var sharedQrImageUrl = "https://api.qrserver.com/v1/create-qr-code/?size=260x260&data=" +
 Uri.EscapeDataString(sharedQrTargetUrl);
     var sharedQrFileName = "vkstreetfood-pay-qr.png";

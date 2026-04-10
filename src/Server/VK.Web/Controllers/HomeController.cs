@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Text.RegularExpressions;
 using VK.Core.Interfaces;
 using VK.Web.Models;
 using VK.Web.Services;
@@ -156,6 +157,35 @@ public class HomeController : Controller
         return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
     }
 
+    [HttpGet("/open-app")]
+    [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
+    public IActionResult OpenApp(string? target)
+    {
+        var deepLinkHost = NormalizeDeepLinkHost(target);
+        if (string.IsNullOrWhiteSpace(deepLinkHost))
+        {
+            deepLinkHost = "pay";
+        }
+
+        var appDeepLink = $"vkstreetfood://{deepLinkHost}";
+        var androidStoreUrl = _config["MobileAppLinks:AndroidDownloadUrl"]
+            ?? _config["MobileAppLinks:AndroidStoreUrl"]
+            ?? "https://vkstreetfood.vn/downloads/vkstreetfood.apk";
+        var iosStoreUrl = _config["MobileAppLinks:IosDownloadUrl"]
+            ?? _config["MobileAppLinks:IosStoreUrl"]
+            ?? "https://testflight.apple.com/join/vkstreetfood";
+        var webFallbackUrl = _config["MobileAppLinks:FallbackUrl"]
+            ?? Url.Action("Index", "Home", null, Request.Scheme)
+            ?? "/";
+
+        ViewBag.AppDeepLink = appDeepLink;
+        ViewBag.AndroidStoreUrl = androidStoreUrl;
+        ViewBag.IosStoreUrl = iosStoreUrl;
+        ViewBag.WebFallbackUrl = webFallbackUrl;
+
+        return View("OpenApp");
+    }
+
     [HttpGet]
     public async Task<IActionResult> OwnerRegister()
     {
@@ -165,6 +195,27 @@ public class HomeController : Controller
             .ToListAsync();
 
         return View();
+    }
+
+    private static string NormalizeDeepLinkHost(string? host)
+    {
+        if (string.IsNullOrWhiteSpace(host))
+        {
+            return string.Empty;
+        }
+
+        var value = host.Trim().ToLowerInvariant();
+        if (value.StartsWith("vkstreetfood://", StringComparison.OrdinalIgnoreCase))
+        {
+            value = value["vkstreetfood://".Length..].Trim('/');
+        }
+
+        if (value.Length is < 1 or > 50)
+        {
+            return string.Empty;
+        }
+
+        return Regex.IsMatch(value, "^[a-z0-9-]+$") ? value : string.Empty;
     }
 
     [HttpPost]

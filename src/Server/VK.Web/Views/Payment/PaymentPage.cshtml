@@ -1,9 +1,17 @@
 @model VK.Web.Models.PaymentConfigEditViewModel
+@inject IConfiguration Configuration
 @{
     ViewData["Title"] = "Quản lý thanh toán";
     Layout = "_AdminLayout";
 
-    var qrTargetUrl = Model.DeepLinkPreview;
+    var publicBaseUrl = Configuration["MobileAppLinks:PublicBaseUrl"];
+    if (string.IsNullOrWhiteSpace(publicBaseUrl))
+    {
+        publicBaseUrl = $"{Context.Request.Scheme}://{Context.Request.Host}";
+    }
+
+    publicBaseUrl = publicBaseUrl.TrimEnd('/');
+    var qrTargetUrl = $"{publicBaseUrl}/open-app?target={Uri.EscapeDataString(Model.DeepLinkName)}";
     var qrImageUrl = "https://api.qrserver.com/v1/create-qr-code/?size=260x260&data=" + Uri.EscapeDataString(qrTargetUrl);
 }
 
