@@ -242,7 +242,22 @@ public class AudioService : IAudioService
     private static string ToAbsoluteUrl(string url)
     {
         if (Uri.TryCreate(url, UriKind.Absolute, out var absolute))
+        {
+            if (absolute.Scheme.Equals(Uri.UriSchemeHttp, StringComparison.OrdinalIgnoreCase)
+                && Uri.TryCreate(AppSettings.AudioBaseUrl, UriKind.Absolute, out var configuredBase)
+                && configuredBase.Scheme.Equals(Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase)
+                && absolute.Host.Equals(configuredBase.Host, StringComparison.OrdinalIgnoreCase))
+            {
+                var secureUri = new UriBuilder(absolute)
+                {
+                    Scheme = Uri.UriSchemeHttps,
+                    Port = -1
+                };
+                return secureUri.Uri.ToString();
+            }
+
             return absolute.ToString();
+        }
 
         var baseUrl = AppSettings.AudioBaseUrl.TrimEnd('/');
         if (url.StartsWith('/'))

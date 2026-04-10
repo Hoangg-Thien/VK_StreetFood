@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.HttpOverrides;
 using VK.Core.Interfaces;
 using VK.Infrastructure.Data;
 using VK.Infrastructure.Repositories;
@@ -8,6 +9,14 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor
+        | ForwardedHeaders.XForwardedProto
+        | ForwardedHeaders.XForwardedHost;
+    options.KnownIPNetworks.Clear();
+    options.KnownProxies.Clear();
+});
 
 // Add Session
 builder.Services.AddDistributedMemoryCache();
@@ -42,6 +51,8 @@ builder.Services.AddHttpClient<ITextTranslationService, GoogleTextTranslationSer
 });
 
 var app = builder.Build();
+
+app.UseForwardedHeaders();
 
 await SchemaBootstrapper.EnsureOwnerAuthSchemaAsync(app.Services, app.Logger);
 

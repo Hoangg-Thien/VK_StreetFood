@@ -129,23 +129,42 @@ public partial class PaymentViewModel : ObservableObject, IQueryAttributable
             }
 
             var touristId = await EnsureTouristIdAsync();
+            var location = await _locationService.GetCurrentLocationAsync();
+            var analyticsPoiId = await ResolveAnalyticsPoiIdAsync(location?.Latitude, location?.Longitude);
 
-            if (touristId.HasValue && PoiId > 0)
+            if (touristId.HasValue && analyticsPoiId.HasValue)
             {
-                var location = await _locationService.GetCurrentLocationAsync();
+                if (PoiId > 0)
+                {
+                    await _apiService.LogVisitAsync(
+                        touristId.Value,
+                        PoiId,
+                        "qr_payment",
+                        location?.Latitude,
+                        location?.Longitude);
+                }
 
-                await _apiService.LogVisitAsync(
-                    touristId.Value,
-                    PoiId,
-                    "qr_payment",
-                    location?.Latitude,
-                    location?.Longitude);
+                var language = LocalizationResourceManager.Instance.CurrentLanguage;
 
                 await _apiService.TrackEventAsync(
                     touristId.Value,
-                    PoiId,
+                    analyticsPoiId.Value,
+                    "qr_payment",
+                    language);
+
+                await _apiService.TrackEventAsync(
+                    touristId.Value,
+                    analyticsPoiId.Value,
                     "qr_payment_success",
-                    LocalizationResourceManager.Instance.CurrentLanguage);
+                    language);
+            }
+            else
+            {
+                _logger.LogWarning(
+                    "Skip payment analytics: TouristId={TouristId}, PoiId={PoiId}, ResolvedAnalyticsPoiId={ResolvedPoiId}",
+                    touristId,
+                    PoiId,
+                    analyticsPoiId);
             }
 
             IsPaid = true;
@@ -206,5 +225,53 @@ public partial class PaymentViewModel : ObservableObject, IQueryAttributable
         await _storageService.SetTouristIdAsync(tourist.Id);
         await _storageService.SetTouristAsync(tourist);
         return tourist.Id;
+    }
+
+    private async Task<int?> ResolveAnalyticsPoiIdAsync(double? latitude, double? longitude)
+    {
+        if (PoiId > 0)
+        {
+            return PoiId;
+        }
+
+        if (App.PendingPoiId is int pendingPoiId && pendingPoiId > 0)
+        {
+            return pendingPoiId;
+        }
+
+        var language = LocalizationResourceManager.Instance.CurrentLanguage;
+        if (string.IsNullOrWhiteSpace(language))
+        {
+            language = "vi";
+        }
+
+        try
+        {
+            if (latitude.HasValue && longitude.HasValue)
+            {
+                var nearby = await _apiService.GetNearbyPOIsAsync(
+                    latitude.Value,
+                    longitude.Value,
+                    2.0,
+                    language);
+
+                var nearestPoi = nearby
+                    .OrderBy(p => p.DistanceKm ?? double.MaxValue)
+                    .FirstOrDefault();
+
+                if (nearestPoi?.Id > 0)
+                {
+                    return nearestPoi.Id;
+                }
+            }
+
+            var allPois = await _apiService.GetAllPOIsAsync(languageCode: language);
+            return allPois.FirstOrDefault(p => p.Id > 0)?.Id;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Could not resolve fallback POI for payment analytics");
+            return null;
+        }
     }
 }
