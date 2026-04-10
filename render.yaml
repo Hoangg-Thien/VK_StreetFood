@@ -4,7 +4,7 @@ services:
     env: docker
     plan: free
     rootDir: .
-    dockerfilePath: src/Server/VK.API/Dockerfile
+    dockerfilePath: Dockerfile.api
     dockerContext: .
     autoDeploy: true
     healthCheckPath: /swagger
@@ -21,7 +21,7 @@ services:
     env: docker
     plan: free
     rootDir: .
-    dockerfilePath: src/Server/VK.Web/Dockerfile
+    dockerfilePath: Dockerfile.web
     dockerContext: .
     autoDeploy: true
     envVars:
