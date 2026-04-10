@@ -49,6 +49,18 @@ List<VK.Core.Entities.PointOfInterest>();
         publicBaseUrl = $"{Context.Request.Scheme}://{Context.Request.Host}";
     }
 
+    var apiBaseUrl = Configuration["ApiSettings:BaseUrl"];
+    if (string.IsNullOrWhiteSpace(apiBaseUrl))
+    {
+        apiBaseUrl = $"{Context.Request.Scheme}://{Context.Request.Host}/api/";
+    }
+
+    apiBaseUrl = apiBaseUrl.TrimEnd('/');
+    if (apiBaseUrl.EndsWith("/api", StringComparison.OrdinalIgnoreCase))
+    {
+        apiBaseUrl = apiBaseUrl[..^4];
+    }
+
     publicBaseUrl = publicBaseUrl.TrimEnd('/');
     var sharedQrTargetUrl = $"{publicBaseUrl}/open-app?target=pay";
     var sharedQrImageUrl = "https://api.qrserver.com/v1/create-qr-code/?size=260x260&data=" +
@@ -123,13 +135,14 @@ Uri.EscapeDataString(sharedQrTargetUrl);
                 w[0].ToString().ToUpper()));
                         var bgColors = new[] { "#E85D04", "#3B82F6", "#8B5CF6", "#22C55E", "#F59E0B" };
                         var bg = bgColors[Math.Abs(poi.Id.GetHashCode()) % bgColors.Length];
-                        var apiBase = "http://localhost:5089";
                         <tr>
                             <td>
                                 <div class="item-info">
                                     @if (!string.IsNullOrEmpty(poi.ImageUrl))
                                     {
-                                        var imgSrc = poi.ImageUrl.StartsWith("http") ? poi.ImageUrl : apiBase + poi.ImageUrl;
+                                        var imgSrc = poi.ImageUrl.StartsWith("http", StringComparison.OrdinalIgnoreCase)
+                                            ? poi.ImageUrl
+                                            : apiBaseUrl + poi.ImageUrl;
                                         <img src="@imgSrc" class="table-avatar" style="object-fit:cover;border-radius:8px;"
                                              alt="@poi.Name"
                                              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';" />
