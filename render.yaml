@@ -1,0 +1,37 @@
+services:
+  - type: web
+    name: vk-api
+    runtime: docker
+    plan: free
+    rootDir: .
+    dockerfilePath: ./src/Server/VK.API/Dockerfile
+    autoDeploy: true
+    healthCheckPath: /swagger
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+      - key: ASPNETCORE_FORWARDEDHEADERS_ENABLED
+        value: "true"
+      - key: ConnectionStrings__DefaultConnection
+        sync: false
+
+  - type: web
+    name: vk-web
+    runtime: docker
+    plan: free
+    rootDir: .
+    dockerfilePath: ./src/Server/VK.Web/Dockerfile
+    autoDeploy: true
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+      - key: ASPNETCORE_FORWARDEDHEADERS_ENABLED
+        value: "true"
+      - key: ConnectionStrings__DefaultConnection
+        sync: false
+      - key: ApiSettings__BaseUrl
+        sync: false
+      - key: AdminAuth__Email
+        sync: false
+      - key: AdminAuth__Password
+        sync: false
