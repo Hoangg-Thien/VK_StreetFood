@@ -1,12 +1,16 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
+using System.Text.RegularExpressions;
 using VK.Mobile.Services;
 
 namespace VK.Mobile.ViewModels;
 
 public partial class PaymentViewModel : ObservableObject, IQueryAttributable
 {
+    private static readonly Regex DeepLinkNameRegex = new("^[a-z][a-z0-9_-]{1,31}$", RegexOptions.Compiled);
+    private static LocalizationResourceManager L => LocalizationResourceManager.Instance;
+
     private readonly IApiService _apiService;
     private readonly StorageService _storageService;
     private readonly ILocationService _locationService;
@@ -25,7 +29,7 @@ public partial class PaymentViewModel : ObservableObject, IQueryAttributable
     private bool _isPaid;
 
     [ObservableProperty]
-    private string _statusMessage = "Vui lòng xác nhận thanh toán để tiếp tục.";
+    private string _statusMessage = string.Empty;
 
     [ObservableProperty]
     private decimal _amountVnd;
@@ -62,6 +66,7 @@ public partial class PaymentViewModel : ObservableObject, IQueryAttributable
         _storageService = storageService;
         _locationService = locationService;
         _logger = logger;
+        _statusMessage = L["PaymentStatusConfirmToContinue"];
     }
 
     public void ApplyQueryAttributes(IDictionary<string, object> query)
@@ -78,8 +83,8 @@ public partial class PaymentViewModel : ObservableObject, IQueryAttributable
         }
 
         StatusMessage = PoiId > 0
-            ? "Nhấn Thanh toán để bắt đầu khám phá"
-            : "Nhấn Thanh toán để mở khóa vào app.";
+            ? L["PaymentStatusTapToExplore"]
+            : L["PaymentStatusTapToUnlock"];
 
         _ = LoadQrPaymentConfigAsync();
     }
@@ -89,7 +94,18 @@ public partial class PaymentViewModel : ObservableObject, IQueryAttributable
         var config = await _apiService.GetQrPaymentConfigAsync();
         AmountVnd = config?.DefaultAmountVnd ?? 0;
         QrTtlMinutes = config?.QrTtlMinutes is > 0 ? config.QrTtlMinutes : 15;
-        DeepLinkName = string.IsNullOrWhiteSpace(config?.DeepLinkName) ? "pay" : config.DeepLinkName.Trim().ToLowerInvariant();
+
+        var deepLinkName = string.IsNullOrWhiteSpace(config?.DeepLinkName)
+            ? "pay"
+            : config!.DeepLinkName.Trim().ToLowerInvariant();
+
+        if (!DeepLinkNameRegex.IsMatch(deepLinkName))
+        {
+            _logger.LogWarning("Invalid DeepLinkName '{DeepLinkName}' from config. Fallback to 'pay'.", deepLinkName);
+            deepLinkName = "pay";
+        }
+
+        DeepLinkName = deepLinkName;
 
         ValidateQrExpiry();
     }
@@ -108,7 +124,7 @@ public partial class PaymentViewModel : ObservableObject, IQueryAttributable
 
         if (IsQrExpired)
         {
-            StatusMessage = "QR đã hết hạn. Vui lòng quét lại mã mới.";
+            StatusMessage = L["PaymentStatusQrExpired"];
         }
     }
 
@@ -118,7 +134,7 @@ public partial class PaymentViewModel : ObservableObject, IQueryAttributable
         try
         {
             IsProcessing = true;
-            StatusMessage = "Đang xử lý thanh toán...";
+            StatusMessage = L["PaymentStatusProcessing"];
 
             await Task.Delay(1200);
 
@@ -191,15 +207,18 @@ public partial class PaymentViewModel : ObservableObject, IQueryAttributable
 
             IsPaid = true;
             App.MarkPendingPaymentCompleted();
-            StatusMessage = "Thanh toán thành công. Bạn đã được mở khóa vào app.";
+            StatusMessage = L["PaymentStatusSuccessUnlock"];
 
-            await Shell.Current.DisplayAlert("Thanh toán", "Thanh toán thành công", "OK");
+            await Shell.Current.DisplayAlertAsync(
+                L["PaymentSuccessDialogTitle"],
+                L["PaymentSuccessDialogMessage"],
+                L["OK"]);
             await Shell.Current.GoToAsync("//Welcome");
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Payment flow failed for POI {PoiId}", PoiId);
-            StatusMessage = "Thanh toán thất bại. Vui lòng thử lại.";
+            StatusMessage = L["PaymentStatusFailed"];
         }
         finally
         {

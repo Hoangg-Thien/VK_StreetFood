@@ -567,6 +567,67 @@
     <value>cách {0:F1} km</value>
   </data>
 
+  <!-- Welcome payment gate -->
+  <data name="WelcomePaymentRequiredTitle" xml:space="preserve">
+    <value>Mở khóa trải nghiệm</value>
+  </data>
+  <data name="WelcomePaymentRequiredMessage" xml:space="preserve">
+    <value>Bạn cần thanh toán để bắt đầu khám phá.</value>
+  </data>
+  <data name="WelcomePaymentRequiredContinue" xml:space="preserve">
+    <value>Tiếp tục</value>
+  </data>
+
+  <!-- Payment page -->
+  <data name="PaymentTitle" xml:space="preserve">
+    <value>Thanh toán</value>
+  </data>
+  <data name="PaymentSubtitle" xml:space="preserve">
+    <value>Hoàn tất thanh toán để mở khóa trải nghiệm trong app</value>
+  </data>
+  <data name="PaymentTransactionInfo" xml:space="preserve">
+    <value>Thông tin giao dịch</value>
+  </data>
+  <data name="PaymentPoiIdLabel" xml:space="preserve">
+    <value>POI ID</value>
+  </data>
+  <data name="PaymentAmountLabel" xml:space="preserve">
+    <value>Số tiền</value>
+  </data>
+  <data name="PaymentQrLinkLabel" xml:space="preserve">
+    <value>Liên kết QR</value>
+  </data>
+  <data name="PaymentPayButton" xml:space="preserve">
+    <value>Thanh toán</value>
+  </data>
+  <data name="PaymentStatusConfirmToContinue" xml:space="preserve">
+    <value>Vui lòng xác nhận thanh toán để tiếp tục.</value>
+  </data>
+  <data name="PaymentStatusTapToExplore" xml:space="preserve">
+    <value>Nhấn Thanh toán để bắt đầu khám phá</value>
+  </data>
+  <data name="PaymentStatusTapToUnlock" xml:space="preserve">
+    <value>Nhấn Thanh toán để mở khóa vào app.</value>
+  </data>
+  <data name="PaymentStatusQrExpired" xml:space="preserve">
+    <value>QR đã hết hạn. Vui lòng quét lại mã mới.</value>
+  </data>
+  <data name="PaymentStatusProcessing" xml:space="preserve">
+    <value>Đang xử lý thanh toán...</value>
+  </data>
+  <data name="PaymentStatusSuccessUnlock" xml:space="preserve">
+    <value>Thanh toán thành công. Bạn đã được mở khóa vào app.</value>
+  </data>
+  <data name="PaymentStatusFailed" xml:space="preserve">
+    <value>Thanh toán thất bại. Vui lòng thử lại.</value>
+  </data>
+  <data name="PaymentSuccessDialogTitle" xml:space="preserve">
+    <value>Thanh toán</value>
+  </data>
+  <data name="PaymentSuccessDialogMessage" xml:space="preserve">
+    <value>Thanh toán thành công</value>
+  </data>
+
   <!-- Common -->
   <data name="TrackingUnknown" xml:space="preserve">
     <value>Không rõ</value>

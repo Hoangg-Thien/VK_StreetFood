@@ -521,6 +521,67 @@
     <value>{0:F1} km away</value>
   </data>
 
+  <!-- Welcome payment gate -->
+  <data name="WelcomePaymentRequiredTitle" xml:space="preserve">
+    <value>Unlock Experience</value>
+  </data>
+  <data name="WelcomePaymentRequiredMessage" xml:space="preserve">
+    <value>You need to complete payment before starting your exploration.</value>
+  </data>
+  <data name="WelcomePaymentRequiredContinue" xml:space="preserve">
+    <value>Continue</value>
+  </data>
+
+  <!-- Payment page -->
+  <data name="PaymentTitle" xml:space="preserve">
+    <value>Payment</value>
+  </data>
+  <data name="PaymentSubtitle" xml:space="preserve">
+    <value>Complete payment to unlock the in-app experience</value>
+  </data>
+  <data name="PaymentTransactionInfo" xml:space="preserve">
+    <value>Transaction Information</value>
+  </data>
+  <data name="PaymentPoiIdLabel" xml:space="preserve">
+    <value>POI ID</value>
+  </data>
+  <data name="PaymentAmountLabel" xml:space="preserve">
+    <value>Amount</value>
+  </data>
+  <data name="PaymentQrLinkLabel" xml:space="preserve">
+    <value>QR Link</value>
+  </data>
+  <data name="PaymentPayButton" xml:space="preserve">
+    <value>Pay</value>
+  </data>
+  <data name="PaymentStatusConfirmToContinue" xml:space="preserve">
+    <value>Please confirm payment to continue.</value>
+  </data>
+  <data name="PaymentStatusTapToExplore" xml:space="preserve">
+    <value>Tap Pay to start exploring</value>
+  </data>
+  <data name="PaymentStatusTapToUnlock" xml:space="preserve">
+    <value>Tap Pay to unlock app access.</value>
+  </data>
+  <data name="PaymentStatusQrExpired" xml:space="preserve">
+    <value>This QR code has expired. Please scan a new one.</value>
+  </data>
+  <data name="PaymentStatusProcessing" xml:space="preserve">
+    <value>Processing payment...</value>
+  </data>
+  <data name="PaymentStatusSuccessUnlock" xml:space="preserve">
+    <value>Payment successful. Your app access has been unlocked.</value>
+  </data>
+  <data name="PaymentStatusFailed" xml:space="preserve">
+    <value>Payment failed. Please try again.</value>
+  </data>
+  <data name="PaymentSuccessDialogTitle" xml:space="preserve">
+    <value>Payment</value>
+  </data>
+  <data name="PaymentSuccessDialogMessage" xml:space="preserve">
+    <value>Payment successful</value>
+  </data>
+
   <!-- Common -->
   <data name="TrackingUnknown" xml:space="preserve">
     <value>Unknown</value>

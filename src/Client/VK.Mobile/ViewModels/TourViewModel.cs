@@ -50,7 +50,7 @@ public partial class TourViewModel : ObservableObject
     [RelayCommand]
     private async Task LoadToursAsync()
     {
-        var language = LocalizationResourceManager.Instance.CurrentLanguage;
+        var language = NormalizeLanguage(LocalizationResourceManager.Instance.CurrentLanguage);
 
         try
         {
@@ -64,6 +64,7 @@ public partial class TourViewModel : ObservableObject
             }
             else
             {
+                tours = await EnrichToursWithPointsAsync(tours, language);
                 SaveCachedTours(language, tours);
             }
 
@@ -131,10 +132,21 @@ public partial class TourViewModel : ObservableObject
         if (tour == null)
             return;
 
-        var language = LocalizationResourceManager.Instance.CurrentLanguage;
+        var language = NormalizeLanguage(LocalizationResourceManager.Instance.CurrentLanguage);
         var detail = await _apiService.GetTourByIdAsync(tour.Id, language) ?? tour;
         if (detail.Points.Count == 0)
             detail = tour;
+
+        if (detail.Points.Count == 0)
+        {
+            var cachedDetail = LoadCachedTours(language)
+                .FirstOrDefault(x => x.Id == tour.Id && x.Points.Count > 0)
+                ?? LoadCachedTours("vi")
+                    .FirstOrDefault(x => x.Id == tour.Id && x.Points.Count > 0);
+
+            if (cachedDetail != null)
+                detail = cachedDetail;
+        }
 
         if (detail.Points.Count == 0 && detail.FirstPOIId is int singlePoiId && singlePoiId > 0)
         {
@@ -146,7 +158,7 @@ public partial class TourViewModel : ObservableObject
 
         if (detail.Points.Count == 0)
         {
-            await Application.Current!.MainPage!.DisplayAlert(
+            await Shell.Current.DisplayAlertAsync(
                 L["Error"],
                 L["ToursNoPoiToOpen"],
                 L["OK"]);
@@ -167,10 +179,50 @@ public partial class TourViewModel : ObservableObject
 
     private static string BuildToursCacheKey(string languageCode)
     {
-        var normalized = string.IsNullOrWhiteSpace(languageCode)
-            ? "vi"
-            : languageCode.Trim().ToLowerInvariant();
+        var normalized = NormalizeLanguage(languageCode);
         return $"{ToursCacheKeyPrefix}.{normalized}";
+    }
+
+    private async Task<List<TourModel>> EnrichToursWithPointsAsync(List<TourModel> tours, string languageCode)
+    {
+        var result = new List<TourModel>(tours.Count);
+
+        foreach (var tour in tours)
+        {
+            if (tour.Points.Count > 0)
+            {
+                result.Add(tour);
+                continue;
+            }
+
+            try
+            {
+                var detail = await _apiService.GetTourByIdAsync(tour.Id, languageCode);
+                if (detail?.Points.Count > 0)
+                {
+                    result.Add(detail);
+                    continue;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogDebug(ex, "Could not hydrate offline tour detail for tour {TourId}", tour.Id);
+            }
+
+            result.Add(tour);
+        }
+
+        return result;
+    }
+
+    private static string NormalizeLanguage(string? languageCode)
+    {
+        if (string.IsNullOrWhiteSpace(languageCode))
+            return "vi";
+
+        var code = languageCode.Trim().ToLowerInvariant();
+        var separatorIndex = code.IndexOfAny(new[] { '-', '_' });
+        return separatorIndex > 0 ? code[..separatorIndex] : code;
     }
 
     private static List<TourModel> LoadCachedTours(string languageCode)

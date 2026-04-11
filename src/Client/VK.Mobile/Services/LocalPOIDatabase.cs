@@ -38,9 +38,7 @@ public class LocalPOIDatabase
         try
         {
             var db = await GetDbAsync();
-            var lang = string.IsNullOrWhiteSpace(languageCode)
-                ? "vi"
-                : languageCode.Trim().ToLowerInvariant();
+            var lang = NormalizeLanguageCode(languageCode);
 
             var entry = await db.Table<PoiCacheEntryV2>()
                 .FirstOrDefaultAsync(x => x.LanguageCode == lang);
@@ -77,17 +75,28 @@ public class LocalPOIDatabase
         try
         {
             var db = await GetDbAsync();
-            var lang = string.IsNullOrWhiteSpace(languageCode)
-                ? "vi"
-                : languageCode.Trim().ToLowerInvariant();
+            var lang = NormalizeLanguageCode(languageCode);
 
             var entry = await db.Table<PoiCacheEntryV2>()
                 .FirstOrDefaultAsync(x => x.LanguageCode == lang);
+
+            if (entry == null)
+            {
+                // Legacy compatibility: older builds could persist full locale (e.g. en-US).
+                var allEntries = await db.Table<PoiCacheEntryV2>().ToListAsync();
+                entry = allEntries.FirstOrDefault(x => NormalizeLanguageCode(x.LanguageCode) == lang);
+            }
 
             if (entry == null && !string.Equals(lang, "vi", StringComparison.OrdinalIgnoreCase))
             {
                 entry = await db.Table<PoiCacheEntryV2>()
                     .FirstOrDefaultAsync(x => x.LanguageCode == "vi");
+
+                if (entry == null)
+                {
+                    var allEntries = await db.Table<PoiCacheEntryV2>().ToListAsync();
+                    entry = allEntries.FirstOrDefault(x => NormalizeLanguageCode(x.LanguageCode) == "vi");
+                }
             }
 
             if (entry == null || string.IsNullOrEmpty(entry.JsonData))
@@ -129,9 +138,7 @@ public class LocalPOIDatabase
         try
         {
             var db = await GetDbAsync();
-            var lang = string.IsNullOrWhiteSpace(languageCode)
-                ? "vi"
-                : languageCode.Trim().ToLowerInvariant();
+            var lang = NormalizeLanguageCode(languageCode);
 
             var existing = await db.Table<AudioScriptCacheEntry>()
                 .FirstOrDefaultAsync(x => x.POIId == poiId && x.LanguageCode == lang);
@@ -170,18 +177,36 @@ public class LocalPOIDatabase
         try
         {
             var db = await GetDbAsync();
-            var lang = string.IsNullOrWhiteSpace(languageCode)
-                ? "vi"
-                : languageCode.Trim().ToLowerInvariant();
+            var lang = NormalizeLanguageCode(languageCode);
 
-            return await db.Table<AudioScriptCacheEntry>()
+            var exact = await db.Table<AudioScriptCacheEntry>()
                 .FirstOrDefaultAsync(x => x.POIId == poiId && x.LanguageCode == lang);
+
+            if (exact != null)
+                return exact;
+
+            // Legacy compatibility: handle entries persisted as locale variants (e.g. en-US, ko-KR).
+            var candidates = await db.Table<AudioScriptCacheEntry>()
+                .Where(x => x.POIId == poiId)
+                .ToListAsync();
+
+            return candidates.FirstOrDefault(x => NormalizeLanguageCode(x.LanguageCode) == lang);
         }
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"[LocalPOIDatabase] GetAudioScript error: {ex.Message}");
             return null;
         }
+    }
+
+    private static string NormalizeLanguageCode(string? languageCode)
+    {
+        if (string.IsNullOrWhiteSpace(languageCode))
+            return "vi";
+
+        var code = languageCode.Trim().ToLowerInvariant();
+        var separatorIndex = code.IndexOfAny(new[] { '-', '_' });
+        return separatorIndex > 0 ? code[..separatorIndex] : code;
     }
 
     /// <summary>Lấy text script từ cache, fallback sang tiếng Việt nếu thiếu ngôn ngữ hiện tại.</summary>

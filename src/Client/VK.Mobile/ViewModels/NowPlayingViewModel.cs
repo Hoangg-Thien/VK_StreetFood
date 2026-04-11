@@ -469,9 +469,7 @@ public partial class NowPlayingViewModel : ObservableObject, IQueryAttributable
 
     private static string BuildLocalizedFallbackNarration(POIModel poi, string languageCode)
     {
-        var normalized = string.IsNullOrWhiteSpace(languageCode)
-            ? "vi"
-            : languageCode.Trim().ToLowerInvariant();
+        var normalized = NormalizeLanguage(languageCode);
 
         return normalized switch
         {
@@ -479,6 +477,16 @@ public partial class NowPlayingViewModel : ObservableObject, IQueryAttributable
             "ko" => $"{poi.Name}. 빈칸 거리의 대표 길거리 음식 명소입니다.",
             _ => string.IsNullOrWhiteSpace(poi.Description) ? poi.Name : $"{poi.Name}. {poi.Description}"
         };
+    }
+
+    private static string NormalizeLanguage(string languageCode)
+    {
+        if (string.IsNullOrWhiteSpace(languageCode))
+            return "vi";
+
+        var code = languageCode.Trim().ToLowerInvariant();
+        var separatorIndex = code.IndexOfAny(new[] { '-', '_' });
+        return separatorIndex > 0 ? code[..separatorIndex] : code;
     }
 
     private void StopTimer()

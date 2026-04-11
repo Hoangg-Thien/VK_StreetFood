@@ -157,9 +157,14 @@ public class NarrationCoordinator : INarrationCoordinator
     }
 
     private static string NormalizeLanguage(string languageCode)
-        => string.IsNullOrWhiteSpace(languageCode)
-            ? "vi"
-            : languageCode.Trim().ToLowerInvariant();
+    {
+        if (string.IsNullOrWhiteSpace(languageCode))
+            return "vi";
+
+        var code = languageCode.Trim().ToLowerInvariant();
+        var separatorIndex = code.IndexOfAny(new[] { '-', '_' });
+        return separatorIndex > 0 ? code[..separatorIndex] : code;
+    }
 
     private static string FormatDistance(double? km, string languageCode)
     {

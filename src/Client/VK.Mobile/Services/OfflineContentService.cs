@@ -44,6 +44,7 @@ public record OfflinePackageStatus(
 
 public class OfflineContentService : IOfflineContentService, IOfflineSyncService
 {
+    private static readonly string[] SupportedOfflineNarrationLanguages = { "vi", "en", "ko" };
     private const string ToursCacheKeyPrefix = "offline_tours";
 
     private const string KeyLastSyncTicks = "Offline.LastSyncTicks";
@@ -102,6 +103,7 @@ public class OfflineContentService : IOfflineContentService, IOfflineSyncService
                 var tours = await _apiService.GetToursAsync(lang);
                 if (tours.Count > 0)
                 {
+                    tours = await EnrichToursWithPointsAsync(tours, lang, ct);
                     var toursKey = BuildToursCacheKey(lang);
                     Preferences.Set(toursKey, JsonSerializer.Serialize(tours, ApiClientJson.Options));
                 }
@@ -118,44 +120,60 @@ public class OfflineContentService : IOfflineContentService, IOfflineSyncService
             {
                 ct.ThrowIfCancellationRequested();
 
-                AudioContentResult? audio = null;
-                try
+                foreach (var scriptLanguage in SupportedOfflineNarrationLanguages)
                 {
-                    audio = await _apiService.GetAudioForPOIAsync(poi.Id, lang);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogDebug(ex, "Skip audio fetch for POI {PoiId}", poi.Id);
-                }
+                    ct.ThrowIfCancellationRequested();
 
-                var narrationText = !string.IsNullOrWhiteSpace(audio?.TextContent)
-                    ? audio!.TextContent!
-                    : (!string.IsNullOrWhiteSpace(poi.Description)
-                        ? $"{poi.Name}. {poi.Description}"
-                        : poi.Name);
+                    AudioContentResult? audio = null;
+                    try
+                    {
+                        audio = await _apiService.GetAudioForPOIAsync(poi.Id, scriptLanguage);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogDebug(
+                            ex,
+                            "Skip audio fetch for POI {PoiId} language {Language}",
+                            poi.Id,
+                            scriptLanguage);
+                    }
 
-                string? localAudioPath = null;
-                if (includeAudioFiles && !string.IsNullOrWhiteSpace(audio?.AudioFileUrl))
-                {
-                    localAudioPath = await _audioDownloader.DownloadAudioFileAsync(
-                        audio!.AudioFileUrl!,
+                    if (string.IsNullOrWhiteSpace(audio?.TextContent))
+                    {
+                        continue;
+                    }
+
+                    var scriptLang = NormalizeLanguage(audio.LanguageCode);
+                    if (!SupportedOfflineNarrationLanguages.Contains(scriptLang, StringComparer.OrdinalIgnoreCase))
+                    {
+                        scriptLang = scriptLanguage;
+                    }
+
+                    string? localAudioPath = null;
+                    if (includeAudioFiles
+                        && string.Equals(scriptLang, lang, StringComparison.OrdinalIgnoreCase)
+                        && !string.IsNullOrWhiteSpace(audio.AudioFileUrl))
+                    {
+                        localAudioPath = await _audioDownloader.DownloadAudioFileAsync(
+                            audio.AudioFileUrl!,
+                            poi.Id,
+                            scriptLang,
+                            ct);
+
+                        if (!string.IsNullOrWhiteSpace(localAudioPath))
+                            audioFileCount++;
+                    }
+
+                    await _localDb.SaveAudioScriptAsync(
                         poi.Id,
-                        audio.LanguageCode ?? lang,
-                        ct);
+                        scriptLang,
+                        audio.TextContent!,
+                        audio.AudioFileUrl,
+                        audio.DurationInSeconds,
+                        localAudioPath);
 
-                    if (!string.IsNullOrWhiteSpace(localAudioPath))
-                        audioFileCount++;
+                    scriptCount++;
                 }
-
-                await _localDb.SaveAudioScriptAsync(
-                    poi.Id,
-                    audio?.LanguageCode ?? lang,
-                    narrationText,
-                    audio?.AudioFileUrl,
-                    audio?.DurationInSeconds,
-                    localAudioPath);
-
-                scriptCount++;
             }
 
             var now = DateTime.UtcNow;
@@ -255,7 +273,14 @@ public class OfflineContentService : IOfflineContentService, IOfflineSyncService
     }
 
     private static string NormalizeLanguage(string languageCode)
-        => string.IsNullOrWhiteSpace(languageCode) ? "vi" : languageCode.Trim().ToLowerInvariant();
+    {
+        if (string.IsNullOrWhiteSpace(languageCode))
+            return "vi";
+
+        var code = languageCode.Trim().ToLowerInvariant();
+        var separatorIndex = code.IndexOfAny(new[] { '-', '_' });
+        return separatorIndex > 0 ? code[..separatorIndex] : code;
+    }
 
     private static CultureInfo ResolveCulture(string languageCode)
     {
@@ -275,5 +300,42 @@ public class OfflineContentService : IOfflineContentService, IOfflineSyncService
     {
         var normalized = NormalizeLanguage(languageCode);
         return $"{ToursCacheKeyPrefix}.{normalized}";
+    }
+
+    private async Task<List<TourModel>> EnrichToursWithPointsAsync(
+        List<TourModel> tours,
+        string languageCode,
+        CancellationToken ct)
+    {
+        var result = new List<TourModel>(tours.Count);
+
+        foreach (var tour in tours)
+        {
+            ct.ThrowIfCancellationRequested();
+
+            if (tour.Points.Count > 0)
+            {
+                result.Add(tour);
+                continue;
+            }
+
+            try
+            {
+                var detail = await _apiService.GetTourByIdAsync(tour.Id, languageCode);
+                if (detail?.Points.Count > 0)
+                {
+                    result.Add(detail);
+                    continue;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogDebug(ex, "Skip tour detail sync for tour {TourId}", tour.Id);
+            }
+
+            result.Add(tour);
+        }
+
+        return result;
     }
 }

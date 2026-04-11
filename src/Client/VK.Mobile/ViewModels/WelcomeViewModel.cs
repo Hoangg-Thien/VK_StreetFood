@@ -6,6 +6,8 @@ namespace VK.Mobile.ViewModels;
 
 public partial class WelcomeViewModel : ObservableObject
 {
+    private static LocalizationResourceManager L => LocalizationResourceManager.Instance;
+
     [ObservableProperty] private string _selectedLanguage = "vi";
 
     // Màu nền button: trắng nếu được chọn, trong suốt nếu không
@@ -89,9 +91,9 @@ public partial class WelcomeViewModel : ObservableObject
         if (!App.IsPaymentUnlocked)
         {
             await Shell.Current.DisplayAlertAsync(
-                "Mở khóa trải nghiệm",
-                "Bạn cần thanh toán để bắt đầu khám phá.",
-                "Tiếp tục");
+                L["WelcomePaymentRequiredTitle"],
+                L["WelcomePaymentRequiredMessage"],
+                L["WelcomePaymentRequiredContinue"]);
 
             await Shell.Current.GoToAsync("Payment");
             return;
