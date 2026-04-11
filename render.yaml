@@ -57,3 +57,11 @@ services:
         sync: false
       - key: AdminAuth__Password
         sync: false
+      - key: SupabaseStorage__Url
+        sync: false
+      - key: SupabaseStorage__ServiceRoleKey
+        sync: false
+      - key: SupabaseStorage__Bucket
+        value: poi-images
+      - key: SupabaseStorage__PublicBaseUrl
+        sync: false

@@ -16,6 +16,7 @@ public class PoiController : Controller
     private readonly ILogger<PoiController> _logger;
     private readonly ITextTranslationService _textTranslationService;
     private readonly IWebHostEnvironment _environment;
+    private readonly IPoiImageStorageService _poiImageStorageService;
 
     public PoiController(
         IPoiManagementRepository poiManagementRepository,
@@ -23,7 +24,8 @@ public class PoiController : Controller
         IUnitOfWork unitOfWork,
         ILogger<PoiController> logger,
         ITextTranslationService textTranslationService,
-        IWebHostEnvironment environment)
+        IWebHostEnvironment environment,
+        IPoiImageStorageService poiImageStorageService)
     {
         _poiManagementRepository = poiManagementRepository;
         _changeRequestRepository = changeRequestRepository;
@@ -31,6 +33,7 @@ public class PoiController : Controller
         _logger = logger;
         _textTranslationService = textTranslationService;
         _environment = environment;
+        _poiImageStorageService = poiImageStorageService;
     }
 
     public override void OnActionExecuting(ActionExecutingContext context)
@@ -348,14 +351,25 @@ public class PoiController : Controller
             var timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
             var randomSuffix = Guid.NewGuid().ToString("N")[..8];
             var fileName = $"{safeName}-{timestamp}-{randomSuffix}{ext}";
+
+            var supabaseUrl = await _poiImageStorageService.UploadPoiImageAsync(file, fileName, HttpContext.RequestAborted);
+            if (!string.IsNullOrWhiteSpace(supabaseUrl))
+            {
+                return Ok(new { url = supabaseUrl });
+            }
+
+            if (_poiImageStorageService.IsConfigured)
+            {
+                _logger.LogWarning("Supabase storage is configured but upload failed. Falling back to local wwwroot storage.");
+            }
+
             var destPath = Path.Combine(imageRoot, fileName);
 
             await using (var stream = new FileStream(destPath, FileMode.Create))
                 await file.CopyToAsync(stream);
 
             var relativeUrl = $"/images/poi/{fileName}";
-            var absoluteUrl = $"{Request.Scheme}://{Request.Host}{relativeUrl}";
-            return Ok(new { url = absoluteUrl });
+            return Ok(new { url = relativeUrl });
         }
         catch (Exception ex)
         {

@@ -49,18 +49,6 @@ List<VK.Core.Entities.PointOfInterest>();
         publicBaseUrl = $"{Context.Request.Scheme}://{Context.Request.Host}";
     }
 
-    var apiBaseUrl = Configuration["ApiSettings:BaseUrl"];
-    if (string.IsNullOrWhiteSpace(apiBaseUrl))
-    {
-        apiBaseUrl = $"{Context.Request.Scheme}://{Context.Request.Host}/api/";
-    }
-
-    apiBaseUrl = apiBaseUrl.TrimEnd('/');
-    if (apiBaseUrl.EndsWith("/api", StringComparison.OrdinalIgnoreCase))
-    {
-        apiBaseUrl = apiBaseUrl[..^4];
-    }
-
     publicBaseUrl = publicBaseUrl.TrimEnd('/');
     var sharedQrTargetUrl = $"{publicBaseUrl}/open-app?target=pay";
     var sharedQrImageUrl = "https://api.qrserver.com/v1/create-qr-code/?size=260x260&data=" +
@@ -142,7 +130,7 @@ Uri.EscapeDataString(sharedQrTargetUrl);
                                     {
                                         var imgSrc = poi.ImageUrl.StartsWith("http", StringComparison.OrdinalIgnoreCase)
                                             ? poi.ImageUrl
-                                            : apiBaseUrl + poi.ImageUrl;
+                                            : publicBaseUrl + poi.ImageUrl;
                                         <img src="@imgSrc" class="table-avatar" style="object-fit:cover;border-radius:8px;"
                                              alt="@poi.Name"
                                              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';" />
@@ -426,7 +414,7 @@ Uri.EscapeDataString(sharedQrTargetUrl);
                             if (!wrap || !img) return;
 
                             if (url) {
-                                var src = url.startsWith('http') ? url : '@apiBaseUrl' + url;
+                                var src = url.startsWith('http') ? url : '@publicBaseUrl' + url;
                                 img.src = src;
                                 wrap.style.display = 'block';
                             } else {
@@ -557,7 +545,7 @@ Uri.EscapeDataString(sharedQrTargetUrl);
                             var wrap = document.getElementById('editImgPreviewWrap');
                             var img = document.getElementById('editImgPreview');
                             if (url) {
-                                var src = url.startsWith('http') ? url : '@apiBaseUrl' + url;
+                                var src = url.startsWith('http') ? url : '@publicBaseUrl' + url;
                                 img.src = src;
                                 wrap.style.display = 'block';
                             } else {

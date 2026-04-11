@@ -35,6 +35,11 @@ builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddScoped<IPoiManagementRepository, PoiManagementRepository>();
 builder.Services.AddScoped<ITourManagementRepository, TourManagementRepository>();
+builder.Services.Configure<SupabaseStorageOptions>(builder.Configuration.GetSection("SupabaseStorage"));
+builder.Services.AddHttpClient<IPoiImageStorageService, SupabasePoiImageStorageService>(client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(30);
+});
 
 // Add HttpClient to call API
 builder.Services.AddHttpClient("VKAPI", client =>

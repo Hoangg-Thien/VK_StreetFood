@@ -54,9 +54,9 @@ public class PaymentController : AdminBaseController
             paymentEventsQuery = paymentEventsQuery.Where(a => a.EventTimestamp < toExclusiveUtc.Value);
         }
 
-        var transactions = await paymentEventsQuery
+        var rawTransactions = await paymentEventsQuery
             .OrderByDescending(a => a.EventTimestamp)
-            .Take(150)
+            .Take(300)
             .Select(a => new PaymentHistoryItemViewModel
             {
                 OccurredAt = a.EventTimestamp,
@@ -66,6 +66,10 @@ public class PaymentController : AdminBaseController
                 PoiName = a.PointOfInterest != null ? a.PointOfInterest.Name : string.Empty
             })
             .ToListAsync();
+
+        var transactions = CollapseInitializedEvents(rawTransactions, normalizedStatus)
+            .Take(150)
+            .ToList();
 
         var model = new PaymentConfigEditViewModel
         {
@@ -202,4 +206,48 @@ public class PaymentController : AdminBaseController
             "qr_payment" => "Khởi tạo",
             _ => "Không xác định"
         };
+
+    private static IEnumerable<PaymentHistoryItemViewModel> CollapseInitializedEvents(
+        IReadOnlyList<PaymentHistoryItemViewModel> items,
+        string normalizedStatus)
+    {
+        if (!string.IsNullOrWhiteSpace(normalizedStatus))
+        {
+            return items;
+        }
+
+        var result = new List<PaymentHistoryItemViewModel>(items.Count);
+
+        for (var i = 0; i < items.Count; i++)
+        {
+            var current = items[i];
+
+            if (!IsTerminalStatus(current.StatusCode) || i + 1 >= items.Count)
+            {
+                result.Add(current);
+                continue;
+            }
+
+            var next = items[i + 1];
+            var isImmediateInitForSameDeviceAndPoi =
+                string.Equals(next.StatusCode, "qr_payment", StringComparison.Ordinal)
+                && string.Equals(current.DeviceId, next.DeviceId, StringComparison.Ordinal)
+                && string.Equals(current.PoiName, next.PoiName, StringComparison.Ordinal)
+                && current.OccurredAt >= next.OccurredAt
+                && (current.OccurredAt - next.OccurredAt).TotalMinutes <= 10;
+
+            result.Add(current);
+
+            if (isImmediateInitForSameDeviceAndPoi)
+            {
+                i++;
+            }
+        }
+
+        return result;
+    }
+
+    private static bool IsTerminalStatus(string statusCode)
+        => string.Equals(statusCode, "qr_payment_success", StringComparison.Ordinal)
+           || string.Equals(statusCode, "qr_payment_failed", StringComparison.Ordinal);
 }
