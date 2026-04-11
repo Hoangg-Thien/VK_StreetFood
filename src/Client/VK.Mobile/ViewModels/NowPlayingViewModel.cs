@@ -192,9 +192,7 @@ public partial class NowPlayingViewModel : ObservableObject, IQueryAttributable
 
             if (string.IsNullOrWhiteSpace(narration))
             {
-                narration = string.IsNullOrWhiteSpace(poi.Description)
-                    ? poi.Name
-                    : $"{poi.Name}. {poi.Description}";
+                narration = BuildLocalizedFallbackNarration(poi, lang);
             }
 
             Initialize(
@@ -403,7 +401,7 @@ public partial class NowPlayingViewModel : ObservableObject, IQueryAttributable
                 var cached = await _offlineContentService.GetCachedNarrationTextAsync(next.Id, Language);
                 audioText = !string.IsNullOrWhiteSpace(cached)
                     ? cached
-                    : (string.IsNullOrWhiteSpace(next.Description) ? next.Name : $"{next.Name}. {next.Description}");
+                    : BuildLocalizedFallbackNarration(next, Language);
             }
         }
         catch
@@ -411,7 +409,7 @@ public partial class NowPlayingViewModel : ObservableObject, IQueryAttributable
             var cached = await _offlineContentService.GetCachedNarrationTextAsync(next.Id, Language);
             audioText = !string.IsNullOrWhiteSpace(cached)
                 ? cached
-                : (string.IsNullOrWhiteSpace(next.Description) ? next.Name : $"{next.Name}. {next.Description}");
+                : BuildLocalizedFallbackNarration(next, Language);
         }
 
         // Re-initialize với POI mới — _allPois vẫn còn, tự tính next tiếp theo
@@ -467,6 +465,20 @@ public partial class NowPlayingViewModel : ObservableObject, IQueryAttributable
             }
         };
         _timer.Start();
+    }
+
+    private static string BuildLocalizedFallbackNarration(POIModel poi, string languageCode)
+    {
+        var normalized = string.IsNullOrWhiteSpace(languageCode)
+            ? "vi"
+            : languageCode.Trim().ToLowerInvariant();
+
+        return normalized switch
+        {
+            "en" => $"{poi.Name}. Discover this famous street food stop in Vinh Khanh.",
+            "ko" => $"{poi.Name}. 빈칸 거리의 대표 길거리 음식 명소입니다.",
+            _ => string.IsNullOrWhiteSpace(poi.Description) ? poi.Name : $"{poi.Name}. {poi.Description}"
+        };
     }
 
     private void StopTimer()

@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using VK.Mobile.Models;
 using VK.Mobile.Resources.Strings;
@@ -43,6 +44,8 @@ public record OfflinePackageStatus(
 
 public class OfflineContentService : IOfflineContentService, IOfflineSyncService
 {
+    private const string ToursCacheKeyPrefix = "offline_tours";
+
     private const string KeyLastSyncTicks = "Offline.LastSyncTicks";
     private const string KeyPoiCount = "Offline.PoiCount";
     private const string KeyScriptCount = "Offline.ScriptCount";
@@ -93,6 +96,20 @@ public class OfflineContentService : IOfflineContentService, IOfflineSyncService
             }
 
             await _localDb.SavePOIsAsync(pois, lang);
+
+            try
+            {
+                var tours = await _apiService.GetToursAsync(lang);
+                if (tours.Count > 0)
+                {
+                    var toursKey = BuildToursCacheKey(lang);
+                    Preferences.Set(toursKey, JsonSerializer.Serialize(tours, ApiClientJson.Options));
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogDebug(ex, "Skip tours cache sync for language {Language}", lang);
+            }
 
             var scriptCount = 0;
             var audioFileCount = 0;
@@ -253,4 +270,10 @@ public class OfflineContentService : IOfflineContentService, IOfflineSyncService
 
     private static string GetLocalizedString(string key, string languageCode)
         => AppResources.ResourceManager.GetString(key, ResolveCulture(languageCode)) ?? key;
+
+    private static string BuildToursCacheKey(string languageCode)
+    {
+        var normalized = NormalizeLanguage(languageCode);
+        return $"{ToursCacheKeyPrefix}.{normalized}";
+    }
 }

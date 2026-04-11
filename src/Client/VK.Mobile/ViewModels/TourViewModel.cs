@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
+using System.Text.Json;
 using VK.Mobile.Models;
 using VK.Mobile.Services;
 
@@ -9,6 +10,8 @@ namespace VK.Mobile.ViewModels;
 
 public partial class TourViewModel : ObservableObject
 {
+    private const string ToursCacheKeyPrefix = "offline_tours";
+
     private readonly IApiService _apiService;
     private readonly ITourSessionService _tourSession;
     private readonly ILogger<TourViewModel> _logger;
@@ -47,24 +50,50 @@ public partial class TourViewModel : ObservableObject
     [RelayCommand]
     private async Task LoadToursAsync()
     {
+        var language = LocalizationResourceManager.Instance.CurrentLanguage;
+
         try
         {
             IsLoading = true;
             ErrorMessage = null;
-            var language = LocalizationResourceManager.Instance.CurrentLanguage;
 
             var tours = await _apiService.GetToursAsync(language);
+            if (tours.Count == 0)
+            {
+                tours = LoadCachedTours(language);
+            }
+            else
+            {
+                SaveCachedTours(language, tours);
+            }
+
             var readyTours = tours.Where(IsReadyStatus).ToList();
             var completedTours = tours.Where(IsCompletedStatus).ToList();
 
             UpcomingTours = new ObservableCollection<TourModel>(readyTours);
 
             CompletedTours = new ObservableCollection<TourModel>(completedTours);
+
+            if (UpcomingTours.Count == 0 && CompletedTours.Count == 0)
+            {
+                ErrorMessage = L["ToursLoadFailed"];
+            }
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error loading tours");
-            ErrorMessage = L["ToursLoadFailed"];
+
+            var cachedTours = LoadCachedTours(language);
+            if (cachedTours.Count > 0)
+            {
+                UpcomingTours = new ObservableCollection<TourModel>(cachedTours.Where(IsReadyStatus));
+                CompletedTours = new ObservableCollection<TourModel>(cachedTours.Where(IsCompletedStatus));
+                ErrorMessage = null;
+            }
+            else
+            {
+                ErrorMessage = L["ToursLoadFailed"];
+            }
         }
         finally
         {
@@ -135,4 +164,47 @@ public partial class TourViewModel : ObservableObject
     private static bool IsCompletedStatus(TourModel tour)
         => string.Equals(tour.Status, "completed", StringComparison.OrdinalIgnoreCase)
            || string.Equals(tour.Status, "inactive", StringComparison.OrdinalIgnoreCase);
+
+    private static string BuildToursCacheKey(string languageCode)
+    {
+        var normalized = string.IsNullOrWhiteSpace(languageCode)
+            ? "vi"
+            : languageCode.Trim().ToLowerInvariant();
+        return $"{ToursCacheKeyPrefix}.{normalized}";
+    }
+
+    private static List<TourModel> LoadCachedTours(string languageCode)
+    {
+        try
+        {
+            var key = BuildToursCacheKey(languageCode);
+            var json = Preferences.Get(key, string.Empty);
+
+            if (string.IsNullOrWhiteSpace(json) && !string.Equals(languageCode, "vi", StringComparison.OrdinalIgnoreCase))
+            {
+                json = Preferences.Get(BuildToursCacheKey("vi"), string.Empty);
+            }
+
+            return string.IsNullOrWhiteSpace(json)
+                ? new List<TourModel>()
+                : JsonSerializer.Deserialize<List<TourModel>>(json, ApiClientJson.Options) ?? new List<TourModel>();
+        }
+        catch
+        {
+            return new List<TourModel>();
+        }
+    }
+
+    private static void SaveCachedTours(string languageCode, List<TourModel> tours)
+    {
+        try
+        {
+            var key = BuildToursCacheKey(languageCode);
+            Preferences.Set(key, JsonSerializer.Serialize(tours, ApiClientJson.Options));
+        }
+        catch
+        {
+            // best effort
+        }
+    }
 }

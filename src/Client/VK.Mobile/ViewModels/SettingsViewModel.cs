@@ -84,6 +84,13 @@ public partial class SettingsViewModel : ObservableObject
 
     partial void OnSelectedLanguageChanged(string value)
     {
+        if (!string.IsNullOrWhiteSpace(value)
+            && !string.Equals(LocalizationResourceManager.Instance.CurrentLanguage, value, StringComparison.OrdinalIgnoreCase))
+        {
+            LocalizationResourceManager.Instance.SetLanguage(value);
+            _ = _storageService.SetPreferredLanguageAsync(value);
+        }
+
         OnPropertyChanged(nameof(SelectedLanguageDisplayIndex));
         _ = LoadTtsVoicesAsync();
     }

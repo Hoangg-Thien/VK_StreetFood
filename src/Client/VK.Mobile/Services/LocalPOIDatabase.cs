@@ -191,13 +191,6 @@ public class LocalPOIDatabase
         if (!string.IsNullOrWhiteSpace(script?.TextContent))
             return script!.TextContent;
 
-        if (!string.Equals(languageCode, "vi", StringComparison.OrdinalIgnoreCase))
-        {
-            var viScript = await GetAudioScriptAsync(poiId, "vi");
-            if (!string.IsNullOrWhiteSpace(viScript?.TextContent))
-                return viScript!.TextContent;
-        }
-
         return null;
     }
 
