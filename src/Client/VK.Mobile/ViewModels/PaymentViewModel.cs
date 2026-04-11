@@ -136,27 +136,49 @@ public partial class PaymentViewModel : ObservableObject, IQueryAttributable
             {
                 if (PoiId > 0)
                 {
-                    await _apiService.LogVisitAsync(
+                    var visitLogged = await _apiService.LogVisitAsync(
                         touristId.Value,
                         PoiId,
                         "qr_payment",
                         location?.Latitude,
                         location?.Longitude);
+
+                    if (!visitLogged)
+                    {
+                        _logger.LogWarning(
+                            "Payment log visit failed for tourist {TouristId}, poi {PoiId}",
+                            touristId.Value,
+                            PoiId);
+                    }
                 }
 
                 var language = LocalizationResourceManager.Instance.CurrentLanguage;
 
-                await _apiService.TrackEventAsync(
+                var paymentTracked = await _apiService.TrackEventAsync(
                     touristId.Value,
                     analyticsPoiId.Value,
                     "qr_payment",
                     language);
+                if (!paymentTracked)
+                {
+                    _logger.LogWarning(
+                        "Payment analytics event qr_payment failed for tourist {TouristId}, poi {PoiId}",
+                        touristId.Value,
+                        analyticsPoiId.Value);
+                }
 
-                await _apiService.TrackEventAsync(
+                var paymentSuccessTracked = await _apiService.TrackEventAsync(
                     touristId.Value,
                     analyticsPoiId.Value,
                     "qr_payment_success",
                     language);
+                if (!paymentSuccessTracked)
+                {
+                    _logger.LogWarning(
+                        "Payment analytics event qr_payment_success failed for tourist {TouristId}, poi {PoiId}",
+                        touristId.Value,
+                        analyticsPoiId.Value);
+                }
             }
             else
             {
@@ -191,12 +213,6 @@ public partial class PaymentViewModel : ObservableObject, IQueryAttributable
 
     private async Task<int?> EnsureTouristIdAsync()
     {
-        var touristId = await _storageService.GetTouristIdAsync();
-        if (touristId.HasValue)
-        {
-            return touristId;
-        }
-
         var deviceId = await _storageService.GetDeviceIdAsync();
         if (string.IsNullOrWhiteSpace(deviceId))
         {
@@ -219,6 +235,15 @@ public partial class PaymentViewModel : ObservableObject, IQueryAttributable
 
         if (tourist == null)
         {
+            var cachedTouristId = await _storageService.GetTouristIdAsync();
+            if (cachedTouristId.HasValue)
+            {
+                _logger.LogWarning(
+                    "RegisterTourist failed during payment; falling back to cached touristId {TouristId}",
+                    cachedTouristId.Value);
+                return cachedTouristId.Value;
+            }
+
             return null;
         }
 
