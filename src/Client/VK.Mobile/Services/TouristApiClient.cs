@@ -36,6 +36,12 @@ public class TouristApiClient : ITouristApiClient
         {
             var request = new { latitude, longitude };
             var response = await _httpClient.PutAsJsonAsync($"tourist/{touristId}/location", request);
+            if (!response.IsSuccessStatusCode)
+            {
+                await LogFailedResponseAsync("UpdateLocation", response);
+                return false;
+            }
+
             return response.IsSuccessStatusCode;
         }
         catch (Exception ex)
@@ -51,6 +57,12 @@ public class TouristApiClient : ITouristApiClient
         {
             var request = new { pointOfInterestId = poiId, triggerMethod, latitude, longitude };
             var response = await _httpClient.PostAsJsonAsync($"tourist/{touristId}/visits", request);
+            if (!response.IsSuccessStatusCode)
+            {
+                await LogFailedResponseAsync("LogVisit", response);
+                return false;
+            }
+
             return response.IsSuccessStatusCode;
         }
         catch (Exception ex)
@@ -79,6 +91,12 @@ public class TouristApiClient : ITouristApiClient
         {
             var request = new { POIId = poiId };
             var response = await _httpClient.PostAsJsonAsync($"tourist/{touristId}/favorites", request);
+            if (!response.IsSuccessStatusCode)
+            {
+                await LogFailedResponseAsync("AddFavorite", response);
+                return false;
+            }
+
             return response.IsSuccessStatusCode;
         }
         catch (Exception ex)
@@ -93,6 +111,12 @@ public class TouristApiClient : ITouristApiClient
         try
         {
             var response = await _httpClient.DeleteAsync($"tourist/{touristId}/favorites/{poiId}");
+            if (!response.IsSuccessStatusCode)
+            {
+                await LogFailedResponseAsync("RemoveFavorite", response);
+                return false;
+            }
+
             return response.IsSuccessStatusCode;
         }
         catch (Exception ex)
@@ -123,6 +147,12 @@ public class TouristApiClient : ITouristApiClient
         {
             var request = new { pointOfInterestId = poiId, ratingValue = rating, comment };
             var response = await _httpClient.PostAsJsonAsync($"tourist/{touristId}/ratings", request);
+            if (!response.IsSuccessStatusCode)
+            {
+                await LogFailedResponseAsync("SubmitRating", response);
+                return false;
+            }
+
             return response.IsSuccessStatusCode;
         }
         catch (Exception ex)
@@ -130,6 +160,16 @@ public class TouristApiClient : ITouristApiClient
             _logger.LogError(ex, "Error submitting rating");
             return false;
         }
+    }
+
+    private async Task LogFailedResponseAsync(string operation, HttpResponseMessage response)
+    {
+        var body = await response.Content.ReadAsStringAsync();
+        _logger.LogWarning(
+            "{Operation} failed with status {StatusCode}. Body: {ResponseBody}",
+            operation,
+            (int)response.StatusCode,
+            string.IsNullOrWhiteSpace(body) ? "<empty>" : body);
     }
 
     public async Task<QrPaymentConfigModel?> GetQrPaymentConfigAsync()

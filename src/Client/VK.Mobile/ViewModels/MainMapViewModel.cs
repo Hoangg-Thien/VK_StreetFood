@@ -435,12 +435,26 @@ public partial class MainMapViewModel : ObservableObject
             }
             else
             {
-                CurrentTourist = new TouristModel
+                // Re-sync tourist by deviceId to avoid stale cached touristId across environments.
+                var syncedTourist = await _apiService.RegisterTouristAsync(deviceId, language);
+                if (syncedTourist != null)
                 {
-                    Id = touristId.Value,
-                    DeviceId = deviceId,
-                    PreferredLanguage = language
-                };
+                    await _storageService.SetTouristIdAsync(syncedTourist.Id);
+                    CurrentTourist = syncedTourist;
+                }
+                else
+                {
+                    CurrentTourist = new TouristModel
+                    {
+                        Id = touristId.Value,
+                        DeviceId = deviceId,
+                        PreferredLanguage = language
+                    };
+
+                    _logger.LogWarning(
+                        "Using cached tourist identity (Id={TouristId}) because register sync failed",
+                        touristId.Value);
+                }
             }
         }
         catch (Exception ex)
@@ -462,7 +476,7 @@ public partial class MainMapViewModel : ObservableObject
         if (CurrentTourist != null && (DateTime.UtcNow - _lastServerLocationUpdate).TotalSeconds >= 30)
         {
             _lastServerLocationUpdate = DateTime.UtcNow;
-            _ = _apiService.UpdateLocationAsync(
+            _ = SendLocationUpdateAsync(
                 CurrentTourist.Id,
                 e.Location.Latitude,
                 e.Location.Longitude);
@@ -510,19 +524,33 @@ public partial class MainMapViewModel : ObservableObject
             // Log visit
             if (CurrentTourist != null && CurrentLocation != null)
             {
-                await _apiService.LogVisitAsync(
+                var visitLogged = await _apiService.LogVisitAsync(
                     CurrentTourist.Id,
                     poi.Id,
                     "geofence",
                     CurrentLocation.Latitude,
                     CurrentLocation.Longitude);
+                if (!visitLogged)
+                {
+                    _logger.LogWarning(
+                        "Failed to log visit for tourist {TouristId}, poi {PoiId}",
+                        CurrentTourist.Id,
+                        poi.Id);
+                }
 
                 // Track analytics event
-                await _apiService.TrackEventAsync(
+                var eventTracked = await _apiService.TrackEventAsync(
                     CurrentTourist.Id,
                     poi.Id,
                     "geofence_enter",
                     SelectedLanguage);
+                if (!eventTracked)
+                {
+                    _logger.LogWarning(
+                        "Failed to track geofence_enter for tourist {TouristId}, poi {PoiId}",
+                        CurrentTourist.Id,
+                        poi.Id);
+                }
             }
 
             if (!Preferences.Get("AutoPlayAudio", true))
@@ -540,6 +568,19 @@ public partial class MainMapViewModel : ObservableObject
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error handling geofence trigger");
+        }
+    }
+
+    private async Task SendLocationUpdateAsync(int touristId, double latitude, double longitude)
+    {
+        var updated = await _apiService.UpdateLocationAsync(touristId, latitude, longitude);
+        if (!updated)
+        {
+            _logger.LogWarning(
+                "Failed to update location for tourist {TouristId} ({Latitude}, {Longitude})",
+                touristId,
+                latitude,
+                longitude);
         }
     }
 }

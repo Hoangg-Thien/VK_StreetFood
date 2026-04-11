@@ -20,6 +20,19 @@ public class AnalyticsApiClient : IAnalyticsApiClient
         {
             var request = new { touristId, poiId, eventType, languageCode, durationSeconds };
             var response = await _httpClient.PostAsJsonAsync("analytics/event", request);
+            if (!response.IsSuccessStatusCode)
+            {
+                var body = await response.Content.ReadAsStringAsync();
+                _logger.LogWarning(
+                    "TrackEvent failed with status {StatusCode}. EventType={EventType}, PoiId={PoiId}, TouristId={TouristId}. Body: {ResponseBody}",
+                    (int)response.StatusCode,
+                    eventType,
+                    poiId,
+                    touristId,
+                    string.IsNullOrWhiteSpace(body) ? "<empty>" : body);
+                return false;
+            }
+
             return response.IsSuccessStatusCode;
         }
         catch (Exception ex)
