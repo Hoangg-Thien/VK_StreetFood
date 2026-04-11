@@ -283,8 +283,26 @@ public partial class POIDetailViewModel : ObservableObject, IQueryAttributable
 
                 // API trả về single "audio" (đúng language), không phải list
                 // AudioContents luôn rỗng → dùng Audio trực tiếp
-                SelectedAudio = detail.AudioContents.FirstOrDefault(a => a.LanguageCode == language)
-                             ?? detail.Audio;
+                SelectedAudio = detail.AudioContents.FirstOrDefault(a =>
+                                   string.Equals(a.LanguageCode, language, StringComparison.OrdinalIgnoreCase));
+
+                if (SelectedAudio == null
+                    && detail.Audio != null
+                    && string.Equals(detail.Audio.LanguageCode, language, StringComparison.OrdinalIgnoreCase))
+                {
+                    SelectedAudio = detail.Audio;
+                }
+
+                if (SelectedAudio == null)
+                {
+                    SelectedAudio = new AudioInfo
+                    {
+                        LanguageCode = language,
+                        TextContent = BuildLocalizedFallbackNarration(detail.Name, detail.Description, language),
+                        AudioFileUrl = null,
+                        DurationSeconds = null
+                    };
+                }
 
                 // Check if favorite (chỉ khi online)
                 if (Connectivity.NetworkAccess == NetworkAccess.Internet)
@@ -359,7 +377,9 @@ public partial class POIDetailViewModel : ObservableObject, IQueryAttributable
                 var text = SelectedAudio?.TextContent;
                 System.Diagnostics.Debug.WriteLine($"[POIDetail] ToggleAudio: SelectedAudio={SelectedAudio != null}, TextContent={text?.Length ?? 0} chars");
                 if (string.IsNullOrWhiteSpace(text))
-                    text = Poi != null ? $"{Poi.Name}. {Poi.Description}" : string.Empty;
+                    text = Poi != null
+                        ? BuildLocalizedFallbackNarration(Poi.Name, Poi.Description, SelectedLanguage)
+                        : string.Empty;
                 System.Diagnostics.Debug.WriteLine($"[POIDetail] Final text for TTS ({text?.Length ?? 0} chars): {text?[..Math.Min(60, text?.Length ?? 0)]}");
                 if (string.IsNullOrWhiteSpace(text))
                 {
@@ -589,7 +609,9 @@ public partial class POIDetailViewModel : ObservableObject, IQueryAttributable
 
         var text = SelectedAudio?.TextContent;
         if (string.IsNullOrWhiteSpace(text))
-            text = Poi != null ? $"{Poi.Name}. {Poi.Description}" : string.Empty;
+            text = Poi != null
+                ? BuildLocalizedFallbackNarration(Poi.Name, Poi.Description, SelectedLanguage)
+                : string.Empty;
 
         if (string.IsNullOrWhiteSpace(text))
         {
@@ -650,5 +672,20 @@ public partial class POIDetailViewModel : ObservableObject, IQueryAttributable
         {
             _logger.LogDebug(ex, "Could not track audio_complete for POI {PoiId}", Poi?.Id);
         }
+    }
+
+    private static string BuildLocalizedFallbackNarration(string? name, string? description, string languageCode)
+    {
+        var poiName = string.IsNullOrWhiteSpace(name) ? "POI" : name.Trim();
+        var normalized = string.IsNullOrWhiteSpace(languageCode)
+            ? "vi"
+            : languageCode.Trim().ToLowerInvariant();
+
+        return normalized switch
+        {
+            "en" => $"{poiName}. Discover this famous street food stop in Vinh Khanh.",
+            "ko" => $"{poiName}. 빈칸 거리의 대표 길거리 음식 명소입니다.",
+            _ => string.IsNullOrWhiteSpace(description) ? poiName : $"{poiName}. {description}"
+        };
     }
 }

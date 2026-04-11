@@ -83,6 +83,8 @@ public class AndroidTTSService : Java.Lang.Object, AndroidTTS.IOnInitListener, I
         if (string.IsNullOrWhiteSpace(text)) return;
         _logger.LogDebug("[TTS] SpeakTextAsync lang={Lang} chars={Len}", languageCode, text.Length);
 
+        var normalizedLang = NormalizeLanguage(languageCode);
+
         // Yields the calling thread so OnInit can fire on the main thread
         bool ready;
         try
@@ -113,7 +115,7 @@ public class AndroidTTSService : Java.Lang.Object, AndroidTTS.IOnInitListener, I
                 return;
             }
 
-            Java.Util.Locale locale = languageCode switch
+            Java.Util.Locale locale = normalizedLang switch
             {
                 "en" => Java.Util.Locale.English!,
                 "ko" => Java.Util.Locale.Korean!,
@@ -121,7 +123,7 @@ public class AndroidTTSService : Java.Lang.Object, AndroidTTS.IOnInitListener, I
             };
 
             var langResult = _tts.SetLanguage(locale);
-            _logger.LogDebug("[TTS] SetLanguage({Lang}): {Result}", languageCode, langResult);
+            _logger.LogDebug("[TTS] SetLanguage({Lang}): {Result}", normalizedLang, langResult);
 
             if (langResult is LanguageAvailableResult.MissingData
                            or LanguageAvailableResult.NotSupported)
@@ -130,7 +132,7 @@ public class AndroidTTSService : Java.Lang.Object, AndroidTTS.IOnInitListener, I
                 _tts.SetLanguage(Java.Util.Locale.Default);
             }
 
-            var preferredVoiceId = GetPreferredVoiceId(languageCode);
+            var preferredVoiceId = GetPreferredVoiceId(normalizedLang);
             if (!string.IsNullOrWhiteSpace(preferredVoiceId))
             {
                 var preferredVoiceApplied = TryApplyVoice(preferredVoiceId);
@@ -373,9 +375,14 @@ public class AndroidTTSService : Java.Lang.Object, AndroidTTS.IOnInitListener, I
     }
 
     private static string NormalizeLanguage(string languageCode)
-        => string.IsNullOrWhiteSpace(languageCode)
-            ? "vi"
-            : languageCode.Trim().ToLowerInvariant();
+    {
+        if (string.IsNullOrWhiteSpace(languageCode))
+            return "vi";
+
+        var code = languageCode.Trim().ToLowerInvariant();
+        var separatorIndex = code.IndexOfAny(new[] { '-', '_' });
+        return separatorIndex > 0 ? code[..separatorIndex] : code;
+    }
 
     private static string GetVoicePreferenceKey(string languageCode)
         => $"{VoicePreferenceKeyPrefix}.{NormalizeLanguage(languageCode)}";
