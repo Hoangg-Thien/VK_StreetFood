@@ -86,6 +86,17 @@ public partial class WelcomeViewModel : ObservableObject
     [RelayCommand]
     async Task GetStarted()
     {
+        if (!App.IsPaymentUnlocked)
+        {
+            await Shell.Current.DisplayAlertAsync(
+                "Mở khóa trải nghiệm",
+                "Bạn cần thanh toán để bắt đầu khám phá.",
+                "Tiếp tục");
+
+            await Shell.Current.GoToAsync("Payment");
+            return;
+        }
+
         if (App.HasPendingPayment)
         {
             await Shell.Current.GoToAsync("Payment");

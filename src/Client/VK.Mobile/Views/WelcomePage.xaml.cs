@@ -1,9 +1,15 @@
 using VK.Mobile.ViewModels;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace VK.Mobile.Views;
 
 public partial class WelcomePage : ContentPage
 {
+    public WelcomePage()
+        : this(ResolveViewModel())
+    {
+    }
+
     public WelcomePage(WelcomeViewModel viewModel)
     {
         InitializeComponent();
@@ -14,5 +20,11 @@ public partial class WelcomePage : ContentPage
     {
         base.OnAppearing();
         await App.TryOpenPendingPaymentAsync();
+    }
+
+    private static WelcomeViewModel ResolveViewModel()
+    {
+        var services = Application.Current?.Handler?.MauiContext?.Services;
+        return services?.GetService<WelcomeViewModel>() ?? new WelcomeViewModel();
     }
 }
