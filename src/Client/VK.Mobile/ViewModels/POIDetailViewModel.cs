@@ -136,18 +136,22 @@ public partial class POIDetailViewModel : ObservableObject, IQueryAttributable
             if (_usingAudioService)
             {
                 var realDur = (int)_audioService.Duration;
-                if (realDur > 0) _totalSeconds = realDur;
-                _elapsedSeconds = Math.Min(_totalSeconds, (int)_audioService.CurrentPosition);
+                if (realDur > 0)
+                    _totalSeconds = realDur;
+
+                var currentPos = (int)_audioService.CurrentPosition;
+                _elapsedSeconds = _totalSeconds > 0
+                    ? Math.Min(_totalSeconds, currentPos)
+                    : Math.Max(0, currentPos);
             }
             else
             {
                 _elapsedSeconds = Math.Min(_totalSeconds, _elapsedSeconds + 1);
             }
 
-            AudioPositionRatio = _totalSeconds > 0 ? (double)_elapsedSeconds / _totalSeconds : 0;
-            AudioPositionText = FormatTime(_elapsedSeconds);
+            UpdateAudioProgressUi();
             OnPropertyChanged(nameof(AudioStatusText));
-            if (_elapsedSeconds >= _totalSeconds)
+            if (_totalSeconds > 0 && _elapsedSeconds >= _totalSeconds)
             {
                 IsPlayingAudio = false;
                 StopProgressTimer();
@@ -171,6 +175,13 @@ public partial class POIDetailViewModel : ObservableObject, IQueryAttributable
         return $"{m}:{s:D2}";
     }
 
+    private void UpdateAudioProgressUi()
+    {
+        AudioPositionRatio = _totalSeconds > 0 ? (double)_elapsedSeconds / _totalSeconds : 0;
+        AudioPositionText = FormatTime(_elapsedSeconds);
+        AudioDurationText = FormatTime(_totalSeconds);
+    }
+
     // Returns the portion of fullText starting at the word that corresponds to startSeconds
     private static string GetTextFromPosition(string fullText, int startSeconds, int totalSeconds)
     {
@@ -187,19 +198,14 @@ public partial class POIDetailViewModel : ObservableObject, IQueryAttributable
     {
         if (_totalSeconds <= 0) return;
         _elapsedSeconds = (int)(ratio * _totalSeconds);
-        AudioPositionRatio = ratio;
-        AudioPositionText = FormatTime(_elapsedSeconds);
+        UpdateAudioProgressUi();
         if (IsPlayingAudio)
         {
             if (_usingAudioService)
                 await _audioService.SeekAsync(_elapsedSeconds);
             else
             {
-                _ttsCts?.Cancel();
-                await _ttsService.StopAsync();
-                IsPlayingAudio = false;
-                StopProgressTimer();
-                await ToggleAudioAsync();
+                RestartTtsFromCurrentPosition();
             }
         }
     }
@@ -279,6 +285,11 @@ public partial class POIDetailViewModel : ObservableObject, IQueryAttributable
 
             if (detail != null)
             {
+                if (Connectivity.NetworkAccess == NetworkAccess.Internet)
+                {
+                    await HydrateAndPreloadAllAudioLanguagesAsync(detail, poiId, language);
+                }
+
                 Poi = detail;
 
                 // API trả về single "audio" (đúng language), không phải list
@@ -333,6 +344,97 @@ public partial class POIDetailViewModel : ObservableObject, IQueryAttributable
         }
     }
 
+    private async Task HydrateAndPreloadAllAudioLanguagesAsync(POIDetailModel detail, int poiId, string preferredLanguage)
+    {
+        var languages = AppSettings.SupportedLanguages
+            .Where(code => !string.IsNullOrWhiteSpace(code))
+            .Select(NormalizeLanguage)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+
+        if (languages.Length == 0)
+            return;
+
+        try
+        {
+            var audioResults = await Task.WhenAll(
+                languages.Select(async lang => new
+                {
+                    Language = lang,
+                    Result = await _apiService.GetAudioForPOIAsync(poiId, lang)
+                }));
+
+            var audioByLanguage = new Dictionary<string, AudioInfo>(StringComparer.OrdinalIgnoreCase);
+
+            if (detail.AudioContents != null)
+            {
+                foreach (var existing in detail.AudioContents.Where(a => a != null))
+                {
+                    var normalized = NormalizeLanguage(existing.LanguageCode);
+                    if (!string.IsNullOrWhiteSpace(existing.AudioFileUrl) || !string.IsNullOrWhiteSpace(existing.TextContent))
+                    {
+                        existing.LanguageCode = normalized;
+                        audioByLanguage[normalized] = existing;
+                    }
+                }
+            }
+
+            if (detail.Audio != null)
+            {
+                var normalized = NormalizeLanguage(detail.Audio.LanguageCode);
+                detail.Audio.LanguageCode = normalized;
+                if (!string.IsNullOrWhiteSpace(detail.Audio.AudioFileUrl) || !string.IsNullOrWhiteSpace(detail.Audio.TextContent))
+                {
+                    audioByLanguage[normalized] = detail.Audio;
+                }
+            }
+
+            foreach (var item in audioResults)
+            {
+                var result = item.Result;
+                if (result == null)
+                    continue;
+
+                var normalized = NormalizeLanguage(result.LanguageCode);
+                if (string.IsNullOrWhiteSpace(result.AudioFileUrl) && string.IsNullOrWhiteSpace(result.TextContent))
+                    continue;
+
+                audioByLanguage[normalized] = new AudioInfo
+                {
+                    Id = result.AudioId,
+                    LanguageCode = normalized,
+                    AudioFileUrl = result.AudioFileUrl,
+                    TextContent = result.TextContent,
+                    DurationSeconds = result.DurationInSeconds
+                };
+            }
+
+            detail.AudioContents = audioByLanguage
+                .Values
+                .OrderBy(a => a.LanguageCode, StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            var preferredNormalized = NormalizeLanguage(preferredLanguage);
+            var preferredAudio = detail.AudioContents.FirstOrDefault(a =>
+                string.Equals(a.LanguageCode, preferredNormalized, StringComparison.OrdinalIgnoreCase));
+
+            if (preferredAudio != null)
+            {
+                detail.Audio = preferredAudio;
+            }
+
+            var preloadTasks = detail.AudioContents
+                .Where(a => !string.IsNullOrWhiteSpace(a.AudioFileUrl))
+                .Select(a => _audioService.PreloadAudioAsync(a.AudioFileUrl!));
+
+            await Task.WhenAll(preloadTasks);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogDebug(ex, "Could not hydrate/preload multilingual audio for POI {PoiId}", poiId);
+        }
+    }
+
     [RelayCommand]
     private async Task ToggleAudioAsync()
     {
@@ -355,16 +457,29 @@ public partial class POIDetailViewModel : ObservableObject, IQueryAttributable
             {
                 // Tier 1: phát MP3 thực từ server
                 _usingAudioService = true;
+                var canResumeCurrent = Poi != null
+                    && _audioService.CurrentPOIId == Poi.Id
+                    && !string.IsNullOrWhiteSpace(_audioService.CurrentUrl)
+                    && _elapsedSeconds > 0;
+
+                if (canResumeCurrent)
+                {
+                    IsPlayingAudio = true;
+                    await _audioService.ResumeAsync();
+                    _audioSessionStartedAtUtc = DateTime.UtcNow;
+                    _hasTriggeredMp3Fallback = false;
+                    return;
+                }
+
                 if (_elapsedSeconds == 0)
                 {
                     _totalSeconds = SelectedAudio?.DurationSeconds is > 0
                         ? SelectedAudio.DurationSeconds.Value
                         : EstimateDurationFromTranscript(SelectedAudio?.TextContent);
-                    AudioDurationText = FormatTime(_totalSeconds);
-                    AudioPositionRatio = 0;
-                    AudioPositionText = "0:00";
                     _elapsedSeconds = 0;
+                    UpdateAudioProgressUi();
                 }
+
                 IsPlayingAudio = true;
                 _ = _audioService.PlayAudioAsync(audioUrl, Poi?.Id);
                 _audioSessionStartedAtUtc = DateTime.UtcNow;
@@ -390,11 +505,9 @@ public partial class POIDetailViewModel : ObservableObject, IQueryAttributable
                 _fullText = text;
                 if (_elapsedSeconds == 0)
                 {
-                    var wordCount = text.Split(' ', StringSplitOptions.RemoveEmptyEntries).Length;
-                    _totalSeconds = Math.Max(30, wordCount * 60 / 130);
-                    AudioDurationText = FormatTime(_totalSeconds);
-                    AudioPositionRatio = 0;
-                    AudioPositionText = "0:00";
+                    _totalSeconds = EstimateDurationFromTranscript(text);
+                    _elapsedSeconds = 0;
+                    UpdateAudioProgressUi();
                 }
 
                 _ttsCts?.Cancel();
@@ -428,12 +541,25 @@ public partial class POIDetailViewModel : ObservableObject, IQueryAttributable
         return Math.Max(10, words * 60 / 130);
     }
 
+    private void RestartTtsFromCurrentPosition()
+    {
+        _ttsCts?.Cancel();
+        _ttsCts = new CancellationTokenSource();
+        var token = _ttsCts.Token;
+        var speakText = GetTextFromPosition(_fullText, _elapsedSeconds, _totalSeconds);
+        _ = _ttsService.SpeakTextAsync(speakText, SelectedLanguage, token)
+            .ContinueWith(t =>
+            {
+                if (t.Exception != null)
+                    System.Diagnostics.Debug.WriteLine($"[TTS] Exception: {t.Exception.GetBaseException().Message}");
+            }, TaskContinuationOptions.OnlyOnFaulted);
+    }
+
     [RelayCommand]
     private async Task SkipForwardAudio()
     {
         _elapsedSeconds = Math.Min(_totalSeconds, _elapsedSeconds + 5);
-        AudioPositionRatio = _totalSeconds > 0 ? (double)_elapsedSeconds / _totalSeconds : 0;
-        AudioPositionText = FormatTime(_elapsedSeconds);
+        UpdateAudioProgressUi();
         OnPropertyChanged(nameof(AudioStatusText));
         if (IsPlayingAudio)
         {
@@ -441,11 +567,7 @@ public partial class POIDetailViewModel : ObservableObject, IQueryAttributable
                 await _audioService.SeekAsync(_elapsedSeconds);
             else
             {
-                _ttsCts?.Cancel();
-                await _ttsService.StopAsync();
-                IsPlayingAudio = false;
-                StopProgressTimer();
-                await ToggleAudioAsync();
+                RestartTtsFromCurrentPosition();
             }
         }
     }
@@ -454,8 +576,7 @@ public partial class POIDetailViewModel : ObservableObject, IQueryAttributable
     private async Task SkipBackAudio()
     {
         _elapsedSeconds = Math.Max(0, _elapsedSeconds - 5);
-        AudioPositionRatio = _totalSeconds > 0 ? (double)_elapsedSeconds / _totalSeconds : 0;
-        AudioPositionText = FormatTime(_elapsedSeconds);
+        UpdateAudioProgressUi();
         OnPropertyChanged(nameof(AudioStatusText));
         if (IsPlayingAudio)
         {
@@ -463,11 +584,7 @@ public partial class POIDetailViewModel : ObservableObject, IQueryAttributable
                 await _audioService.SeekAsync(_elapsedSeconds);
             else
             {
-                _ttsCts?.Cancel();
-                await _ttsService.StopAsync();
-                IsPlayingAudio = false;
-                StopProgressTimer();
-                await ToggleAudioAsync();
+                RestartTtsFromCurrentPosition();
             }
         }
     }
@@ -491,8 +608,7 @@ public partial class POIDetailViewModel : ObservableObject, IQueryAttributable
         _usingAudioService = false;
         _hasTrackedAudioPlayForSession = false;
         _hasTrackedAudioCompleteForSession = false;
-        AudioPositionRatio = 0;
-        AudioPositionText = "0:00";
+        UpdateAudioProgressUi();
         StopProgressTimer();
         OnPropertyChanged(nameof(AudioStatusText));
     }
@@ -624,9 +740,8 @@ public partial class POIDetailViewModel : ObservableObject, IQueryAttributable
         if (_elapsedSeconds == 0)
         {
             _totalSeconds = EstimateDurationFromTranscript(text);
-            AudioDurationText = FormatTime(_totalSeconds);
-            AudioPositionRatio = 0;
-            AudioPositionText = "0:00";
+            _elapsedSeconds = 0;
+            UpdateAudioProgressUi();
         }
 
         _ttsCts?.Cancel();

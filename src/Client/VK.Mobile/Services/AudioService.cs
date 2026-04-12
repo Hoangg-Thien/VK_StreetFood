@@ -14,6 +14,11 @@ public interface IAudioService
     /// </summary>
     Task<bool> PlayAudioAsync(string audioUrl, int? poiId = null, int priority = 0);
 
+    /// <summary>
+    /// Tải sẵn audio vào cache để phát nhanh hơn khi người dùng bấm nghe.
+    /// </summary>
+    Task<bool> PreloadAudioAsync(string audioUrl);
+
     /// <summary>Dừng hẳn và xóa toàn bộ queue.</summary>
     Task StopAsync();
     Task PauseAsync();
@@ -112,6 +117,15 @@ public class AudioService : IAudioService
             _ = ProcessQueueAsync();
 
         return true;
+    }
+
+    public async Task<bool> PreloadAudioAsync(string audioUrl)
+    {
+        if (string.IsNullOrWhiteSpace(audioUrl))
+            return false;
+
+        var tempPath = await DownloadToTempAsync(audioUrl);
+        return !string.IsNullOrWhiteSpace(tempPath);
     }
 
     private async Task ProcessQueueAsync()
