@@ -8,7 +8,7 @@
 
 **Hệ thống du lịch ẩm thực thông minh với tính năng thuyết minh tự động dựa trên vị trí GPS**
 
-[Tính năng](#-tính-năng-chính) • [Cài đặt](#-cài-đặt-nhanh) • [Kiến trúc](#-kiến-trúc-hệ-thống) • [API Documentation](#-api-endpoints) • [Đóng góp](#-đóng-góp)
+[Tính năng](#-tính-năng-chính) • [Cài đặt](#-cài-đặt) • [Kiến trúc](#-kiến-trúc-hệ-thống) • [Deployment](#-deployment) • [Đóng góp](#-đóng-góp)
 
 </div>
 
@@ -20,13 +20,9 @@
 - [Tính năng chính](#-tính-năng-chính)
 - [Công nghệ sử dụng](#-công-nghệ-sử-dụng)
 - [Kiến trúc hệ thống](#-kiến-trúc-hệ-thống)
-- [Yêu cầu hệ thống](#-yêu-cầu-hệ-thống)
-- [Cài đặt nhanh](#-cài-đặt-nhanh)
+- [Cài đặt](#-cài-đặt)
 - [Cấu hình](#%EF%B8%8F-cấu-hình)
 - [Chạy ứng dụng](#-chạy-ứng-dụng)
-- [API Endpoints](#-api-endpoints)
-- [Database Schema](#-database-schema)
-- [Tài khoản & Phân quyền](#-tài-khoản--phân-quyền)
 - [Testing](#-testing)
 - [Deployment](#-deployment)
 - [Troubleshooting](#-troubleshooting)
@@ -51,102 +47,125 @@
 
 ✅ **Thuyết minh tự động** khi đến gần điểm (geofence trigger)  
 ✅ **Bản đồ tương tác** hiển thị POI với thông tin chi tiết  
-✅ **Đa ngôn ngữ** (Việt/Anh/Hàn) với fallback thông minh  
+✅ **Đa ngôn ngữ** (Việt/Anh/Hàn) với TTS tự động  
 ✅ **Hoạt động offline** với cache dữ liệu và audio  
 ✅ **QR code** để truy cập nhanh thông tin quán  
-✅ **Dashboard quản trị** cho admin và chủ quán
+✅ **Dashboard quản trị** cho admin và chủ quán  
+✅ **Payment Integration** với QR code thanh toán
 
 ---
 
 ## 🚀 Tính năng chính
 
-### 📱 Mobile App (Du khách)
-
-<table>
-<tr>
-<td width="50%">
+### 📱 Mobile App (.NET MAUI - Android/iOS)
 
 #### Bản đồ & Định vị
-
-- 🗺️ Hiển thị POI trên OpenStreetMap
+- 🗺️ Hiển thị POI trên OpenStreetMap (Mapsui)
 - 📍 Theo dõi GPS thời gian thực
-- 🎯 Geofence tự động phát audio
+- 🎯 Geofence tự động phát audio khi vào vùng POI
 - 📏 Tính khoảng cách đến điểm
-
-</td>
-<td width="50%">
+- 🌐 Hỗ trợ offline map (.mbtiles)
 
 #### Nội dung & Trải nghiệm
-
-- 🔊 Audio guide đa ngôn ngữ
-- 📷 Ảnh quán, món ăn chi tiết
-- ⭐ Đánh giá & yêu thích
+- 🔊 Audio guide đa ngôn ngữ (vi, en, ko)
+- 📷 Xem ảnh quán, món ăn chi tiết
+- ⭐ Đánh giá & yêu thích POI
 - 📖 Lịch sử tham quan
-
-</td>
-</tr>
-<tr>
-<td>
+- 🏆 Tour gợi ý theo chủ đề
 
 #### QR & Deep Link
-
-- 📲 Quét QR mở chi tiết quán
+- 📲 Quét QR code mở chi tiết quán (ZXing.Net.Maui)
+- 💳 Quét QR thanh toán (VNPay/MoMo)
 - 🔗 Deep link navigation
 - ⚡ Truy cập nhanh từ poster
 
-</td>
-<td>
+#### Offline & Cache
+- 💾 SQLite cache cho POI, routes, audio
+- 🎵 Audio warmup với Plugin.Maui.Audio
+- 📦 Route package download (.json)
 
-#### Offline & Performance
+### 🖥️ Web Portal (ASP.NET Core MVC)
 
-- 💾 Cache POI, route, audio
-- 🌐 Map offline (.mbtiles)
-- 🎵 Audio warmup/hotset
-- 📦 Route package (.json)
-
-</td>
-</tr>
-</table>
-
-### 🖥️ Web Admin
-
-#### Dashboard KPI
-
-- 📊 Thống kê POI, visits, ratings
-- 📈 Trend analysis & heatmap
+#### Dashboard Admin
+- 📊 Thống kê tổng quan (POI, visits, ratings, tourists)
+- 📈 Phân tích xu hướng theo thời gian
 - 🎯 Top POIs theo lượt truy cập
-- 🔊 Audio coverage theo ngôn ngữ
+- 🔊 Coverage báo cáo audio theo ngôn ngữ
+- 👥 Quản lý user & owner registration
 
-#### Quản lý nội dung
+#### Quản lý nội dung POI
+- 🏪 CRUD POI, tours, categories, tags
+- 🖼️ Upload & quản lý ảnh POI (Supabase Storage)
+- 📝 Quản lý thông tin quán (địa chỉ, giờ mở cửa, vendor)
+- 🌍 Translation management (PoiTranslations, TourTranslations)
+- ✅ Content approval workflow
 
-- 🏪 CRUD POI, tour, categories
-- 🎙️ Quản lý audio & translations
-- 🖼️ Upload & quản lý media
-- 🌍 Localization management
+#### Quản lý Audio
+- 🎙️ Upload audio files cho từng POI
+- 🤖 TTS tự động với edge-tts (Text-to-Speech on-demand)
+- 🌐 Quản lý audio theo ngôn ngữ
+- 📊 Audio coverage statistics
 
 #### Quản trị Owner
+- 👤 Đăng ký chủ quán (PoiOwnerRegistrations)
+- ✅ Approve/reject registration requests
+- 📝 Content change request workflow (PoiContentChangeRequests)
+- 🔐 Role-based access control (Admin/Owner)
 
-- 👥 Đăng ký & duyệt chủ quán
-- ✅ Approve/reject requests
-- 📝 Content moderation workflow
-- 🔐 Role-based access control
+#### Payment Management
+- 💳 Cấu hình QR code thanh toán cho POI
+- 💰 Quản lý thông tin VNPay/MoMo/ZaloPay
+- 📊 Usage history tracking
 
-### 🛠️ API Backend
+### 🛠️ REST API Backend (ASP.NET Core Web API)
 
-#### Core APIs
+#### Core Endpoints
 
-- **POI**: List, nearby, detail, categories
-- **Tourist**: Device registration, location tracking, visit history
-- **Audio**: Multi-language, TTS on-demand, batch generation
-- **Tour**: Tour list, detail, waypoints
-- **Analytics**: Event logging, statistics, dashboard data
+**POI Controller**
+- `GET /api/pois` - Danh sách POI
+- `GET /api/pois/nearby` - POI gần vị trí hiện tại
+- `GET /api/pois/{id}` - Chi tiết POI
+- `GET /api/pois/categories` - Danh mục POI
 
-#### Special Features
+**Tourist Controller**
+- `POST /api/tourists/register` - Đăng ký device
+- `POST /api/tourists/{id}/location` - Cập nhật GPS
+- `GET /api/tourists/{id}/history` - Lịch sử tham quan
 
-- 🔄 TTS on-demand với task deduplication
-- 🌐 Localization hotset & warmup
-- 📦 Offline package upload/download
-- 🔍 Admin health check & coverage stats
+**Audio Controller**
+- `GET /api/audio/{poiId}/{languageCode}` - Lấy audio file
+- `POST /api/audio/generate` - TTS on-demand generation
+- `POST /api/audio/batch-generate` - Batch TTS cho nhiều POI
+- `GET /api/audio/hotset` - Warmup audio cache
+
+**Tour Controller**
+- `GET /api/tours` - Danh sách tour
+- `GET /api/tours/{id}` - Chi tiết tour với waypoints
+
+**Analytics Controller**
+- `POST /api/analytics/log` - Ghi nhận event
+- `GET /api/analytics/stats` - Thống kê dashboard
+
+**Offline Controller**
+- `GET /api/offline/routes` - Package offline routes
+- `GET /api/offline/audio/{languageCode}` - Batch audio download
+
+**Localization Controller**
+- `GET /api/localization/strings/{languageCode}` - App strings
+- `GET /api/localization/warmup` - Warmup translations
+
+**Payment Controller**
+- `GET /api/payment/qr/{poiId}` - Lấy QR payment config
+
+**Admin Controller**
+- `GET /api/admin/health` - Health check & coverage stats
+
+#### Features nổi bật
+- 🔄 **TTS on-demand** với task deduplication (AudioTaskManager)
+- 🌐 **Localization warmup** cho performance
+- 📦 **Offline package** download
+- 🔍 **Health check** với coverage statistics
+- 📊 **Analytics logging** chi tiết
 
 ---
 
@@ -156,8 +175,11 @@
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│  .NET 10 • ASP.NET Core Web API • EF Core • Npgsql    │
-│  Swashbuckle (Swagger) • Session-based Auth            │
+│  .NET 10 • ASP.NET Core Web API & MVC                  │
+│  Entity Framework Core 9.0 • Npgsql (PostgreSQL)       │
+│  Swashbuckle.AspNetCore (Swagger/OpenAPI)              │
+│  Session-based Authentication                           │
+│  edge-tts (Python) cho Text-to-Speech                  │
 └─────────────────────────────────────────────────────────┘
 ```
 
@@ -165,10 +187,13 @@
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│  .NET MAUI (Android/iOS)                                │
-│  Mapsui + OpenStreetMap • ZXing.Net.Maui (QR)         │
-│  Plugin.Maui.Audio • sqlite-net-pcl                    │
-│  CommunityToolkit.Mvvm • CommunityToolkit.Maui         │
+│  .NET MAUI (net10.0-android / net10.0-ios)             │
+│  Mapsui.Maui 5.0 + OpenStreetMap                       │
+│  ZXing.Net.Maui 0.4 (QR Scanner)                       │
+│  Plugin.Maui.Audio 3.0 (Audio Player)                  │
+│  CommunityToolkit.Mvvm 8.3 (MVVM Pattern)              │
+│  CommunityToolkit.Maui 9.1 (UI Components)             │
+│  sqlite-net-pcl 1.9 (Offline Cache)                    │
 └─────────────────────────────────────────────────────────┘
 ```
 
@@ -176,17 +201,20 @@
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│  PostgreSQL (Supabase) • SQL Migrations                │
-│  Row Level Security (RLS) • Automated Seeding          │
+│  PostgreSQL (Supabase Cloud)                            │
+│  Supabase Storage (Image & Audio hosting)              │
+│  SQL Migrations (schema.sql, rls.sql, seed_pois.sql)   │
+│  Row Level Security (RLS)                               │
 └─────────────────────────────────────────────────────────┘
 ```
 
-### Development Tools
+### Development & Deployment
 
-- **Version Control**: Git
-- **IDE**: Visual Studio 2022 / VS Code
+- **IDE**: Visual Studio 2022 (Windows), VS Code
 - **API Testing**: Swagger UI, HTTP files
-- **Database**: Supabase Dashboard, pgAdmin
+- **Version Control**: Git
+- **CI/CD**: Render.com (Docker deployment)
+- **Containerization**: Docker (multi-stage builds)
 
 ---
 
@@ -198,291 +226,405 @@
 VK_StreetFood/
 │
 ├── 📱 src/Client/
-│   └── VK.Mobile/                    # MAUI app for tourists
-│       ├── Views/                    # XAML pages
-│       ├── ViewModels/               # MVVM ViewModels
-│       ├── Services/                 # API, Location, Audio, Geofence
-│       ├── Models/                   # Data models
-│       └── Resources/                # Images, fonts, strings
+│   └── VK.Mobile/                     # .NET MAUI App
+│       ├── Views/                     # XAML pages (MainPage, TourPage)
+│       ├── ViewModels/                # MVVM ViewModels
+│       ├── Services/                  # ApiService, LocationService, AudioService, GeofenceService
+│       ├── Models/                    # DTOs & data models
+│       ├── Converters/                # XAML value converters
+│       ├── Resources/                 # Images, fonts, strings, styles
+│       ├── Platforms/                 # Android/iOS specific code
+│       └── VK.Mobile.csproj
 │
 ├── 🔧 src/Server/
-│   ├── VK.API/                       # REST API
-│   │   ├── Controllers/              # API endpoints
-│   │   ├── Services/                 # Business logic
-│   │   └── wwwroot/                  # Static files (audio, images)
+│   ├── VK.API/                        # REST API Backend
+│   │   ├── Controllers/               # API endpoints
+│   │   │   ├── POIController.cs
+│   │   │   ├── TouristController.cs
+│   │   │   ├── AudioController.cs
+│   │   │   ├── TourController.cs
+│   │   │   ├── AnalyticsController.cs
+│   │   │   ├── OfflineController.cs
+│   │   │   ├── LocalizationController.cs
+│   │   │   ├── PaymentController.cs
+│   │   │   └── AdminController.cs
+│   │   ├── Services/                  # Business logic
+│   │   │   ├── TtsGenerationService.cs    # edge-tts wrapper
+│   │   │   ├── AudioTaskManager.cs        # Task deduplication
+│   │   │   ├── TouristAppService.cs
+│   │   │   └── AnalyticsAppService.cs
+│   │   ├── wwwroot/                   # Static files
+│   │   │   └── audio/                 # Generated audio files
+│   │   ├── App_Data/                  # Application data
+│   │   └── VK.API.csproj
 │   │
-│   ├── VK.Web/                       # Admin/Owner web portal
-│   │   ├── Controllers/              # MVC controllers
-│   │   ├── Views/                    # Razor views
-│   │   └── Services/                 # Web services
+│   ├── VK.Web/                        # Admin/Owner Portal
+│   │   ├── Controllers/               # MVC controllers
+│   │   │   ├── HomeController.cs          # Login, dashboard
+│   │   │   ├── DashboardController.cs     # Admin dashboard
+│   │   │   ├── PoiController.cs           # POI CRUD
+│   │   │   ├── TourController.cs          # Tour CRUD
+│   │   │   ├── AudioController.cs         # Audio management
+│   │   │   ├── TranslationController.cs   # i18n management
+│   │   │   ├── OwnerController.cs         # Owner functions
+│   │   │   ├── OwnerRegistrationController.cs
+│   │   │   ├── OwnerContentApprovalController.cs
+│   │   │   ├── PaymentController.cs       # Payment config
+│   │   │   └── UsageHistoryController.cs
+│   │   ├── Views/                     # Razor views
+│   │   ├── Services/                  # Web services
+│   │   └── VK.Web.csproj
 │   │
-│   ├── VK.Core/                      # Domain entities
-│   │   └── Entities/                 # POI, Tour, Audio, Tourist, etc.
+│   ├── VK.Core/                       # Domain Layer
+│   │   └── Entities/                  # Domain entities
+│   │       ├── PointOfInterest.cs
+│   │       ├── PointOfInterestTranslation.cs
+│   │       ├── AudioContent.cs
+│   │       ├── Tour.cs
+│   │       ├── TourTranslation.cs
+│   │       ├── CategoryAndTags.cs
+│   │       ├── Tourist.cs
+│   │       ├── VisitLog.cs
+│   │       ├── Analytics.cs
+│   │       ├── User.cs
+│   │       ├── Vendor.cs
+│   │       ├── PoiContentChangeRequest.cs
+│   │       └── QrPaymentConfig.cs
 │   │
-│   └── VK.Infrastructure/            # Data access
-│       ├── Data/                     # DbContext, configurations
-│       └── Repositories/             # Data repositories
+│   └── VK.Infrastructure/             # Data Access Layer
+│       ├── Data/
+│       │   ├── ApplicationDbContext.cs
+│       │   └── Configurations/        # EF Core entity configs
+│       └── Repositories/              # Repository pattern
 │
 ├── 🔄 src/Shared/
-│   ├── VK.Contracts/                 # Request/Response DTOs
-│   └── VK.Shared/                    # Constants, enums, shared DTOs
+│   ├── VK.Contracts/                  # API Contracts (DTOs)
+│   │   ├── Requests/                  # Request models
+│   │   └── Responses/                 # Response models
+│   └── VK.Shared/                     # Shared utilities
+│       ├── Constants/                 # App constants
+│       └── DTOs/                      # Shared DTOs
 │
 ├── 🗄️ supabase/
-│   ├── migrations/                   # SQL migration files
-│   │   └──delta_align_existing_db.sql
-│   ├── schema.sql
-│   ├── rls.sql
-│   ├── seed_pois.sql
-│   └── MIGRATION_INSTRUCTIONS.md
+│   ├── migrations/                    # SQL migration scripts
+│   │   └── delta_align_existing_db.sql
+│   ├── schema.sql                     # Database schema
+│   ├── rls.sql                        # Row Level Security policies
+│   ├── seed_pois.sql                  # Seed data
+│   └── MIGRATION_INSTRUCTIONS.md      # Migration guide
 │
 ├── 🧪 tests/
 │   ├── VK.API.Tests/
+│   │   ├── Unit/                      # Unit tests
+│   │   │   ├── TouristAppServiceTests.cs
+│   │   │   └── AnalyticsAppServiceTests.cs
+│   │   ├── Integration/               # Integration tests
+│   │   │   ├── TouristEndpointsTests.cs
+│   │   │   └── AnalyticsEndpointsTests.cs
+│   │   └── Infrastructure/
+│   │       └── CustomWebApplicationFactory.cs
 │   └── VK.Core.Tests/
 │
-├── 🖼️ images/                         # Asset images
-│   ├── poi/                          # POI images
-│   └── backgroundad/                 # Background ads
+├── 🐳 Docker/
+│   ├── Dockerfile.api                 # API container definition
+│   ├── Dockerfile.web                 # Web container definition
+│   └── render.yaml                    # Render.com deployment config
 │
-└── 📄 docs/
-    └── prd.md                        # Product Requirements Document
+├── 🖼️ images/
+│   ├── poi/                           # POI images
+│   └── backgroundad/                  # Background ads
+│
+├── 📄 docs/
+│   └── prd.docx                       # Product Requirements Document
+│
+├── VKStreetFood.slnx                  # Solution file
+└── README.md
+
 ```
 
 ### Architecture Diagram
 
 ```
 ┌────────────────────────────────────────────────────────────────┐
-│                     FRONTEND LAYER                             │
+│                     PRESENTATION LAYER                         │
 │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐        │
 │  │ Mobile MAUI  │  │  Admin Web   │  │  Owner Web   │        │
-│  │  (Visitor)   │  │  (ASP.NET)   │  │  (ASP.NET)   │        │
+│  │ (Tourists)   │  │  (ASP.NET)   │  │  (ASP.NET)   │        │
 │  └──────┬───────┘  └──────┬───────┘  └──────┬───────┘        │
 └─────────┼──────────────────┼──────────────────┼────────────────┘
           │                  │                  │
-          │        HTTPS REST + Cookie Auth     │
+          │      HTTPS REST + Session Cookie Auth
           ▼                  ▼                  ▼
 ┌────────────────────────────────────────────────────────────────┐
-│                      BACKEND LAYER                             │
+│                      APPLICATION LAYER                         │
 │         ┌────────────────────────────────────────┐             │
-│         │   ASP.NET Core Web API (.NET 10)      │             │
+│         │   VK.API (Web API) + VK.Web (MVC)     │             │
 │         │   ┌────────────────────────────┐      │             │
 │         │   │  Controllers               │      │             │
-│         │   │  ├─ POI                    │      │             │
-│         │   │  ├─ Tourist                │      │             │
-│         │   │  ├─ Audio                  │      │             │
-│         │   │  ├─ Tour                   │      │             │
-│         │   │  ├─ Analytics              │      │             │
-│         │   │  └─ Admin                  │      │             │
-│         │   └────────────┬───────────────┘      │             │
-│         │                ▼                       │             │
-│         │   ┌────────────────────────────┐      │             │
-│         │   │  Services                  │      │             │
+│         │   ├────────────────────────────┤      │             │
+│         │   │  Application Services      │      │             │
+│         │   │  ├─ TouristAppService      │      │             │
+│         │   │  ├─ AnalyticsAppService    │      │             │
 │         │   │  ├─ TtsGenerationService   │      │             │
 │         │   │  └─ AudioTaskManager       │      │             │
 │         │   └────────────┬───────────────┘      │             │
-│         │                ▼                       │             │
-│         │   ┌────────────────────────────┐      │             │
-│         │   │  Repositories              │      │             │
-│         │   └────────────┬───────────────┘      │             │
-│         │                ▼                       │             │
-│         │   ┌────────────────────────────┐      │             │
-│         │   │  EF Core + DbContext       │      │             │
-│         │   └────────────────────────────┘      │             │
-│         └────────────────┬───────────────────────┘             │
-└──────────────────────────┼─────────────────────────────────────┘
+│         └────────────────┼────────────────────────┘             │
+└──────────────────────────┼──────────────────────────────────────┘
                            │
-          ┌────────────────┴────────────────┐
-          ▼                                 ▼
-┌──────────────────────┐        ┌──────────────────────┐
-│   PostgreSQL         │        │   Static Files       │
-│   (Supabase)         │        │   wwwroot/           │
-│                      │        │   ├─ audio/          │
-│   ├─ pois            │        │   ├─ images/         │
-│   ├─ tours           │        │   └─ offline/        │
-│   ├─ audio_contents  │        │      ├─ *.mbtiles    │
-│   ├─ tourists        │        │      └─ *.json       │
-│   ├─ categories      │        └──────────────────────┘
-│   ├─ poi_owners      │
-│   └─ analytics       │
-└──────────────────────┘
+                           ▼
+┌────────────────────────────────────────────────────────────────┐
+│                       DOMAIN LAYER                             │
+│         ┌────────────────────────────────────────┐             │
+│         │   VK.Core (Domain Entities)           │             │
+│         │   ├─ PointOfInterest                  │             │
+│         │   ├─ Tour, Tourist                    │             │
+│         │   ├─ AudioContent                     │             │
+│         │   ├─ Analytics, VisitLog              │             │
+│         │   └─ User, Vendor                     │             │
+│         └────────────────────────────────────────┘             │
+└────────────────────────────────────────────────────────────────┘
+                           │
+                           ▼
+┌────────────────────────────────────────────────────────────────┐
+│                   INFRASTRUCTURE LAYER                         │
+│         ┌────────────────────────────────────────┐             │
+│         │   VK.Infrastructure                   │             │
+│         │   ├─ ApplicationDbContext (EF Core)   │             │
+│         │   ├─ Repositories                     │             │
+│         │   └─ Configurations                   │             │
+│         └────────────┬───────────────────────────┘             │
+└──────────────────────┼──────────────────────────────────────────┘
+                       │
+                       ▼
+┌────────────────────────────────────────────────────────────────┐
+│                    DATA PERSISTENCE                            │
+│  ┌──────────────────────┐    ┌──────────────────────┐         │
+│  │ PostgreSQL (Supabase)│    │ Supabase Storage     │         │
+│  │ - Tables             │    │ - Images (poi-images)│         │
+│  │ - RLS Policies       │    │ - Audio files        │         │
+│  └──────────────────────┘    └──────────────────────┘         │
+└────────────────────────────────────────────────────────────────┘
 ```
 
-### Data Flow
+### Database Schema (Key Tables)
 
-#### 1️⃣ Tourist Opens App
+```sql
+-- Core POI
+PointsOfInterest (Id, Name, Latitude, Longitude, GeofenceRadius, CategoryId, ...)
+PointOfInterestTranslations (Id, PoiId, LanguageCode, Name, Description, ...)
+AudioContents (Id, PoiId, LanguageCode, AudioUrl, ...)
 
-```
-Mobile App → GET /api/pois → API → Database
-                ↓
-           Render Map + Cache POI locally
-```
+-- Tours
+Tours (Id, Name, TourType, EstimatedDurationMinutes, ...)
+TourTranslations (Id, TourId, LanguageCode, Name, Description, ...)
+TourPointsOfInterest (TourId, PoiId, OrderIndex, ...)
 
-#### 2️⃣ Geofence Trigger
+-- Categories & Tags
+Categories (Id, Name, IconUrl, ...)
+Tags (Id, Name, ...)
+PointOfInterestTag (PoiId, TagId)
 
-```
-GPS Update → Geofence Check → Distance < Radius
-                ↓
-           Select Audio by Language
-                ↓
-           Play from Cache OR Download → Save → Play
-```
+-- Tourists & Analytics
+Tourists (Id, DeviceId, PreferredLanguage, ...)
+VisitLogs (Id, TouristId, PoiId, VisitedAt, ...)
+Analytics (Id, EventType, EntityId, EntityType, Timestamp, ...)
 
-#### 3️⃣ QR Code Scan
+-- Vendors & Users
+Vendors (Id, Name, ContactInfo, OpeningHours, ...)
+Users (Id, Email, PasswordHash, Role, ...)
+PoiOwnerRegistrations (Id, UserId, PoiId, Status, ...)
+PoiContentChangeRequests (Id, PoiId, RequesterId, Status, ...)
 
-```
-QR Scan → Parse Deep Link → Navigate to POI Detail
-              ↓
-         GET /api/pois/{id}/detail
-              ↓
-         Display Info + Images + Menu + Audio
-```
-
-#### 4️⃣ Owner Updates Content
-
-```
-Login (Cookie Auth) → Edit POI → Submit Request
-         ↓
-    Status: Pending
-         ↓
-    Admin Reviews → Approve/Reject
-         ↓
-    Update Database → Tourists see new data on next sync
+-- Payment
+QrPaymentConfigs (Id, PoiId, PaymentMethod, QrCodeData, ...)
 ```
 
 ---
 
-## ⚙️ Yêu cầu hệ thống
+## 📦 Cài đặt
 
-### Bắt buộc
+### Yêu cầu hệ thống
 
-- ✅ **.NET SDK 10.0** ([Download](https://dotnet.microsoft.com/download/dotnet/10.0))
-- ✅ **Git** ([Download](https://git-scm.com/downloads))
-- ✅ **PostgreSQL/Supabase** account với project đã tạo
+#### Development Machine
+- **OS**: Windows 10/11, macOS 12+, hoặc Linux
+- **IDE**: Visual Studio 2022 (17.8+) hoặc VS Code
+- **.NET SDK**: .NET 10.0 SDK
+- **Database**: PostgreSQL client (hoặc dùng Supabase web interface)
+- **Mobile Development**:
+  - Android: Android SDK API 21+
+  - iOS: Xcode 15+ (chỉ trên macOS)
 
-### Cho Mobile Development
+#### Runtime Requirements
+- **Backend**: .NET 10.0 Runtime, Python 3.x (cho edge-tts)
+- **Mobile**: Android 5.0+ (API 21+) hoặc iOS 15.0+
 
-- ✅ **Visual Studio 2022** (v17.12+) với workload:
-  - ☑️ .NET Multi-platform App UI development
-  - ☑️ Mobile development with .NET
-- ✅ **Android SDK** (API level 21+)
-- ✅ **iOS SDK** (nếu build cho iOS trên macOS)
-
-### Cho Web Development (Optional)
-
-- ✅ **Node.js** v20+ (nếu sử dụng React frontend)
-- ✅ **VS Code** với C# extension
-
-### Khuyến nghị
-
-- 🔹 **RAM**: 8GB+ (16GB tốt hơn cho MAUI)
-- 🔹 **Storage**: 10GB+ free space
-- 🔹 **OS**: Windows 10/11, macOS 12+, hoặc Linux (Ubuntu 20.04+)
-
----
-
-## 🚀 Cài đặt nhanh
-
-### 1️⃣ Clone Repository
+### Clone Repository
 
 ```bash
-git clone https://github.com/your-org/VK_StreetFood.git
+git clone https://github.com/your-username/VK_StreetFood.git
 cd VK_StreetFood
 ```
 
-### 2️⃣ Restore Dependencies
+### Setup Database (Supabase)
+
+1. Tạo project trên [Supabase](https://supabase.com/)
+2. Copy connection string từ Settings > Database
+3. Chạy migrations theo thứ tự:
 
 ```bash
+# Trong Supabase SQL Editor
+# 1. Tạo schema
+psql -f supabase/schema.sql
+
+# 2. Áp dụng RLS policies
+psql -f supabase/rls.sql
+
+# 3. Seed dữ liệu mẫu
+psql -f supabase/seed_pois.sql
+
+# 4. (Optional) Chạy delta migration nếu DB đã tồn tại
+psql -f supabase/migrations/delta_align_existing_db.sql
+```
+
+Hoặc copy-paste trực tiếp từng file vào Supabase SQL Editor.
+
+### Install Dependencies
+
+#### Backend (.NET)
+
+```bash
+# Restore NuGet packages
 dotnet restore VKStreetFood.slnx
 ```
 
-### 3️⃣ Setup Database
+#### Mobile (MAUI)
 
-#### A. Tạo Supabase Project
-
-1. Đăng nhập [Supabase](https://supabase.com/)
-2. Tạo project mới
-3. Copy **Connection String** từ Settings → Database
-
-#### B. Chạy Migrations
-
-Mở **Supabase SQL Editor** và chạy lần lượt:
-
-```sql
--- Step 1: Create schema and tables
--- Copy nội dung file: supabase/migrations/schema.sql
-
--- Step 2: Create Row Level Security policies
--- Copy nội dung file: supabase/migrations/rls.sql
-
--- Step 3: Seed initial data
--- Copy nội dung file: supabase/migrations/seed_pois.sql
+```bash
+# Workload đã được cài trong Visual Studio Installer
+# Nếu dùng CLI, cài workload:
+dotnet workload install maui
 ```
-
-📖 **Chi tiết**: Xem `supabase/MIGRATION_INSTRUCTIONS.md`
-
-### 4️⃣ Cấu hình Connection String
-
-Cập nhật trong các file sau:
-
-#### `src/Server/VK.API/appsettings.json`
-
-```json
-{
-  "ConnectionStrings": {
-    "DefaultConnection": "Host=YOUR_HOST;Database=YOUR_DB;Username=YOUR_USER;Password=YOUR_PASSWORD"
-  }
-}
-```
-
-#### `src/Server/VK.Web/appsettings.json`
-
-```json
-{
-  "ConnectionStrings": {
-    "DefaultConnection": "Host=YOUR_HOST;Database=YOUR_DB;Username=YOUR_USER;Password=YOUR_PASSWORD"
-  }
-}
-```
-
-> ⚠️ **Security**: Không commit credentials lên Git! Sử dụng User Secrets hoặc Environment Variables.
 
 ---
 
-## ⚡ Chạy ứng dụng
+## ⚙️ Cấu hình
 
-### 🔧 API Backend
+### 1. API Configuration
+
+Tạo `src/Server/VK.API/appsettings.Development.json`:
+
+```json
+{
+  "ConnectionStrings": {
+    "DefaultConnection": "Host=your-supabase-host.supabase.co;Port=5432;Database=postgres;Username=postgres;Password=your-password;SSL Mode=Require;Trust Server Certificate=true"
+  },
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning",
+      "Microsoft.EntityFrameworkCore": "Information"
+    }
+  },
+  "AllowedHosts": "*",
+  "TtsGenerationService": {
+    "PythonExecutable": "python",
+    "OutputDirectory": "wwwroot/audio",
+    "DefaultVoice": "vi-VN-HoaiMyNeural"
+  }
+}
+```
+
+### 2. Web Portal Configuration
+
+Tạo `src/Server/VK.Web/appsettings.Development.json`:
+
+```json
+{
+  "ConnectionStrings": {
+    "DefaultConnection": "Host=your-supabase-host.supabase.co;Port=5432;Database=postgres;Username=postgres;Password=your-password;SSL Mode=Require;Trust Server Certificate=true"
+  },
+  "ApiSettings": {
+    "BaseUrl": "http://localhost:5089/api/"
+  },
+  "AdminAuth": {
+    "Email": "admin@vkstreetfood.com",
+    "Password": "Admin@123"
+  },
+  "SupabaseStorage": {
+    "Url": "https://your-project.supabase.co",
+    "ServiceRoleKey": "your-service-role-key",
+    "Bucket": "poi-images",
+    "PublicBaseUrl": "https://your-project.supabase.co/storage/v1/object/public/poi-images/"
+  },
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information"
+    }
+  }
+}
+```
+
+### 3. Mobile App Configuration
+
+Sửa `src/Client/VK.Mobile/Services/ApiService.cs`:
+
+```csharp
+// Development
+private const string BaseUrl = "http://10.0.2.2:5089/api/"; // Android Emulator
+// private const string BaseUrl = "http://localhost:5089/api/"; // iOS Simulator
+// private const string BaseUrl = "http://192.168.1.100:5089/api/"; // Physical device
+```
+
+### 4. Install edge-tts (cho TTS)
+
+```bash
+# Global installation
+pip install edge-tts
+
+# Hoặc trong virtual environment
+python -m venv .venv
+source .venv/bin/activate  # Linux/macOS
+# .venv\Scripts\activate  # Windows
+pip install edge-tts
+```
+
+---
+
+## 🚀 Chạy ứng dụng
+
+### Development Mode
+
+#### 1. Chạy API Backend
 
 ```bash
 cd src/Server/VK.API
 dotnet run
 ```
 
-✅ API chạy tại: `http://localhost:5089`  
-📖 Swagger UI: `http://localhost:5089/swagger`
+API sẽ chạy tại: `http://localhost:5089`  
+Swagger UI: `http://localhost:5089/swagger`
 
-### 🌐 Web Admin/Owner
-
-Mở terminal mới:
+#### 2. Chạy Web Portal
 
 ```bash
 cd src/Server/VK.Web
 dotnet run
 ```
 
-✅ Web portal chạy tại: `https://localhost:7xxx` (port tự động)
+Web portal sẽ chạy tại: `http://localhost:5173`
 
-### 📱 Mobile App
+**Login credentials (default admin):**
+- Email: `admin@vkstreetfood.com`
+- Password: `Admin@123`
 
-#### Option 1: Visual Studio
+#### 3. Chạy Mobile App
 
-1. Mở `VKStreetFood.slnx`
-2. Set `VK.Mobile` làm startup project
-3. Chọn target:
-   - **Android Emulator**: API 21+
-   - **Android Device**: Kết nối qua USB, bật USB debugging
-   - **iOS Simulator**: (macOS only)
-4. Nhấn **F5** để chạy
+**Trong Visual Studio:**
+1. Set `VK.Mobile` là startup project
+2. Chọn target (Android Emulator hoặc iOS Simulator)
+3. Nhấn F5 để debug
 
-#### Option 2: CLI
+**Hoặc dùng CLI:**
 
 ```bash
 cd src/Client/VK.Mobile
@@ -490,778 +632,340 @@ cd src/Client/VK.Mobile
 # Android
 dotnet build -t:Run -f net10.0-android
 
-# iOS (macOS only)
+# iOS (chỉ trên macOS)
 dotnet build -t:Run -f net10.0-ios
 ```
 
-#### Cấu hình API Base URL
+### Production Build
 
-Sửa file `src/Client/VK.Mobile/Models/AppSettings.cs`:
-
-```csharp
-public static class AppSettings
-{
-    // Android Emulator
-    public const string ApiBaseUrl = "http://10.0.2.2:5089/api/";
-
-    // Thiết bị thật (thay YOUR_IP bằng IP máy dev)
-    // public const string ApiBaseUrl = "http://192.168.1.10:5089/api/";
-
-    // Production
-    // public const string ApiBaseUrl = "https://api.vkstreetfood.com/api/";
-}
-```
-
-📌 **Lưu ý**:
-
-- Android Emulator **PHẢI** dùng `10.0.2.2` thay vì `localhost`
-- Thiết bị thật phải cùng mạng WiFi với máy dev
-- Bật firewall port 5089 nếu cần
-
----
-
-## 🛠️ Cấu hình
-
-### API Configuration
-
-File: `src/Server/VK.API/appsettings.json`
-
-```json
-{
-  "ConnectionStrings": {
-    "DefaultConnection": "Host=...;Database=...;Username=...;Password=..."
-  },
-  "Logging": {
-    "LogLevel": {
-      "Default": "Information",
-      "Microsoft.AspNetCore": "Warning"
-    }
-  },
-  "AllowedHosts": "*"
-}
-```
-
-### Web Configuration
-
-File: `src/Server/VK.Web/appsettings.json`
-
-```json
-{
-  "ApiSettings": {
-    "BaseUrl": "http://localhost:5089/api/"
-  },
-  "AdminAuth": {
-    "Username": "admin",
-    "Password": "Admin@123" // ⚠️ ĐỔI PASSWORD PRODUCTION!
-  },
-  "Session": {
-    "IdleTimeout": "00:30:00",
-    "CookieName": ".VKStreetFood.Session"
-  }
-}
-```
-
-### Mobile Configuration
-
-File: `src/Client/VK.Mobile/Models/AppSettings.cs`
-
-```csharp
-public static class AppSettings
-{
-    public const string ApiBaseUrl = "http://10.0.2.2:5089/api/";
-
-    // Geofence settings
-    public const double DefaultGeofenceRadius = 50.0; // meters
-    public const double LocationUpdateInterval = 5.0; // seconds
-
-    // Audio settings
-    public const string DefaultLanguage = "vi";
-    public const double AudioFadeOutDuration = 2.0; // seconds
-
-    // Cache settings
-    public const int MaxCachedAudios = 50;
-    public const int CacheExpirationDays = 7;
-}
-```
-
----
-
-## 📚 API Endpoints
-
-### 📍 POI APIs
-
-| Method | Endpoint                | Description        | Auth |
-| ------ | ----------------------- | ------------------ | ---- |
-| GET    | `/api/pois`             | Lấy danh sách POI  | ❌   |
-| GET    | `/api/pois/nearby`      | Tìm POI gần vị trí | ❌   |
-| GET    | `/api/pois/{id}`        | Chi tiết POI       | ❌   |
-| GET    | `/api/pois/categories`  | Danh mục POI       | ❌   |
-| GET    | `/api/pois/{id}/images` | Ảnh của POI        | ❌   |
-| GET    | `/api/pois/{id}/menu`   | Menu món ăn        | ❌   |
-
-**Example Request:**
+#### API
 
 ```bash
-curl -X GET "http://localhost:5089/api/pois/nearby?lat=10.7553&lng=106.6986&radius=500"
+cd src/Server/VK.API
+dotnet publish -c Release -o ./publish
 ```
 
-**Example Response:**
+#### Web
 
-```json
-{
-  "pois": [
-    {
-      "id": "poi-001",
-      "name": "Bánh Mì Huỳnh Hoa",
-      "latitude": 10.7553,
-      "longitude": 106.6986,
-      "category": "Bánh mì",
-      "rating": 4.5,
-      "distance": 125.5
-    }
-  ]
-}
+```bash
+cd src/Server/VK.Web
+dotnet publish -c Release -o ./publish
 ```
 
-### 👤 Tourist APIs
+#### Mobile
 
-| Method | Endpoint                     | Description       | Auth |
-| ------ | ---------------------------- | ----------------- | ---- |
-| POST   | `/api/tourists/register`     | Đăng ký device    | ❌   |
-| PUT    | `/api/tourists/location`     | Cập nhật vị trí   | ❌   |
-| POST   | `/api/tourists/visit`        | Ghi nhận visit    | ❌   |
-| POST   | `/api/tourists/favorites`    | Thêm yêu thích    | ❌   |
-| GET    | `/api/tourists/{id}/history` | Lịch sử tham quan | ❌   |
+```bash
+# Android APK
+cd src/Client/VK.Mobile
+dotnet publish -f net10.0-android -c Release
 
-### 🔊 Audio APIs
-
-| Method | Endpoint                    | Description             | Auth     |
-| ------ | --------------------------- | ----------------------- | -------- |
-| GET    | `/api/audio/{poiId}/{lang}` | Lấy audio theo ngôn ngữ | ❌       |
-| POST   | `/api/audio/tts`            | Generate TTS on-demand  | ✅ Admin |
-| POST   | `/api/audio/generate-batch` | Generate batch audio    | ✅ Admin |
-| GET    | `/api/audio/status`         | Audio coverage status   | ✅ Admin |
-
-### 🗺️ Tour APIs
-
-| Method | Endpoint                    | Description          | Auth |
-| ------ | --------------------------- | -------------------- | ---- |
-| GET    | `/api/tours`                | Danh sách tour       | ❌   |
-| GET    | `/api/tours/{id}`           | Chi tiết tour        | ❌   |
-| GET    | `/api/tours/{id}/waypoints` | Điểm dừng trong tour | ❌   |
-
-### 📊 Analytics APIs
-
-| Method | Endpoint                   | Description     | Auth     |
-| ------ | -------------------------- | --------------- | -------- |
-| POST   | `/api/analytics/event`     | Ghi event       | ❌       |
-| GET    | `/api/analytics/dashboard` | Dashboard stats | ✅ Admin |
-| GET    | `/api/analytics/top-pois`  | Top POIs        | ✅ Admin |
-| GET    | `/api/analytics/trends`    | Xu hướng        | ✅ Admin |
-
-### 📦 Offline APIs
-
-| Method | Endpoint                     | Description           | Auth     |
-| ------ | ---------------------------- | --------------------- | -------- |
-| GET    | `/api/offline/map-package`   | Download map .mbtiles | ❌       |
-| POST   | `/api/offline/map-package`   | Upload map package    | ✅ Admin |
-| GET    | `/api/offline/route-package` | Download route .json  | ❌       |
-| POST   | `/api/offline/route-package` | Upload route package  | ✅ Admin |
-| GET    | `/api/offline/map-status`    | Map package status    | ❌       |
-
-### 🔧 Admin APIs
-
-| Method | Endpoint                    | Description       | Auth     |
-| ------ | --------------------------- | ----------------- | -------- |
-| GET    | `/api/admin/health`         | Health check      | ✅ Admin |
-| GET    | `/api/admin/stats`          | System statistics | ✅ Admin |
-| POST   | `/api/admin/owners/approve` | Duyệt chủ quán    | ✅ Admin |
-| POST   | `/api/admin/owners/reject`  | Từ chối chủ quán  | ✅ Admin |
-
-📖 **Full API Documentation**: Xem Swagger UI tại `http://localhost:5089/swagger`
-
----
-
-## 🗄️ Database Schema
-
-### Core Tables
-
-#### `pois` (Points of Interest)
-
-```sql
-id              UUID PRIMARY KEY
-name            TEXT NOT NULL
-name_en         TEXT
-name_ko         TEXT
-description     TEXT
-description_en  TEXT
-description_ko  TEXT
-latitude        DOUBLE PRECISION NOT NULL
-longitude       DOUBLE PRECISION NOT NULL
-category_id     UUID REFERENCES categories(id)
-geofence_radius DOUBLE PRECISION DEFAULT 50
-qr_code         TEXT UNIQUE
-rating          DECIMAL(3,2)
-is_active       BOOLEAN DEFAULT true
-created_at      TIMESTAMP WITH TIME ZONE
-updated_at      TIMESTAMP WITH TIME ZONE
-```
-
-#### `audio_contents`
-
-```sql
-id              UUID PRIMARY KEY
-poi_id          UUID REFERENCES pois(id)
-language_code   VARCHAR(5) NOT NULL
-audio_url       TEXT
-transcript      TEXT
-duration_seconds INTEGER
-is_generated    BOOLEAN DEFAULT false
-created_at      TIMESTAMP WITH TIME ZONE
-```
-
-#### `tourists`
-
-```sql
-id              UUID PRIMARY KEY
-device_id       TEXT UNIQUE NOT NULL
-device_name     TEXT
-preferred_language VARCHAR(5) DEFAULT 'vi'
-last_latitude   DOUBLE PRECISION
-last_longitude  DOUBLE PRECISION
-created_at      TIMESTAMP WITH TIME ZONE
-last_active_at  TIMESTAMP WITH TIME ZONE
-```
-
-#### `tours`
-
-```sql
-id              UUID PRIMARY KEY
-name            TEXT NOT NULL
-name_en         TEXT
-name_ko         TEXT
-description     TEXT
-duration_minutes INTEGER
-difficulty_level VARCHAR(20)
-is_featured     BOOLEAN DEFAULT false
-created_at      TIMESTAMP WITH TIME ZONE
-```
-
-#### `categories`
-
-```sql
-id              UUID PRIMARY KEY
-name            TEXT UNIQUE NOT NULL
-name_en         TEXT
-name_ko         TEXT
-icon_url        TEXT
-display_order   INTEGER
-```
-
-#### `poi_owners`
-
-```sql
-id              UUID PRIMARY KEY
-username        TEXT UNIQUE NOT NULL
-password_hash   TEXT NOT NULL
-full_name       TEXT
-email           TEXT
-phone           TEXT
-status          VARCHAR(20) DEFAULT 'pending'
-is_verified     BOOLEAN DEFAULT false
-created_at      TIMESTAMP WITH TIME ZONE
-```
-
-### Relationship Diagram
-
-```
-categories ──┐
-             ├──< pois >──┬── audio_contents
-             │            │
-tours ───────┘            ├── tour_pois
-                          │
-                          ├── visit_history ──< tourists
-                          │
-                          ├── favorites ──< tourists
-                          │
-                          └── poi_images
-
-poi_owners ──< owner_pois
-```
-
-📖 **Full Schema**: Xem `supabase/migrations/schema.sql`
-
----
-
-## 👥 Tài khoản & Phân quyền
-
-### Roles
-
-| Role          | Description            | Permissions                                              |
-| ------------- | ---------------------- | -------------------------------------------------------- |
-| **admin**     | Quản trị viên hệ thống | Full access: quản lý POI, users, audio, analytics        |
-| **poi_owner** | Chủ quán               | Chỉnh sửa POI của mình, upload ảnh/audio (cần duyệt)     |
-| **tourist**   | Du khách               | Xem POI, nghe audio, lưu favorites (không cần đăng nhập) |
-
-### Default Admin Account
-
-**Web Admin Portal** (`/Home/Login`)
-
-```
-Username: admin
-Password: Admin@123
-```
-
-> ⚠️ **QUAN TRỌNG**: Đổi mật khẩu ngay sau khi deploy production!
-
-Cấu hình trong `src/Server/VK.Web/appsettings.json`:
-
-```json
-{
-  "AdminAuth": {
-    "Username": "admin",
-    "Password": "YOUR_SECURE_PASSWORD"
-  }
-}
-```
-
-### Owner Registration Flow
-
-1. **Đăng ký**: Chủ quán điền form `/Owner/Register`
-   - Username, password, email, phone
-   - Chọn POI liên kết (optional)
-2. **Pending**: Hệ thống tạo account với `status = 'pending'`
-
-3. **Admin Review**: Admin vào dashboard `/Admin/Owners`
-   - Xem danh sách pending owners
-   - Kiểm tra thông tin
-4. **Approve/Reject**:
-   - ✅ Approve → `status = 'approved'`, `is_verified = true`
-   - ❌ Reject → `status = 'rejected'`
-
-5. **Owner Access**: Sau khi approved, owner login và:
-   - Chỉnh sửa POI của mình
-   - Upload ảnh, audio (qua request workflow)
-   - Xem analytics của quán
-
-### Content Moderation Workflow
-
-```
-Owner Submit Edit
-       ↓
-  Status: Pending
-       ↓
-Admin Review Dashboard
-       ↓
-   Approve ────→ Update POI ────→ Tourist thấy nội dung mới
-       │
-   Reject ────→ Notify Owner ───→ Owner có thể submit lại
+# iOS (macOS only)
+dotnet publish -f net10.0-ios -c Release
 ```
 
 ---
 
 ## 🧪 Testing
 
-### Run All Tests
+### Run Unit Tests
 
 ```bash
-dotnet test VKStreetFood.slnx
-```
+# Chạy tất cả tests
+dotnet test
 
-### Run Specific Test Project
+# Chạy tests với coverage
+dotnet test --collect:"XPlat Code Coverage"
 
-```bash
+# Chạy tests trong một project cụ thể
 dotnet test tests/VK.API.Tests/VK.API.Tests.csproj
-dotnet test tests/VK.Core.Tests/VK.Core.Tests.csproj
 ```
 
 ### Test Coverage
 
 ```bash
-dotnet test tests/VK.API.Tests/VK.API.Tests.csproj --collect:"XPlat Code Coverage"
+# Cài đặt ReportGenerator
+dotnet tool install -g dotnet-reportgenerator-globaltool
+
+# Generate coverage report
+reportgenerator \
+  -reports:tests/*/TestResults/*/coverage.cobertura.xml \
+  -targetdir:coverage-report \
+  -reporttypes:Html
+
+# Mở report
+open coverage-report/index.html
 ```
 
-Coverage report được tạo tại:
+### Integration Tests
 
-`tests/VK.API.Tests/TestResults/<guid>/coverage.cobertura.xml`
-
-### Trạng thái test hiện tại
-
-- ✅ Unit tests cho business/service logic (TouristAppService, AnalyticsAppService)
-- ✅ Integration tests cho API endpoints + database operations (SQLite in-memory)
-- 🎯 Coverage goal: 60-80%
-
-> Ghi chú: coverage tổng toàn bộ API hiện vẫn thấp do nhiều module chưa có test. Mục tiêu 60-80% khả thi khi tiếp tục bổ sung test theo từng cụm nghiệp vụ (POI, Tour, Audio, Owner workflow, Analytics queries).
-
----
-
-## 🚢 Deployment
-
-### Production Checklist
-
-#### 🔐 Security
-
-- [ ] Đổi admin password mạnh
-- [ ] Enable HTTPS cho tất cả endpoints
-- [ ] Rotate database credentials
-- [ ] Remove sensitive data từ appsettings.json → Environment Variables
-- [ ] Enable CORS chỉ cho domains production
-- [ ] Review và harden RLS policies
-
-#### 🗄️ Database
-
-- [ ] Run migrations trên production database
-- [ ] Setup automated backups (daily)
-- [ ] Monitor connection pooling
-- [ ] Index optimization cho queries hay dùng
-
-#### 📦 Assets
-
-- [ ] Upload offline packages (map.mbtiles, routes.json) vào `wwwroot/offline/`
-- [ ] Generate TTS batch audio cho tất cả POIs
-- [ ] Optimize images (compress, WebP format)
-- [ ] Setup CDN cho static files
-
-#### 🔍 Monitoring
-
-- [ ] Configure structured logging (Serilog, Application Insights)
-- [ ] Setup health check endpoints
-- [ ] Monitor API error rate & latency
-- [ ] Track audio playback success rate
-
-#### ⚡ Performance
-
-- [ ] Enable response compression
-- [ ] Setup caching (Redis) cho frequently accessed data
-- [ ] Optimize EF Core queries (AsNoTracking where appropriate)
-- [ ] Load testing với expected traffic
-
-### Deploy to Azure (Example)
-
-### Deploy to Render with Docker (Recommended)
-
-Repo đã có sẵn cấu hình Docker + Render Blueprint:
-
-- `src/Server/VK.API/Dockerfile`
-- `src/Server/VK.Web/Dockerfile`
-- `render.yaml`
-
-#### Bước 1: Push branch lên GitHub
+Integration tests sử dụng `CustomWebApplicationFactory` để test API endpoints với in-memory database.
 
 ```bash
-git add .
-git commit -m "chore(deploy): add Docker + Render blueprint"
-git push origin qr_pay
-```
-
-#### Bước 2: Tạo Blueprint trên Render
-
-1. Vào Render Dashboard → **New** → **Blueprint**
-2. Kết nối repo `Hoangg-Thien/VK_StreetFood`
-3. Chọn branch cần deploy (vd: `qr_pay`)
-4. Render sẽ tự đọc file `render.yaml` và tạo 2 services:
-
-- `vk-api`
-- `vk-web`
-
-#### Bước 3: Cấu hình Environment Variables bắt buộc
-
-`vk-api`:
-
-- `ConnectionStrings__DefaultConnection`
-
-`vk-web`:
-
-- `ConnectionStrings__DefaultConnection`
-- `ApiSettings__BaseUrl` (ví dụ: `https://vk-api.onrender.com/api/`)
-- `AdminAuth__Email`
-- `AdminAuth__Password`
-
-> Lưu ý: Không dùng credentials production trong `appsettings.json`. Luôn set qua Render Environment Variables.
-
-#### Bước 4: Verify sau deploy
-
-- API Swagger: `https://<api-service>.onrender.com/swagger`
-- Web Admin: `https://<web-service>.onrender.com`
-
-#### Bước 5: Trỏ QR về domain deploy
-
-- QR nên trỏ vào URL web public (Render domain/custom domain)
-- Trong trang web fallback, nếu mở được app thì chuyển deep link
-- Nếu chưa có app thì hiển thị nút tải app + Add to Home Screen
-
-#### API Backend
-
-```bash
-# Build
-dotnet publish src/Server/VK.API/VK.API.csproj -c Release -o ./publish/api
-
-# Deploy to Azure App Service
-az webapp deployment source config-zip \
-  --resource-group VKStreetFood-RG \
-  --name vkstreetfood-api \
-  --src ./publish/api.zip
-```
-
-#### Mobile App
-
-**Android (Google Play):**
-
-1. Build Release APK/AAB:
-   ```bash
-   dotnet publish -f net10.0-android -c Release
-   ```
-2. Sign with keystore
-3. Upload to Google Play Console
-
-**iOS (App Store):**
-
-1. Build Archive (macOS):
-   ```bash
-   dotnet publish -f net10.0-ios -c Release
-   ```
-2. Submit via Xcode / Transporter
-
-### Environment Variables
-
-Setup trên hosting platform:
-
-```bash
-ConnectionStrings__DefaultConnection=<production_db_connection>
-AdminAuth__Password=<strong_password>
-Logging__LogLevel__Default=Warning
+cd tests/VK.API.Tests
+dotnet test --filter "FullyQualifiedName~Integration"
 ```
 
 ---
 
-## 🐛 Troubleshooting
+## 📦 Deployment
 
-### Common Issues
+### Docker Deployment (Render.com)
 
-#### 1. API không kết nối được từ Mobile
+Project đã được cấu hình sẵn cho deployment lên Render.com với Docker.
 
-**Triệu chứng:**
+#### Prerequisites
+1. Tài khoản Render.com
+2. Repository đã push lên GitHub
+3. Supabase database đã setup
 
+#### Deploy Steps
+
+1. **Connect GitHub repo** trên Render.com
+2. **Auto-deploy** sẽ trigger từ `render.yaml`
+3. **Configure Environment Variables** trên Render Dashboard:
+
+**VK-API Service:**
 ```
-Network request failed
+ConnectionStrings__DefaultConnection=<your-supabase-connection-string>
+ASPNETCORE_ENVIRONMENT=Production
 ```
+
+**VK-Web Service:**
+```
+ConnectionStrings__DefaultConnection=<your-supabase-connection-string>
+ApiSettings__BaseUrl=<your-api-url>/api/
+AdminAuth__Email=admin@vkstreetfood.com
+AdminAuth__Password=<secure-password>
+SupabaseStorage__Url=<your-supabase-url>
+SupabaseStorage__ServiceRoleKey=<your-service-role-key>
+SupabaseStorage__PublicBaseUrl=<your-supabase-storage-url>
+ASPNETCORE_ENVIRONMENT=Production
+```
+
+4. **Deploy** - Render sẽ tự động:
+   - Build Docker images từ `Dockerfile.api` và `Dockerfile.web`
+   - Deploy containers
+   - Expose services qua HTTPS
+
+#### Docker Build Local
+
+```bash
+# Build API image
+docker build -f Dockerfile.api -t vk-api .
+
+# Build Web image
+docker build -f Dockerfile.web -t vk-web .
+
+# Run locally
+docker run -p 8080:8080 \
+  -e ConnectionStrings__DefaultConnection="<connection-string>" \
+  vk-api
+```
+
+### Manual Deployment (Linux Server)
+
+```bash
+# 1. Install .NET 10 runtime
+wget https://dot.net/v1/dotnet-install.sh
+bash dotnet-install.sh --channel 10.0
+
+# 2. Install Python & edge-tts
+sudo apt install python3 python3-pip
+pip3 install edge-tts
+
+# 3. Deploy API
+cd /var/www/vk-api
+dotnet VK.API.dll
+
+# 4. Setup systemd service
+sudo systemctl enable vk-api
+sudo systemctl start vk-api
+
+# 5. Setup Nginx reverse proxy
+# (Cấu hình Nginx để proxy từ port 80/443 -> 5089)
+```
+
+### Mobile App Distribution
+
+#### Android
+1. Build Release APK: `dotnet publish -f net10.0-android -c Release`
+2. Sign APK với keystore
+3. Upload lên Google Play Console
+
+#### iOS
+1. Build Archive trong Xcode
+2. Submit to App Store Connect
+3. TestFlight beta distribution
+
+---
+
+## 🔧 Troubleshooting
+
+### 1. API không kết nối được từ Mobile
+
+**Triệu chứng:** `Unable to connect to the remote server`
 
 **Giải pháp:**
-
-- ✅ Android Emulator: Dùng `http://10.0.2.2:5089/api/` thay vì `localhost`
-- ✅ iOS Simulator: Có thể dùng `http://localhost:5089/api/`
-- ✅ Thiết bị thật: Dùng IP máy dev (VD: `http://192.168.1.10:5089/api/`)
-- ✅ Kiểm tra firewall Windows cho phép port 5089
+- ✅ Android Emulator: Dùng `http://10.0.2.2:5089/api/`
+- ✅ iOS Simulator: Dùng `http://localhost:5089/api/`
+- ✅ Physical Device: Dùng IP máy (VD: `http://192.168.1.100:5089/api/`)
+- ✅ Kiểm tra firewall cho phép port 5089
 - ✅ API phải đang chạy trước khi test mobile
 
-```bash
-# Check API đang chạy
-curl http://localhost:5089/api/pois
-```
+### 2. Database Migration Failed
 
-#### 2. Database Migration Failed
-
-**Triệu chứng:**
-
-```
-Table 'pois' does not exist
-```
+**Triệu chứng:** `Table 'PointsOfInterest' does not exist`
 
 **Giải pháp:**
+1. Verify connection string
+2. Chạy migrations theo đúng thứ tự: `schema.sql` → `rls.sql` → `seed_pois.sql`
+3. Check logs trong Supabase Table Editor
 
-1. Kiểm tra connection string đúng
-2. Chạy lại migrations theo thứ tự:
-   ```sql
-   -- schema.sql → Tạo tables
-   -- rls.sql → RLS policies
-   -- seed_pois.sql → Seed data
-   ```
-3. Verify trong Supabase Table Editor
+### 3. Audio không phát
 
-#### 3. Audio không phát
-
-**Triệu chứng:**
-
-- Không có âm thanh khi geofence trigger
-- Lỗi "Audio file not found"
+**Triệu chứng:** Geofence trigger nhưng không có âm thanh
 
 **Giải pháp:**
-
-- ✅ Kiểm tra bảng `audio_contents` có records cho POI & ngôn ngữ
-- ✅ Verify `audio_url` trỏ đúng file trong `wwwroot/audio/`
+- ✅ Kiểm tra `AudioContents` table có records cho POI + language
+- ✅ Verify `AudioUrl` đúng path trong `wwwroot/audio/`
 - ✅ File MP3 phải tồn tại và không corrupt
-- ✅ Permissions đọc file trên server
+- ✅ Check permissions đọc file
 
 ```sql
--- Check audio coverage
+-- Verify audio coverage
 SELECT poi_id, language_code, audio_url
-FROM audio_contents
+FROM "AudioContents"
 WHERE poi_id = 'your-poi-id';
 ```
 
-#### 4. Geofence không trigger
+### 4. TTS Generation Failed
 
-**Triệu chứng:**
-
-- Đã vào vùng POI nhưng không phát audio
+**Triệu chứng:** `edge-tts command not found`
 
 **Giải pháp:**
+```bash
+# Verify edge-tts installed
+edge-tts --list-voices
 
-- ✅ Kiểm tra GPS permissions được grant
-- ✅ Verify `geofence_radius` trong database (VD: 50m)
-- ✅ Test với bán kính lớn hơn (100m) trước
-- ✅ Check location service đang bật
+# Re-install nếu cần
+pip install --upgrade edge-tts
 
-```csharp
-// Debug trong GeofenceEngine.cs
-Console.WriteLine($"Distance to POI: {distance}m, Radius: {radius}m");
-```
-
-#### 5. Web Admin không gọi được API
-
-**Triệu chứng:**
-
-```
-CORS policy: No 'Access-Control-Allow-Origin' header
-```
-
-**Giải pháp:**
-
-`VK.Web/appsettings.json`:
-
-```json
-{
-  "ApiSettings": {
-    "BaseUrl": "http://localhost:5089/api/"
-  }
+# Check Python path trong appsettings.json
+"TtsGenerationService": {
+  "PythonExecutable": "python3"  # hoặc đường dẫn đầy đủ
 }
 ```
 
-#### 6. Build Mobile Failed
+### 5. Geofence không trigger
 
-**Triệu chứng:**
-
-```
-Error: The Android SDK is not installed
-```
+**Triệu chứng:** Đã vào vùng POI nhưng không callback
 
 **Giải pháp:**
+- ✅ Kiểm tra GPS permissions đã grant
+- ✅ Verify `GeofenceRadius` trong DB (thử tăng lên 100m để test)
+- ✅ Location service đang bật trên device
+- ✅ Debug distance calculation trong `GeofenceService.cs`
 
+### 6. Build Mobile Failed
+
+**Triệu chứng:** `Android SDK not found`
+
+**Giải pháp:**
 1. Mở Visual Studio Installer
-2. Modify → ☑️ Mobile development with .NET
+2. Modify → ☑️ **Mobile development with .NET**
 3. Install Android SDK (API 21+)
 4. Restart Visual Studio
 
-#### 7. Owner không thể login
+### 7. Owner không login được
 
-**Triệu chứng:**
-
-- Login failed với credentials đúng
+**Triệu chứng:** Login failed với correct credentials
 
 **Giải pháp:**
-
 ```sql
 -- Check owner status
-SELECT username, status, is_verified
-FROM poi_owners
-WHERE username = 'owner_username';
+SELECT "Email", "Status", "IsVerified"
+FROM "Users"
+WHERE "Email" = 'owner@example.com';
 
--- If pending, admin cần approve:
-UPDATE poi_owners
-SET status = 'approved', is_verified = true
-WHERE username = 'owner_username';
+-- Approve owner
+UPDATE "Users"
+SET "Status" = 'Approved', "IsVerified" = true
+WHERE "Email" = 'owner@example.com';
 ```
 
-### Debug Mode
+### 8. Supabase Storage Upload Failed
 
-Enable verbose logging:
+**Triệu chứng:** `Unable to upload image to Supabase Storage`
 
-`appsettings.Development.json`:
-
-```json
-{
-  "Logging": {
-    "LogLevel": {
-      "Default": "Debug",
-      "Microsoft": "Information",
-      "VK.API": "Debug",
-      "VK.Infrastructure": "Debug"
-    }
-  }
-}
-```
+**Giải pháp:**
+- ✅ Verify `ServiceRoleKey` đúng
+- ✅ Bucket `poi-images` đã tạo và public
+- ✅ Check RLS policies cho bucket
+- ✅ File size < 5MB
 
 ---
 
 ## 🗺️ Roadmap
 
-### Phase 1: POC ✅ (Current)
-
-- [x] Core API endpoints
-- [x] Mobile MAUI app với geofence
-- [x] Web admin dashboard
-- [x] Audio guide đa ngôn ngữ
-- [x] Offline support (map + audio cache)
+### ✅ Phase 1: MVP (Completed)
+- [x] Core API endpoints (POI, Tourist, Audio, Tour, Analytics)
+- [x] Mobile MAUI app với geofence & map
+- [x] Web admin portal với dashboard
+- [x] Audio guide đa ngôn ngữ (vi/en/ko)
+- [x] Offline support (SQLite cache, audio warmup)
 - [x] Owner registration & approval workflow
+- [x] QR code scanner & payment integration
+- [x] TTS on-demand generation với edge-tts
+- [x] Docker deployment (Render.com)
 
-### Phase 2: Enhancement 🚧 (In Progress)
-
-- [ ] **Testing**: Unit tests & integration tests coverage
-- [ ] **Analytics**: Advanced heatmap & trend visualization
-- [ ] **Localization**: Thêm tiếng Nhật, Trung
-- [ ] **Performance**: Redis caching layer
+### 🚧 Phase 2: Enhancement (In Progress)
+- [ ] **Testing**: Tăng coverage lên 80%+
+- [ ] **Analytics**: Heatmap visualization, user journey tracking
+- [ ] **Performance**: Redis caching layer, CDN for audio
+- [ ] **Localization**: Thêm tiếng Nhật, Trung, Pháp
 - [ ] **Mobile**: Push notifications cho tour suggestions
 
-### Phase 3: Scale 📅 (Planned)
-
-- [ ] **Multi-region**: Mở rộng sang khu phố khác (Quận 1, Quận 5)
+### 📅 Phase 3: Advanced Features (Planned)
 - [ ] **AI Features**:
-  - Gợi ý quán dựa trên preference & history
-  - AR navigation overlay
-  - Voice-controlled tour guide
+  - [ ] Gợi ý POI dựa trên ML (user preferences)
+  - [ ] AR navigation overlay
+  - [ ] Voice-controlled tour guide
+  - [ ] Chatbot hỗ trợ du khách
 - [ ] **Social Features**:
-  - Tourist reviews & ratings
-  - Share experiences on social media
-  - Leaderboard & gamification
+  - [ ] User reviews & ratings system
+  - [ ] Share experiences lên social media
+  - [ ] Leaderboard & gamification
+  - [ ] Friend recommendations
 - [ ] **Business Features**:
-  - Owner analytics dashboard
-  - Promotion & ads management
-  - Booking integration
+  - [ ] Owner analytics dashboard
+  - [ ] Promotion & ads management
+  - [ ] Table booking integration
+  - [ ] Loyalty rewards program
 
-### Phase 4: Advanced 🔮 (Future)
-
+### 🔮 Phase 4: Scale (Future)
+- [ ] **Multi-region**: Mở rộng sang khu phố khác (Bùi Viện, Bến Thành, Chợ Lớn)
 - [ ] **IoT Integration**: Beacon-based micro-location
-- [ ] **Blockchain**: NFT collectibles for landmarks
-- [ ] **Metaverse**: Virtual tour experience
-- [ ] **API Marketplace**: Open API for 3rd party integrations
+- [ ] **API Marketplace**: Public API cho 3rd party developers
+- [ ] **White-label**: Deploy cho các khu phố khác
 
 ---
 
 ## 🤝 Đóng góp
 
-Tôi hoan nghênh mọi đóng góp từ cộng đồng!
+Mọi đóng góp đều được hoan nghênh! 🎉
 
 ### Quy trình Contribute
 
 1. **Fork** repository
-2. **Create** feature branch:
-   ```bash
-   git checkout -b feature/amazing-feature
-   ```
-3. **Commit** changes:
-   ```bash
-   git commit -m "Add some amazing feature"
-   ```
-4. **Push** to branch:
-   ```bash
-   git push origin feature/amazing-feature
-   ```
-5. **Open** Pull Request
+2. **Clone** về máy: `git clone https://github.com/your-username/VK_StreetFood.git`
+3. **Create** feature branch: `git checkout -b feature/amazing-feature`
+4. **Commit** changes: `git commit -m "feat(api): add amazing feature"`
+5. **Push** to branch: `git push origin feature/amazing-feature`
+6. **Open** Pull Request
 
 ### Coding Standards
 
 #### C# (.NET)
-
 - Follow [Microsoft C# Coding Conventions](https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/coding-style/coding-conventions)
 - Use **PascalCase** cho classes, methods, properties
 - Use **camelCase** cho local variables, parameters
@@ -1275,7 +979,7 @@ Tôi hoan nghênh mọi đóng góp từ cộng đồng!
 /// <param name="longitude">GPS longitude</param>
 /// <param name="radiusMeters">Search radius in meters</param>
 /// <returns>List of nearby POIs</returns>
-public async Task<List<POI>> GetNearbyPOIsAsync(
+public async Task<List<PointOfInterest>> GetNearbyPoisAsync(
     double latitude,
     double longitude,
     double radiusMeters)
@@ -1285,54 +989,75 @@ public async Task<List<POI>> GetNearbyPOIsAsync(
 ```
 
 #### SQL
-
-- Use **snake_case** cho table & column names
+- Use **PascalCase** cho table & column names (EF Core convention)
 - Add indexes cho foreign keys
-- Include `created_at`, `updated_at` timestamps
+- Always include `CreatedAt`, `UpdatedAt` timestamps
 
 #### Git Commit Messages
 
 Format: `<type>(<scope>): <subject>`
 
 **Types:**
-
 - `feat`: New feature
 - `fix`: Bug fix
-- `docs`: Documentation only
-- `style`: Code style (formatting, missing semicolons, etc.)
+- `docs`: Documentation
+- `style`: Code formatting
 - `refactor`: Code refactoring
 - `test`: Adding tests
-- `chore`: Build process, dependencies
+- `chore`: Build/dependencies
 
 **Examples:**
-
 ```
 feat(api): add geofence radius configuration endpoint
-fix(mobile): resolve audio playback crash on iOS
+fix(mobile): resolve audio playback crash on iOS 16
 docs(readme): update deployment instructions
+test(api): add integration tests for tourist endpoints
 ```
 
-### Areas for Contribution
+### Areas to Contribute
 
-🐛 **Bug Fixes**: Check Issues  
+🐛 **Bug Fixes**: Check [Issues](https://github.com/your-username/VK_StreetFood/issues)  
 ✨ **Features**: See [Roadmap](#roadmap)  
-📖 **Documentation**: Improve README, add tutorials  
+📖 **Documentation**: Improve README, add code comments  
 🧪 **Testing**: Write unit/integration tests  
-🌐 **Localization**: Add new language support  
+🌐 **Localization**: Add language support (ja, zh, fr)  
 🎨 **UI/UX**: Improve mobile app design
 
 ---
 
 ## 📄 License
 
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
 ---
 
 ## 🙏 Acknowledgments
 
-- **OpenStreetMap** cho dữ liệu bản đồ
-- **Mapsui** cho map rendering engine
-- **Supabase** cho PostgreSQL hosting
-- **Microsoft** cho .NET MAUI framework
+- **OpenStreetMap** - Dữ liệu bản đồ mở
+- **Mapsui** - Cross-platform map rendering engine
+- **Supabase** - PostgreSQL hosting & storage
+- **Microsoft** - .NET MAUI framework
+- **edge-tts** - Free TTS API từ Microsoft Edge
+- **Render.com** - Free Docker hosting
 - Cộng đồng **Phố Vĩnh Khánh** đã hỗ trợ thu thập dữ liệu
 
 ---
+
+## 📞 Contact
+
+- **Project Lead**: [Your Name]
+- **Email**: contact@vkstreetfood.com
+- **GitHub**: [https://github.com/your-username/VK_StreetFood](https://github.com/your-username/VK_StreetFood)
+
+---
+
+<div align="center">
+
+**Made with ❤️ for Phố Vĩnh Khánh community**
+
+[![GitHub stars](https://img.shields.io/github/stars/your-username/VK_StreetFood?style=social)](https://github.com/your-username/VK_StreetFood/stargazers)
+[![GitHub forks](https://img.shields.io/github/forks/your-username/VK_StreetFood?style=social)](https://github.com/your-username/VK_StreetFood/network/members)
+
+[⬆ Back to top](#vk-streetfood---nền-tảng-du-lịch-ẩm-thực-phố-vĩnh-khánh)
+
+</div>
