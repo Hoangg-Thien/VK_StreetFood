@@ -75,7 +75,7 @@
 
 #### QR & Deep Link
 - 📲 Quét QR code mở chi tiết quán (ZXing.Net.Maui)
-- 💳 Quét QR thanh toán (VNPay/MoMo)
+- 💳 Quét QR thanh toán
 - 🔗 Deep link navigation
 - ⚡ Truy cập nhanh từ poster
 
@@ -1045,18 +1045,12 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📞 Contact
 
-- **Project Lead**: [Your Name]
-- **Email**: contact@vkstreetfood.com
-- **GitHub**: [https://github.com/your-username/VK_StreetFood](https://github.com/your-username/VK_StreetFood)
+- **Email**: leviethoangthien2005@gmail.com
+- **GitHub**: [https://github.com/Hoangg-Thien/VK_StreetFood](https://github.com/your-username/VK_StreetFood)
 
 ---
 
 <div align="center">
-
-**Made with ❤️ for Phố Vĩnh Khánh community**
-
-[![GitHub stars](https://img.shields.io/github/stars/your-username/VK_StreetFood?style=social)](https://github.com/your-username/VK_StreetFood/stargazers)
-[![GitHub forks](https://img.shields.io/github/forks/your-username/VK_StreetFood?style=social)](https://github.com/your-username/VK_StreetFood/network/members)
 
 [⬆ Back to top](#vk-streetfood---nền-tảng-du-lịch-ẩm-thực-phố-vĩnh-khánh)
 
