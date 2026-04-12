@@ -452,50 +452,53 @@ public partial class POIDetailViewModel : ObservableObject, IQueryAttributable
         }
         else
         {
+            // Nếu đã phát hết, bấm play lại sẽ reset về đầu và phát lại
+            if (_elapsedSeconds >= _totalSeconds && _totalSeconds > 0)
+            {
+                _elapsedSeconds = 0;
+                UpdateAudioProgressUi();
+            }
+
             var audioUrl = SelectedAudio?.AudioFileUrl;
             if (!string.IsNullOrWhiteSpace(audioUrl))
             {
-                // Tier 1: phát MP3 thực từ server
                 _usingAudioService = true;
+                IsPlayingAudio = true;
+                UpdateAudioProgressUi();
+                StartProgressTimer();
                 var canResumeCurrent = Poi != null
                     && _audioService.CurrentPOIId == Poi.Id
                     && !string.IsNullOrWhiteSpace(_audioService.CurrentUrl)
-                    && _elapsedSeconds > 0;
+                    && _elapsedSeconds > 0
+                    && _elapsedSeconds < _totalSeconds;
 
                 if (canResumeCurrent)
                 {
-                    IsPlayingAudio = true;
                     await _audioService.ResumeAsync();
-                    _audioSessionStartedAtUtc = DateTime.UtcNow;
-                    _hasTriggeredMp3Fallback = false;
-                    return;
                 }
-
-                if (_elapsedSeconds == 0)
+                else
                 {
-                    _totalSeconds = SelectedAudio?.DurationSeconds is > 0
-                        ? SelectedAudio.DurationSeconds.Value
-                        : EstimateDurationFromTranscript(SelectedAudio?.TextContent);
-                    _elapsedSeconds = 0;
-                    UpdateAudioProgressUi();
+                    if (_elapsedSeconds == 0)
+                    {
+                        _totalSeconds = SelectedAudio?.DurationSeconds is > 0
+                            ? SelectedAudio.DurationSeconds.Value
+                            : EstimateDurationFromTranscript(SelectedAudio?.TextContent);
+                        _elapsedSeconds = 0;
+                        UpdateAudioProgressUi();
+                    }
+                    _ = _audioService.PlayAudioAsync(audioUrl, Poi?.Id);
                 }
-
-                IsPlayingAudio = true;
-                _ = _audioService.PlayAudioAsync(audioUrl, Poi?.Id);
                 _audioSessionStartedAtUtc = DateTime.UtcNow;
                 _hasTriggeredMp3Fallback = false;
             }
             else
             {
-                // Fallback: TTS — path cũ không thay đổi
                 _usingAudioService = false;
                 var text = SelectedAudio?.TextContent;
-                System.Diagnostics.Debug.WriteLine($"[POIDetail] ToggleAudio: SelectedAudio={SelectedAudio != null}, TextContent={text?.Length ?? 0} chars");
                 if (string.IsNullOrWhiteSpace(text))
                     text = Poi != null
                         ? BuildLocalizedFallbackNarration(Poi.Name, Poi.Description, SelectedLanguage)
                         : string.Empty;
-                System.Diagnostics.Debug.WriteLine($"[POIDetail] Final text for TTS ({text?.Length ?? 0} chars): {text?[..Math.Min(60, text?.Length ?? 0)]}");
                 if (string.IsNullOrWhiteSpace(text))
                 {
                     await Shell.Current.DisplayAlert(L["Error"], L["POIDetailNoAudioContent"], L["OK"]);
@@ -510,11 +513,13 @@ public partial class POIDetailViewModel : ObservableObject, IQueryAttributable
                     UpdateAudioProgressUi();
                 }
 
+                IsPlayingAudio = true;
+                UpdateAudioProgressUi();
+                StartProgressTimer();
                 _ttsCts?.Cancel();
                 _ttsCts = new CancellationTokenSource();
                 var token = _ttsCts.Token;
                 var lang = SelectedLanguage;
-                IsPlayingAudio = true;
                 _audioSessionStartedAtUtc = DateTime.UtcNow;
                 var speakText = GetTextFromPosition(_fullText, _elapsedSeconds, _totalSeconds);
                 _ = _ttsService.SpeakTextAsync(speakText, lang, token)
@@ -709,6 +714,8 @@ public partial class POIDetailViewModel : ObservableObject, IQueryAttributable
 
     private async Task HandlePlaybackCompletedAsync()
     {
+        _elapsedSeconds = _totalSeconds;
+        UpdateAudioProgressUi();
         IsPlayingAudio = false;
         StopProgressTimer();
         await TrackAudioCompleteIfNeededAsync();
