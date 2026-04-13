@@ -37,7 +37,7 @@ public class AppSettings
     public const string OfflineRoutePackageFileName = "vkstreetfood.routes.json";
 
     // Geofencing
-    public const double GeofenceRadiusMeters = 35.0;
+    public const double GeofenceRadiusMeters = 10.0;
     public const int LocationUpdateIntervalSeconds = 5;
 
     // Debounce & Cooldown chống spam geofence
