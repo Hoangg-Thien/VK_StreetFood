@@ -14,6 +14,7 @@ public class AnalyticsAppService : IAnalyticsAppService
     private readonly IRepository<VisitLog> _visitLogRepository;
     private readonly IRepository<Rating> _ratingRepository;
     private readonly IRepository<PointOfInterest> _poiRepository;
+    private readonly IRepository<Tourist> _touristRepository;
     private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<AnalyticsAppService> _logger;
 
@@ -22,6 +23,7 @@ public class AnalyticsAppService : IAnalyticsAppService
         IRepository<VisitLog> visitLogRepository,
         IRepository<Rating> ratingRepository,
         IRepository<PointOfInterest> poiRepository,
+        IRepository<Tourist> touristRepository,
         IUnitOfWork unitOfWork,
         ILogger<AnalyticsAppService> logger)
     {
@@ -29,6 +31,7 @@ public class AnalyticsAppService : IAnalyticsAppService
         _visitLogRepository = visitLogRepository;
         _ratingRepository = ratingRepository;
         _poiRepository = poiRepository;
+        _touristRepository = touristRepository;
         _unitOfWork = unitOfWork;
         _logger = logger;
     }
@@ -341,69 +344,57 @@ public class AnalyticsAppService : IAnalyticsAppService
 
     public async Task<IActionResult> GetHeatmapAsync(DateTime? from, DateTime? to, string? languageCode, int? poiId)
     {
-        var fromDate = from ?? DateTime.UtcNow.AddDays(-30);
-        var toDate = to ?? DateTime.UtcNow;
-
-        var query = _visitLogRepository.Query()
-            .Where(v => v.VisitedAt >= fromDate && v.VisitedAt <= toDate)
-            .Where(v => v.VisitorLatitude != 0 && v.VisitorLongitude != 0);
+        // Lấy heatmap từ vị trí cuối cùng của mỗi Tourist
+        var query = _touristRepository.Query()
+            .Where(t => t.LastLatitude != null && t.LastLongitude != null)
+            .Where(t => t.LastLatitude != 0 && t.LastLongitude != 0);
 
         if (!string.IsNullOrWhiteSpace(languageCode))
-            query = query.Where(v => v.LanguageUsed == languageCode);
+            query = query.Where(t => t.PreferredLanguage == languageCode);
 
-        if (poiId.HasValue)
-            query = query.Where(v => v.PointOfInterestId == poiId.Value);
+        // Không lọc theo POI vì Tourist không có POI
 
-        var visitPoints = await query
-            .Select(v => new { v.VisitorLatitude, v.VisitorLongitude })
+        var points = await query
+            .Select(t => new { Lat = Math.Round(t.LastLatitude.Value, 4), Lng = Math.Round(t.LastLongitude.Value, 4) })
             .ToListAsync();
 
-        var points = visitPoints
-            .GroupBy(v => new { Lat = Math.Round(v.VisitorLatitude, 4), Lng = Math.Round(v.VisitorLongitude, 4) })
+        var grouped = points
+            .GroupBy(v => new { v.Lat, v.Lng })
             .Select(g => new { latitude = g.Key.Lat, longitude = g.Key.Lng, weight = g.Count() })
             .OrderByDescending(x => x.weight)
             .ToList();
 
-        return new OkObjectResult(points);
+        return new OkObjectResult(grouped);
     }
 
     public async Task<IActionResult> GetAnonymousRoutesAsync(DateTime? from, DateTime? to, string? languageCode, int? poiId, int take = 50)
     {
-        var fromDate = from ?? DateTime.UtcNow.AddDays(-30);
-        var toDate = to ?? DateTime.UtcNow;
+        // Tuyến ẩn danh: mỗi tourist là 1 tuyến, chỉ lấy điểm cuối cùng
         var safeTake = Math.Clamp(take, 1, 200);
-
-        var query = _visitLogRepository.Query()
-            .Where(v => v.VisitedAt >= fromDate && v.VisitedAt <= toDate)
-            .Where(v => v.TouristId > 0)
-            .Where(v => v.VisitorLatitude != 0 && v.VisitorLongitude != 0);
+        var query = _touristRepository.Query()
+            .Where(t => t.LastLatitude != null && t.LastLongitude != null)
+            .Where(t => t.LastLatitude != 0 && t.LastLongitude != 0);
 
         if (!string.IsNullOrWhiteSpace(languageCode))
-            query = query.Where(v => v.LanguageUsed == languageCode);
+            query = query.Where(t => t.PreferredLanguage == languageCode);
 
-        if (poiId.HasValue)
-            query = query.Where(v => v.PointOfInterestId == poiId.Value);
+        var tourists = await query.OrderByDescending(t => t.LastLocationUpdate).Take(safeTake).ToListAsync();
 
-        var visits = await query.OrderBy(v => v.VisitedAt).ToListAsync();
-
-        var routes = visits
-            .GroupBy(v => v.TouristId)
-            .Select(g => new
+        var routes = tourists.Select(t => new
+        {
+            anonymousVisitorId = BuildAnonymousVisitorId(t.Id),
+            pointCount = 1,
+            firstSeenAt = t.LastLocationUpdate,
+            lastSeenAt = t.LastLocationUpdate,
+            points = new[]
             {
-                anonymousVisitorId = BuildAnonymousVisitorId(g.Key),
-                pointCount = g.Count(),
-                firstSeenAt = g.First().VisitedAt,
-                lastSeenAt = g.Last().VisitedAt,
-                points = g.Select(v => new
-                {
-                    latitude = v.VisitorLatitude,
-                    longitude = v.VisitorLongitude,
-                    visitedAt = v.VisitedAt
-                }).ToList()
-            })
-            .OrderByDescending(x => x.pointCount)
-            .Take(safeTake)
-            .ToList();
+                new {
+                    latitude = t.LastLatitude,
+                    longitude = t.LastLongitude,
+                    visitedAt = t.LastLocationUpdate
+                }
+            }
+        }).ToList();
 
         return new OkObjectResult(routes);
     }
