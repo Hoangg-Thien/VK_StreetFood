@@ -43,7 +43,10 @@ public class POIAppService : IPOIAppService
         _httpContextAccessor = httpContextAccessor;
     }
 
-    public async Task<IActionResult> GetAllPOIsAsync(int? categoryId = null, string? search = null, string languageCode = LanguageConstants.Vietnamese)
+    public async Task<IActionResult> GetAllPOIsAsync(
+        int? categoryId = null, 
+        string? search = null, 
+        string languageCode = LanguageConstants.Vietnamese)
     {
         var normalizedLanguageCode = NormalizeLanguageCode(languageCode);
 
@@ -57,48 +60,49 @@ public class POIAppService : IPOIAppService
         if (categoryId.HasValue)
             query = query.Where(p => p.CategoryId == categoryId.Value);
 
+          if (!string.IsNullOrWhiteSpace(search))
+        {
+            var searchLower = search.ToLower();
+            query = query.Where(p =>
+            p.Name.ToLower().Contains(searchLower) ||
+            p.Description.ToLower().Contains(searchLower) ||
+            p.Address.ToLower().Contains(searchLower));
+        }
+
         var entities = await query.OrderBy(p => p.Id).ToListAsync();
 
         var pois = entities.Select(p =>
         {
-            var dto = new POIListItemDto
-            {
-                POIId = p.Id,
-                Name = p.Name,
-                Description = p.Description,
-                Latitude = p.Latitude,
-                Longitude = p.Longitude,
-                Address = p.Address,
-                ImageUrl = p.ImageUrl,
-                AverageRating = p.AverageRating,
-                TotalRatings = p.TotalRatings,
-                Category = p.Category?.Name ?? string.Empty,
-                Tags = p.Tags.Select(t => t.Name).ToList()
-            };
-
-            ApplyLocalizedFields(dto, p, normalizedLanguageCode);
-            return dto;
-        }).ToList();
-
-        if (!string.IsNullOrWhiteSpace(search))
+        var dto = new POIListItemDto
         {
-            pois = pois.Where(p =>
-                    p.Name.Contains(search, StringComparison.OrdinalIgnoreCase) ||
-                    p.Description.Contains(search, StringComparison.OrdinalIgnoreCase) ||
-                    p.Address.Contains(search, StringComparison.OrdinalIgnoreCase))
-                .ToList();
-        }
+            POIId = p.Id,
+            Name = p.Name,
+            Description = p.Description,
+            Latitude = p.Latitude,
+            Longitude = p.Longitude,
+            Address = p.Address,
+            ImageUrl = p.ImageUrl,
+            AverageRating = p.AverageRating,
+            TotalRatings = p.TotalRatings,
+            Category = p.Category?.Name ?? string.Empty,
+            Tags = p.Tags.Select(t => t.Name).ToList()
+        };
 
-        var baseUrl = CurrentBaseUrl();
-        foreach (var poi in pois)
-        {
-            poi.ImageUrl = PrependBase(baseUrl, poi.ImageUrl);
-            var profile = GetTriggerProfile(poi.POIId);
-            poi.Priority = profile.Priority;
-            poi.TriggerRadiusMeters = profile.TriggerRadiusMeters;
-        }
+        ApplyLocalizedFields(dto, p, normalizedLanguageCode);
+        return dto;
+    }).ToList();
 
-        return new OkObjectResult(pois);
+
+    var baseUrl = CurrentBaseUrl();
+    foreach (var poi in pois)
+    {
+        poi.ImageUrl = PrependBase(baseUrl, poi.ImageUrl);
+        var profile = GetTriggerProfile(poi.POIId);
+        poi.Priority = profile.Priority;
+        poi.TriggerRadiusMeters = profile.TriggerRadiusMeters;
+    }
+
+    return new OkObjectResult(pois);
     }
 
     public async Task<IActionResult> GetNearbyPOIsAsync(double latitude, double longitude, double radiusKm = 1.0, string languageCode = LanguageConstants.Vietnamese)

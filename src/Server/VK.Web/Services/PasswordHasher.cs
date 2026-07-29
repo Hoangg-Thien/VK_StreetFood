@@ -1,17 +1,18 @@
-using System.Security.Cryptography;
-using System.Text;
-
 namespace VK.Web.Services;
 
 public static class PasswordHasher
 {
+    // WorkFactor 12 = ~300ms per hash — đủ chậm để chống brute force
+    // SHA-256 cũ: 10 tỷ hash/giây với GPU
+    // BCrypt workFactor 12: ~4 hash/giây — không thể brute force thực tế
+    private const int WorkFactor = 12;
+
     public static string Hash(string plainText)
     {
         if (string.IsNullOrWhiteSpace(plainText))
             return string.Empty;
 
-        var bytes = SHA256.HashData(Encoding.UTF8.GetBytes(plainText));
-        return Convert.ToHexString(bytes);
+        return BCrypt.Net.BCrypt.HashPassword(plainText, WorkFactor);
     }
 
     public static bool Verify(string plainText, string? storedHash)
@@ -19,7 +20,6 @@ public static class PasswordHasher
         if (string.IsNullOrWhiteSpace(storedHash))
             return false;
 
-        var computed = Hash(plainText);
-        return string.Equals(computed, storedHash, StringComparison.OrdinalIgnoreCase);
+        return BCrypt.Net.BCrypt.Verify(plainText, storedHash);
     }
 }
