@@ -98,3 +98,7 @@ TestResults/
 **/*.coveragexml
 
 **/Directory.Build.props
+
+# Local development secrets — never commit
+**/appsettings.Development.json
+**/appsettings.Local.json
