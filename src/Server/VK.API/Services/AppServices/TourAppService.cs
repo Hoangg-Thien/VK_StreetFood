@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using VK.API.Extensions;
 using VK.Core.Entities;
 using VK.Core.Interfaces;
 using VK.Shared.Constants;
@@ -20,7 +21,7 @@ public class TourAppService : ITourAppService
 
     public async Task<IActionResult> GetToursAsync(string languageCode = LanguageConstants.Vietnamese)
     {
-        var normalizedLanguageCode = NormalizeLanguageCode(languageCode);
+        var normalizedLanguageCode = LocalizationHelper.NormalizeLanguageCode(languageCode);
 
         var tours = await _tourRepository.Query()
             .Include(t => t.Translations)
@@ -64,7 +65,7 @@ public class TourAppService : ITourAppService
 
     public async Task<IActionResult> GetTourByIdAsync(int tourId, string languageCode = LanguageConstants.Vietnamese)
     {
-        var normalizedLanguageCode = NormalizeLanguageCode(languageCode);
+        var normalizedLanguageCode = LocalizationHelper.NormalizeLanguageCode(languageCode);
 
         var tour = await _tourRepository.Query()
             .Include(t => t.Translations)
@@ -141,16 +142,16 @@ public class TourAppService : ITourAppService
 
     private static TourTranslation? ResolveTourTranslation(Tour tour, string languageCode)
     {
-        var normalized = NormalizeLanguageCode(languageCode);
-        return tour.Translations.FirstOrDefault(t => NormalizeLanguageCode(t.LanguageCode) == normalized)
-            ?? tour.Translations.FirstOrDefault(t => NormalizeLanguageCode(t.LanguageCode) == LanguageConstants.Vietnamese);
+        var normalized = LocalizationHelper.NormalizeLanguageCode(languageCode);
+        return tour.Translations.FirstOrDefault(t => LocalizationHelper.NormalizeLanguageCode(t.LanguageCode) == normalized)
+            ?? tour.Translations.FirstOrDefault(t => LocalizationHelper.NormalizeLanguageCode(t.LanguageCode) == LanguageConstants.Vietnamese);
     }
 
     private static void ApplyLocalizedPoiFields(TourPointDto dto, PointOfInterest poi, string languageCode)
     {
-        var normalized = NormalizeLanguageCode(languageCode);
-        var translation = poi.Translations.FirstOrDefault(t => NormalizeLanguageCode(t.LanguageCode) == normalized)
-            ?? poi.Translations.FirstOrDefault(t => NormalizeLanguageCode(t.LanguageCode) == LanguageConstants.Vietnamese);
+        var normalized = LocalizationHelper.NormalizeLanguageCode(languageCode);
+        var translation = poi.Translations.FirstOrDefault(t => LocalizationHelper.NormalizeLanguageCode(t.LanguageCode) == normalized)
+            ?? poi.Translations.FirstOrDefault(t => LocalizationHelper.NormalizeLanguageCode(t.LanguageCode) == LanguageConstants.Vietnamese);
 
         if (translation == null)
             return;
@@ -160,16 +161,6 @@ public class TourAppService : ITourAppService
 
         if (!string.IsNullOrWhiteSpace(translation.Address))
             dto.Address = translation.Address;
-    }
-
-    private static string NormalizeLanguageCode(string? languageCode)
-    {
-        if (string.IsNullOrWhiteSpace(languageCode))
-            return LanguageConstants.Vietnamese;
-
-        var code = languageCode.Trim().ToLowerInvariant();
-        var separatorIndex = code.IndexOfAny(new[] { '-', '_' });
-        return separatorIndex > 0 ? code[..separatorIndex] : code;
     }
 
     private static string? PrependBase(string baseUrl, string? path)

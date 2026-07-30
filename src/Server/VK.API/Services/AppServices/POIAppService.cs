@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using VK.API.Extensions;
 using VK.Core.Entities;
 using VK.Core.Interfaces;
 using VK.Shared.Constants;
@@ -48,7 +49,7 @@ public class POIAppService : IPOIAppService
         string? search = null, 
         string languageCode = LanguageConstants.Vietnamese)
     {
-        var normalizedLanguageCode = NormalizeLanguageCode(languageCode);
+        var normalizedLanguageCode = LocalizationHelper.NormalizeLanguageCode(languageCode);
 
         var query = _poiRepository.Query()
             .Where(p => !p.IsDeleted && p.IsActive)
@@ -88,7 +89,7 @@ public class POIAppService : IPOIAppService
             Tags = p.Tags.Select(t => t.Name).ToList()
         };
 
-        ApplyLocalizedFields(dto, p, normalizedLanguageCode);
+        LocalizationHelper.ApplyLocalizedPoiFields(dto, p, normalizedLanguageCode);
         return dto;
     }).ToList();
 
@@ -107,7 +108,7 @@ public class POIAppService : IPOIAppService
 
     public async Task<IActionResult> GetNearbyPOIsAsync(double latitude, double longitude, double radiusKm = 1.0, string languageCode = LanguageConstants.Vietnamese)
     {
-        var normalizedLanguageCode = NormalizeLanguageCode(languageCode);
+        var normalizedLanguageCode = LocalizationHelper.NormalizeLanguageCode(languageCode);
 
         var pois = await _poiRepository.Query()
             .Where(p => !p.IsDeleted && p.IsActive)
@@ -120,7 +121,7 @@ public class POIAppService : IPOIAppService
             .Select(p => new
             {
                 Poi = p,
-                Distance = CalculateDistance(latitude, longitude, p.Latitude, p.Longitude)
+                Distance = GeoHelper.CalculateDistanceKm(latitude, longitude, p.Latitude, p.Longitude)
             })
             .Where(x => x.Distance <= radiusKm)
             .OrderBy(x => x.Distance)
@@ -146,7 +147,7 @@ public class POIAppService : IPOIAppService
         foreach (var item in nearbyPois)
         {
             var source = pois.First(p => p.Id == item.POIId);
-            ApplyLocalizedFields(item, source, normalizedLanguageCode);
+            LocalizationHelper.ApplyLocalizedPoiFields(item, source, normalizedLanguageCode);
         }
 
         _logger.LogInformation("Found {Count} POIs within {Radius}km of ({Lat}, {Lng})",
@@ -157,7 +158,7 @@ public class POIAppService : IPOIAppService
 
     public async Task<IActionResult> GetPOIByIdAsync(int id, string languageCode = LanguageConstants.Vietnamese)
     {
-        var normalizedLanguageCode = NormalizeLanguageCode(languageCode);
+        var normalizedLanguageCode = LocalizationHelper.NormalizeLanguageCode(languageCode);
 
         var poi = await _poiRepository.Query()
             .Include(p => p.Category)
@@ -229,7 +230,7 @@ public class POIAppService : IPOIAppService
                 .ToList()
         };
 
-        ApplyLocalizedFields(response, poi, normalizedLanguageCode);
+        LocalizationHelper.ApplyLocalizedPoiFields(response, poi, normalizedLanguageCode);
         return new OkObjectResult(response);
     }
 
@@ -259,22 +260,6 @@ public class POIAppService : IPOIAppService
         return $"{request.Scheme}://{request.Host}";
     }
 
-    private double CalculateDistance(double lat1, double lon1, double lat2, double lon2)
-    {
-        const double r = 6371;
-        var dLat = ToRadians(lat2 - lat1);
-        var dLon = ToRadians(lon2 - lon1);
-
-        var a = Math.Sin(dLat / 2) * Math.Sin(dLat / 2) +
-                Math.Cos(ToRadians(lat1)) * Math.Cos(ToRadians(lat2)) *
-                Math.Sin(dLon / 2) * Math.Sin(dLon / 2);
-
-        var c = 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
-        return r * c;
-    }
-
-    private static double ToRadians(double degrees) => degrees * Math.PI / 180;
-
     private string? FullUrl(string? path)
     {
         if (string.IsNullOrEmpty(path)) return path;
@@ -293,37 +278,4 @@ public class POIAppService : IPOIAppService
         => PoiTriggerProfiles.TryGetValue(poiId, out var profile)
             ? profile
             : (0, null);
-
-    private static void ApplyLocalizedFields(POIListItemDto dto, PointOfInterest poi, string languageCode)
-    {
-        var translation = ResolveTranslation(poi, languageCode);
-        if (translation == null)
-            return;
-
-        if (!string.IsNullOrWhiteSpace(translation.Name))
-            dto.Name = translation.Name;
-
-        if (!string.IsNullOrWhiteSpace(translation.Description))
-            dto.Description = translation.Description;
-
-        if (!string.IsNullOrWhiteSpace(translation.Address))
-            dto.Address = translation.Address;
-    }
-
-    private static PointOfInterestTranslation? ResolveTranslation(PointOfInterest poi, string languageCode)
-    {
-        var normalized = NormalizeLanguageCode(languageCode);
-        return poi.Translations.FirstOrDefault(t => NormalizeLanguageCode(t.LanguageCode) == normalized)
-            ?? poi.Translations.FirstOrDefault(t => NormalizeLanguageCode(t.LanguageCode) == LanguageConstants.Vietnamese);
-    }
-
-    private static string NormalizeLanguageCode(string? languageCode)
-    {
-        if (string.IsNullOrWhiteSpace(languageCode))
-            return LanguageConstants.Vietnamese;
-
-        var code = languageCode.Trim().ToLowerInvariant();
-        var separatorIndex = code.IndexOfAny(new[] { '-', '_' });
-        return separatorIndex > 0 ? code[..separatorIndex] : code;
-    }
 }
