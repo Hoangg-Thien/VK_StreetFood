@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace VK.API.Controllers;
@@ -92,6 +93,7 @@ public class OfflineController : ControllerBase
         });
     }
 
+    [Authorize(Roles = "Admin")]
     [HttpPost("map-package")]
     [Consumes("multipart/form-data")]
     public async Task<IActionResult> UploadMapPackage(IFormFile file, CancellationToken ct)
@@ -121,6 +123,7 @@ public class OfflineController : ControllerBase
         });
     }
 
+    [Authorize(Roles = "Admin")]
     [HttpPost("route-package")]
     [Consumes("multipart/form-data")]
     public async Task<IActionResult> UploadRoutePackage(IFormFile file, CancellationToken ct)

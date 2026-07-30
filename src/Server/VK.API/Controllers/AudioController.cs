@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using VK.Infrastructure.Data;
@@ -200,6 +201,7 @@ public class AudioController : ControllerBase
     /// <summary>
     /// [Admin] Generate MP3 cho 1 POI (tất cả ngôn ngữ).
     /// </summary>
+    [Authorize(Roles = "Admin")]
     [HttpPost("generate/poi/{poiId}")]
     public async Task<ActionResult> GenerateForPoi(int poiId, CancellationToken ct)
     {
@@ -224,6 +226,7 @@ public class AudioController : ControllerBase
     /// <summary>
     /// [Admin] Generate MP3 cho toàn bộ AudioContent chưa có file (chạy 1 lần khi setup).
     /// </summary>
+    [Authorize(Roles = "Admin")]
     [HttpPost("generate/all")]
     public async Task<ActionResult> GenerateAll(CancellationToken ct)
     {
@@ -249,6 +252,7 @@ public class AudioController : ControllerBase
     /// <summary>
     /// [Admin] Trạng thái generate audio — bao nhiêu cái đã có MP3, bao nhiêu chưa.
     /// </summary>
+    [Authorize(Roles = "Admin")]
     [HttpGet("generate/status")]
     public async Task<ActionResult> GetGenerateStatus()
     {
