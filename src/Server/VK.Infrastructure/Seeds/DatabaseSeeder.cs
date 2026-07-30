@@ -1,4 +1,5 @@
-﻿﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using System.Security.Cryptography;
 using System.Text;
 using VK.Core.Entities;
@@ -9,6 +10,9 @@ namespace VK.Infrastructure.Seeds;
 
 public static class DatabaseSeeder
 {
+    private static readonly ILogger Logger =
+        LoggerFactory.Create(b => b.AddConsole()).CreateLogger(nameof(DatabaseSeeder));
+
     public static async Task SeedAsync(VKStreetFoodDbContext context)
     {
         // Patch: fix ImageUrl paths that were stored without /images/poi/ prefix
@@ -21,6 +25,7 @@ public static class DatabaseSeeder
             await EnsureTourTranslationsAsync(context);
             await EnsureBaselineVendorsAsync(context);
             await EnsureBaselineOwnerUsersAsync(context);
+            await EnsureAdminUserAsync(context);
             return; // Database has been seeded
         }
 
@@ -402,6 +407,7 @@ public static class DatabaseSeeder
         await EnsureTourTranslationsAsync(context);
         await EnsureBaselineVendorsAsync(context);
         await EnsureBaselineOwnerUsersAsync(context);
+        await EnsureAdminUserAsync(context);
     }
 
     /// <summary>
@@ -816,6 +822,58 @@ public static class DatabaseSeeder
         }
     }
 
+    /// <summary>
+    /// Seeds a single admin user if none exists.
+    /// Password is read from the Users table seed; in production override via environment variable.
+    /// Uses PBKDF2-SHA256 (same scheme as API's PasswordHasher) — NOT the legacy SHA256 hex used for owner users.
+    /// </summary>
+    private static async Task EnsureAdminUserAsync(VKStreetFoodDbContext context)
+    {
+        const string adminEmail = "admin@vkstreetfood.local";
+        const string defaultPassword = "ChangeMe@2025!";
+
+        var exists = await context.Users
+            .AnyAsync(u => u.Email == adminEmail && !u.IsDeleted);
+
+        if (exists)
+            return;
+
+        var hash = HashPasswordPbkdf2(defaultPassword);
+
+        context.Users.Add(new User
+        {
+            Email = adminEmail,
+            FullName = "System Admin",
+            Role = "Admin",
+            IsVerified = true,
+            PasswordHash = hash,
+            LastLoginAt = null
+        });
+
+        await context.SaveChangesAsync();
+
+        Logger.LogWarning(
+            "[SECURITY] Default admin user seeded ({Email}). " +
+            "Change the password immediately via POST /api/Auth/login then update the account.",
+            adminEmail);
+    }
+
+    /// <summary>PBKDF2-SHA256 hash (matches VK.API.Auth.PasswordHasher). Used for admin accounts.</summary>
+    private static string HashPasswordPbkdf2(string password)
+    {
+        const int saltSize = 16;
+        const int keySize = 32;
+        const int iterations = 100_000;
+        var salt = RandomNumberGenerator.GetBytes(saltSize);
+        var hash = Rfc2898DeriveBytes.Pbkdf2(
+            Encoding.UTF8.GetBytes(password), salt, iterations, HashAlgorithmName.SHA256, keySize);
+        return $"{Convert.ToBase64String(salt)}:{Convert.ToBase64String(hash)}";
+    }
+
+    /// <summary>
+    /// Legacy SHA-256 hex hash — kept only for existing poi_owner accounts seeded before PBKDF2 migration.
+    /// Do NOT use for new accounts.
+    /// </summary>
     private static string HashPassword(string plainText)
     {
         var bytes = SHA256.HashData(Encoding.UTF8.GetBytes(plainText));
