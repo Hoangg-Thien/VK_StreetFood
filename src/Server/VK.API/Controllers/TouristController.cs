@@ -1,3 +1,5 @@
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using VK.API.Services.AppServices;
 using VK.Shared.Constants;
@@ -16,41 +18,123 @@ public class TouristController : ControllerBase
         _touristAppService = touristAppService;
     }
 
+    /// <summary>
+    /// Register or re-register a tourist by DeviceId.
+    /// Returns a JWT bearer token in the response that must be used for all subsequent
+    /// tourist-scoped requests (Authorization: Bearer {token}).
+    /// This endpoint is intentionally anonymous — no token required to call it.
+    /// </summary>
+    [AllowAnonymous]
     [HttpPost("register")]
     public Task<IActionResult> RegisterTourist([FromBody] RegisterTouristRequest request)
         => _touristAppService.RegisterTouristAsync(request);
 
+    /// <summary>Update the authenticated tourist's GPS location.</summary>
+    [Authorize]
     [HttpPut("{touristId}/location")]
-    public Task<IActionResult> UpdateLocation(int touristId, [FromBody] UpdateLocationRequest request)
-        => _touristAppService.UpdateLocationAsync(touristId, request);
+    public async Task<IActionResult> UpdateLocation(int touristId, [FromBody] UpdateLocationRequest request)
+    {
+        var ownership = VerifyOwnership(touristId);
+        if (ownership != null) return ownership;
+        return await _touristAppService.UpdateLocationAsync(touristId, request);
+    }
 
+    /// <summary>Log a POI visit for the authenticated tourist.</summary>
+    [Authorize]
     [HttpPost("{touristId}/visits")]
-    public Task<IActionResult> LogVisit(int touristId, [FromBody] LogVisitRequest request)
-        => _touristAppService.LogVisitAsync(touristId, request);
+    public async Task<IActionResult> LogVisit(int touristId, [FromBody] LogVisitRequest request)
+    {
+        var ownership = VerifyOwnership(touristId);
+        if (ownership != null) return ownership;
+        return await _touristAppService.LogVisitAsync(touristId, request);
+    }
 
+    /// <summary>Get the authenticated tourist's visit history.</summary>
+    [Authorize]
     [HttpGet("{touristId}/visits")]
-    public Task<IActionResult> GetVisitHistory(int touristId)
-        => _touristAppService.GetVisitHistoryAsync(touristId);
+    public async Task<IActionResult> GetVisitHistory(int touristId)
+    {
+        var ownership = VerifyOwnership(touristId);
+        if (ownership != null) return ownership;
+        return await _touristAppService.GetVisitHistoryAsync(touristId);
+    }
 
+    /// <summary>Add a POI to the authenticated tourist's favourites.</summary>
+    [Authorize]
     [HttpPost("{touristId}/favorites")]
-    public Task<IActionResult> AddFavorite(int touristId, [FromBody] AddFavoriteRequest request)
-        => _touristAppService.AddFavoriteAsync(touristId, request);
+    public async Task<IActionResult> AddFavorite(int touristId, [FromBody] AddFavoriteRequest request)
+    {
+        var ownership = VerifyOwnership(touristId);
+        if (ownership != null) return ownership;
+        return await _touristAppService.AddFavoriteAsync(touristId, request);
+    }
 
+    /// <summary>Remove a POI from the authenticated tourist's favourites.</summary>
+    [Authorize]
     [HttpDelete("{touristId}/favorites/{poiId}")]
-    public Task<IActionResult> RemoveFavorite(int touristId, int poiId)
-        => _touristAppService.RemoveFavoriteAsync(touristId, poiId);
+    public async Task<IActionResult> RemoveFavorite(int touristId, int poiId)
+    {
+        var ownership = VerifyOwnership(touristId);
+        if (ownership != null) return ownership;
+        return await _touristAppService.RemoveFavoriteAsync(touristId, poiId);
+    }
 
+    /// <summary>Get the authenticated tourist's favourite POIs.</summary>
+    [Authorize]
     [HttpGet("{touristId}/favorites")]
-    public Task<IActionResult> GetFavorites(
+    public async Task<IActionResult> GetFavorites(
         int touristId,
         [FromQuery] string languageCode = LanguageConstants.Vietnamese)
-        => _touristAppService.GetFavoritesAsync(touristId, languageCode);
+    {
+        var ownership = VerifyOwnership(touristId);
+        if (ownership != null) return ownership;
+        return await _touristAppService.GetFavoritesAsync(touristId, languageCode);
+    }
 
+    /// <summary>Submit a rating for a POI on behalf of the authenticated tourist.</summary>
+    [Authorize]
     [HttpPost("{touristId}/ratings")]
-    public Task<IActionResult> SubmitRating(int touristId, [FromBody] SubmitRatingRequest request)
-        => _touristAppService.SubmitRatingAsync(touristId, request);
+    public async Task<IActionResult> SubmitRating(int touristId, [FromBody] SubmitRatingRequest request)
+    {
+        var ownership = VerifyOwnership(touristId);
+        if (ownership != null) return ownership;
+        return await _touristAppService.SubmitRatingAsync(touristId, request);
+    }
 
+    /// <summary>Get the authenticated tourist's activity statistics.</summary>
+    [Authorize]
     [HttpGet("{touristId}/stats")]
-    public Task<IActionResult> GetStats(int touristId)
-        => _touristAppService.GetStatsAsync(touristId);
+    public async Task<IActionResult> GetStats(int touristId)
+    {
+        var ownership = VerifyOwnership(touristId);
+        if (ownership != null) return ownership;
+        return await _touristAppService.GetStatsAsync(touristId);
+    }
+
+    // ── IDOR guard ────────────────────────────────────────────────────────────
+    /// <summary>
+    /// Returns a 403 ForbidResult when the JWT subject does not match <paramref name="touristId"/>,
+    /// unless the caller has the Admin role (admins can access any tourist's data).
+    /// Returns null when access is permitted.
+    /// </summary>
+    private IActionResult? VerifyOwnership(int touristId)
+    {
+        // Admins may access any tourist profile
+        if (User.IsInRole("Admin"))
+            return null;
+
+        var sub = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (sub == null || !int.TryParse(sub, out var claimedId))
+            return Unauthorized(new { message = "Invalid token: missing subject claim." });
+
+        if (claimedId != touristId)
+            return StatusCode(403, new
+            {
+                message = "Access denied: you can only access your own tourist profile.",
+                yourTouristId = claimedId,
+                requestedTouristId = touristId
+            });
+
+        return null;
+    }
 }
