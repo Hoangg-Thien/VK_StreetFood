@@ -1,4 +1,4 @@
-﻿using Mapsui;
+using Mapsui;
 using Mapsui.Extensions;
 using Mapsui.Layers;
 using Mapsui.Projections;
@@ -11,6 +11,7 @@ using NetTopologySuite.Geometries;
 using BruTile.Cache;
 using BruTile.Predefined;
 using System.Globalization;
+using VK.Mobile.Helpers;
 using VK.Mobile.ViewModels;
 using VK.Mobile.Models;
 using VK.Mobile.Services;
@@ -467,9 +468,9 @@ public partial class MainMapPage : ContentPage
         if (distKm == null && _viewModel.CurrentLocation is { } loc
             && (poi.Latitude != 0 || poi.Longitude != 0))
         {
-            distKm = ComputeDistanceKm(loc.Latitude, loc.Longitude, poi.Latitude, poi.Longitude);
+            distKm = GeoHelper.HaversineKm(loc.Latitude, loc.Longitude, poi.Latitude, poi.Longitude);
         }
-        POICardDistance.Text = FormatCardDistance(distKm);
+        POICardDistance.Text = DistanceFormatter.Format(distKm);
 
         // Ảnh POI
         POICardImage.Source = !string.IsNullOrWhiteSpace(poi.ImageUrl)
@@ -483,38 +484,6 @@ public partial class MainMapPage : ContentPage
     {
         POIBottomCard.IsVisible = false;
         _selectedPoi = null;
-    }
-
-    private static string FormatCardDistance(double? distKm)
-    {
-        if (distKm is null or 0)
-            return string.Empty;
-
-        if (distKm < 0.1)
-        {
-            var text = string.Format(
-                CultureInfo.CurrentCulture,
-                LocalizationResourceManager.Instance["NowPlayingDistanceMetersAwayFormat"],
-                distKm.Value * 1000);
-            return $"📍 {text}";
-        }
-
-        var kmText = string.Format(
-            CultureInfo.CurrentCulture,
-            LocalizationResourceManager.Instance["NowPlayingDistanceKmAwayFormat"],
-            distKm.Value);
-        return $"📍 {kmText}";
-    }
-
-    private static double ComputeDistanceKm(double lat1, double lon1, double lat2, double lon2)
-    {
-        const double R = 6371;
-        var dLat = (lat2 - lat1) * Math.PI / 180;
-        var dLon = (lon2 - lon1) * Math.PI / 180;
-        var a = Math.Sin(dLat / 2) * Math.Sin(dLat / 2)
-                + Math.Cos(lat1 * Math.PI / 180) * Math.Cos(lat2 * Math.PI / 180)
-                * Math.Sin(dLon / 2) * Math.Sin(dLon / 2);
-        return R * 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
     }
 
     private void OnCardBackdropTapped(object? sender, TappedEventArgs e) => HidePOIBottomCard();

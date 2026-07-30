@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text.Json;
+using VK.Mobile.Helpers;
 using VK.Mobile.Models;
 
 namespace VK.Mobile.Services;
@@ -97,7 +98,7 @@ public class RoutePackageService : IRoutePackageService
                 var neighborsPerWaypoint = fromWaypoint.IsAnchor ? 4 : 7;
                 var nearestNeighbors = waypoints
                     .Where(waypoint => waypoint.Id != fromWaypoint.Id)
-                    .OrderBy(waypoint => CalculateHaversineDistanceMeters(
+                    .OrderBy(waypoint => GeoHelper.HaversineMeters(
                         fromWaypoint.Latitude,
                         fromWaypoint.Longitude,
                         waypoint.Latitude,
@@ -125,7 +126,7 @@ public class RoutePackageService : IRoutePackageService
             if (selectedPairs.Count > maxRoutePairs)
             {
                 selectedPairs = selectedPairs
-                    .OrderBy(pair => CalculateHaversineDistanceMeters(
+                    .OrderBy(pair => GeoHelper.HaversineMeters(
                         pair.FromWaypoint.Latitude,
                         pair.FromWaypoint.Longitude,
                         pair.ToWaypoint.Latitude,
@@ -289,25 +290,6 @@ public class RoutePackageService : IRoutePackageService
         return (result & 1) != 0 ? ~(result >> 1) : result >> 1;
     }
 
-    private static double CalculateHaversineDistanceMeters(double lat1, double lon1, double lat2, double lon2)
-    {
-        const double earthRadiusKm = 6371;
-
-        var deltaLat = ToRadians(lat2 - lat1);
-        var deltaLon = ToRadians(lon2 - lon1);
-
-        var a = Math.Sin(deltaLat / 2) * Math.Sin(deltaLat / 2)
-                + Math.Cos(ToRadians(lat1)) * Math.Cos(ToRadians(lat2))
-                * Math.Sin(deltaLon / 2) * Math.Sin(deltaLon / 2);
-
-        var c = 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
-        var distanceKm = earthRadiusKm * c;
-
-        return distanceKm * 1000;
-    }
-
-    private static double ToRadians(double degrees) => degrees * Math.PI / 180;
-
     private static bool IsLocalRoutePackageCompatible()
     {
         var path = GetRoutePackagePath();
@@ -419,7 +401,7 @@ public class RoutePackageService : IRoutePackageService
                     FromNodeId = fromNodeId,
                     ToNodeId = toNodeId,
                     Bidirectional = true,
-                    DistanceMeters = CalculateHaversineDistanceMeters(
+                    DistanceMeters = GeoHelper.HaversineMeters(
                         fromPoint.Latitude,
                         fromPoint.Longitude,
                         toPoint.Latitude,

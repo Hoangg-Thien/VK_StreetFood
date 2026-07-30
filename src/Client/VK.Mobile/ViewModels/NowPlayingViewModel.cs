@@ -1,6 +1,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System.Globalization;
+using VK.Mobile.Helpers;
 using VK.Mobile.Models;
 using VK.Mobile.Services;
 
@@ -112,7 +113,7 @@ public partial class NowPlayingViewModel : ObservableObject, IQueryAttributable
             {
                 _nextPoiModel = _allPois
                     .Where(p => p.Id != poiId)
-                    .OrderBy(p => HaversineKm(currentPoi.Latitude, currentPoi.Longitude, p.Latitude, p.Longitude))
+                    .OrderBy(p => GeoHelper.HaversineKm(currentPoi.Latitude, currentPoi.Longitude, p.Latitude, p.Longitude))
                     .FirstOrDefault();
             }
             else
@@ -228,16 +229,7 @@ public partial class NowPlayingViewModel : ObservableObject, IQueryAttributable
             (int)Math.Ceiling(km.Value * 12))
     };
 
-    private static double HaversineKm(double lat1, double lon1, double lat2, double lon2)
-    {
-        const double R = 6371;
-        var dLat = (lat2 - lat1) * Math.PI / 180;
-        var dLon = (lon2 - lon1) * Math.PI / 180;
-        var a = Math.Sin(dLat / 2) * Math.Sin(dLat / 2)
-              + Math.Cos(lat1 * Math.PI / 180) * Math.Cos(lat2 * Math.PI / 180)
-              * Math.Sin(dLon / 2) * Math.Sin(dLon / 2);
-        return R * 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
-    }
+
 
     partial void OnAudioTextChanged(string value)
     {
@@ -412,21 +404,10 @@ public partial class NowPlayingViewModel : ObservableObject, IQueryAttributable
                 : BuildLocalizedFallbackNarration(next, Language);
         }
 
-        // Re-initialize với POI mới — _allPois vẫn còn, tự tính next tiếp theo
         Initialize(next.Id, next.Name ?? string.Empty, next.CategoryName ?? string.Empty,
                    next.ImageUrl ?? string.Empty, audioText, Language,
                    next.Address ?? string.Empty,
-                   next.DistanceKm.HasValue
-                       ? (next.DistanceKm < 0.1
-                           ? string.Format(
-                               CultureInfo.CurrentCulture,
-                               L["NowPlayingDistanceMetersAwayFormat"],
-                               next.DistanceKm.Value * 1000)
-                           : string.Format(
-                               CultureInfo.CurrentCulture,
-                               L["NowPlayingDistanceKmAwayFormat"],
-                               next.DistanceKm.Value))
-                       : string.Empty,
+                   DistanceFormatter.Format(next.DistanceKm),
                    audioFileUrl: nextAudioFileUrl,
                    isFallback: nextIsFallback);
 
