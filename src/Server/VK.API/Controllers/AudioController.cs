@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -277,4 +278,11 @@ public class AudioController : ControllerBase
     }
 }
 
-public record OnDemandTtsRequest(int PoiId, string LanguageCode = "vi");
+public class OnDemandTtsRequest
+{
+    [Range(1, int.MaxValue)]
+    public int PoiId { get; set; }
+
+    [MaxLength(10)]
+    public string LanguageCode { get; set; } = "vi";
+}

@@ -195,4 +195,138 @@ public class TouristEndpointsTests : IClassFixture<CustomWebApplicationFactory>
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
+
+    // ── Validation: Register ──────────────────────────────────────────────────
+
+    [Fact]
+    public async Task RegisterTourist_Returns400_WhenDeviceIdIsMissing()
+    {
+        await _factory.ResetDatabaseAsync();
+        var client = _factory.CreateClient();
+
+        // DeviceId is omitted — [Required] should reject this
+        var response = await client.PostAsJsonAsync("/api/Tourist/register", new
+        {
+            preferredLanguage = "en"
+        });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task RegisterTourist_Returns400_WhenLatitudeIsOutOfRange()
+    {
+        await _factory.ResetDatabaseAsync();
+        var client = _factory.CreateClient();
+
+        // Latitude = 999 is impossible — [Range(-90, 90)] should reject this
+        var response = await client.PostAsJsonAsync("/api/Tourist/register", new
+        {
+            deviceId = "device-bad-lat",
+            latitude = 999.0,
+            longitude = 106.69
+        });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    // ── Validation: SubmitRating ──────────────────────────────────────────────
+
+    [Fact]
+    public async Task SubmitRating_Returns400_WhenScoreIsOutOfRange()
+    {
+        await _factory.ResetDatabaseAsync();
+
+        int touristId = 0;
+        int poiId = 0;
+
+        await _factory.ExecuteDbContextAsync(async db =>
+        {
+            var tourist = new Tourist { DeviceId = "device-rating-score", PreferredLanguage = "vi" };
+            var poi = new PointOfInterest
+            {
+                Name = "Pho",
+                Description = "Noodle soup",
+                Latitude = 10.77,
+                Longitude = 106.68,
+                Address = "District 1",
+                IsActive = true
+            };
+            db.Tourists.Add(tourist);
+            db.PointsOfInterest.Add(poi);
+            await db.SaveChangesAsync();
+            touristId = tourist.Id;
+            poiId = poi.Id;
+        });
+
+        var client = _factory.CreateAuthenticatedTouristClient(touristId);
+
+        // Score = 9999 violates [Range(1, 5)]
+        var response = await client.PostAsJsonAsync($"/api/Tourist/{touristId}/ratings", new
+        {
+            poiId,
+            score = 9999,
+            comment = "Invalid score"
+        });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task SubmitRating_Returns400_WhenPOIIdIsZero()
+    {
+        await _factory.ResetDatabaseAsync();
+
+        int touristId = 0;
+
+        await _factory.ExecuteDbContextAsync(async db =>
+        {
+            var tourist = new Tourist { DeviceId = "device-rating-poiid", PreferredLanguage = "vi" };
+            db.Tourists.Add(tourist);
+            await db.SaveChangesAsync();
+            touristId = tourist.Id;
+        });
+
+        var client = _factory.CreateAuthenticatedTouristClient(touristId);
+
+        // POIId = 0 violates [Range(1, int.MaxValue)]
+        var response = await client.PostAsJsonAsync($"/api/Tourist/{touristId}/ratings", new
+        {
+            poiId = 0,
+            score = 3
+        });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    // ── Validation: LogVisit ──────────────────────────────────────────────────
+
+    [Fact]
+    public async Task LogVisit_Returns400_WhenBothPoiIdsAreZeroAndLatitudeInvalid()
+    {
+        await _factory.ResetDatabaseAsync();
+
+        int touristId = 0;
+
+        await _factory.ExecuteDbContextAsync(async db =>
+        {
+            var tourist = new Tourist { DeviceId = "device-logvisit-bad", PreferredLanguage = "vi" };
+            db.Tourists.Add(tourist);
+            await db.SaveChangesAsync();
+            touristId = tourist.Id;
+        });
+
+        var client = _factory.CreateAuthenticatedTouristClient(touristId);
+
+        // Latitude = -999 violates [Range(-90, 90)]
+        var response = await client.PostAsJsonAsync($"/api/Tourist/{touristId}/visits", new
+        {
+            poiId = 1,
+            latitude = -999.0,
+            longitude = 106.68
+        });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
 }
+

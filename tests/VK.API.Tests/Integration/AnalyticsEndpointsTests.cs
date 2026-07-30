@@ -70,4 +70,55 @@ public class AnalyticsEndpointsTests : IClassFixture<CustomWebApplicationFactory
             Assert.Equal(95, row.DurationSeconds);
         });
     }
+
+    // ── Validation ────────────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task RecordEvent_Returns400_WhenEventTypeIsMissing()
+    {
+        await _factory.ResetDatabaseAsync();
+        var client = _factory.CreateClient();
+
+        // eventType is omitted — [Required] should reject before business logic
+        var response = await client.PostAsJsonAsync("/api/Analytics/event", new
+        {
+            poiId = 1,
+            durationSeconds = 30
+        });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task RecordEvent_Returns400_WhenDurationSecondsExceedsLimit()
+    {
+        await _factory.ResetDatabaseAsync();
+        var client = _factory.CreateClient();
+
+        // durationSeconds = 999999 far exceeds [Range(0, 86400)]
+        var response = await client.PostAsJsonAsync("/api/Analytics/event", new
+        {
+            poiId = 1,
+            eventType = "audio_play",
+            durationSeconds = 999999
+        });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task RecordEvent_Returns400_WhenPOIIdIsZero()
+    {
+        await _factory.ResetDatabaseAsync();
+        var client = _factory.CreateClient();
+
+        // poiId = 0 violates [Range(1, int.MaxValue)]
+        var response = await client.PostAsJsonAsync("/api/Analytics/event", new
+        {
+            poiId = 0,
+            eventType = "view"
+        });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
 }

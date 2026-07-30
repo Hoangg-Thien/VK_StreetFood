@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json.Serialization;
@@ -122,12 +123,16 @@ public class LocalizationController : ControllerBase
 
 public class HotsetRequest
 {
+    [Required]
     [JsonPropertyName("poiIds")]
     public List<int> POIIds { get; set; } = new();
+
+    [MaxLength(10)]
     public string LanguageCode { get; set; } = "vi";
 }
 
 public class WarmupRequest
 {
+    [MaxLength(10)]
     public string LanguageCode { get; set; } = "vi";
 }

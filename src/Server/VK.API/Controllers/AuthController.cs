@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -96,6 +97,12 @@ public class AuthController : ControllerBase
 
 public class LoginRequest
 {
+    [Required]
+    [EmailAddress]
+    [MaxLength(256)]
     public string Email { get; set; } = string.Empty;
+
+    [Required]
+    [MaxLength(1024)]
     public string Password { get; set; } = string.Empty;
 }
