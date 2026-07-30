@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using VK.API.Tests.Infrastructure;
 using VK.Core.Entities;
 using VK.Infrastructure.Data;
+using VK.Shared.DTOs;
 
 namespace VK.API.Tests.Integration;
 
@@ -17,8 +18,10 @@ public class TouristEndpointsTests : IClassFixture<CustomWebApplicationFactory>
         _factory = factory;
     }
 
+    // ── Register ──────────────────────────────────────────────────────────────
+
     [Fact]
-    public async Task RegisterTouristEndpoint_CreatesTouristRecord()
+    public async Task RegisterTouristEndpoint_CreatesTouristRecord_AndReturnsToken()
     {
         await _factory.ResetDatabaseAsync();
         var client = _factory.CreateClient();
@@ -33,16 +36,28 @@ public class TouristEndpointsTests : IClassFixture<CustomWebApplicationFactory>
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
+        // Verify DB record was created
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<VKStreetFoodDbContext>();
-
         var tourist = await db.Tourists.SingleAsync();
         Assert.Equal("integration-device-001", tourist.DeviceId);
         Assert.Equal("en", tourist.PreferredLanguage);
+
+        // Verify JWT token was returned in the response
+        var dto = await response.Content.ReadFromJsonAsync<TouristDto>();
+        Assert.NotNull(dto);
+        Assert.False(string.IsNullOrWhiteSpace(dto.Token),
+            "RegisterTourist should return a non-empty JWT token.");
+
+        // Token must be a valid 3-part JWT
+        var parts = dto.Token!.Split('.');
+        Assert.Equal(3, parts.Length);
     }
 
+    // ── Log Visit (authenticated) ─────────────────────────────────────────────
+
     [Fact]
-    public async Task LogVisitEndpoint_PersistsVisitLog()
+    public async Task LogVisitEndpoint_PersistsVisitLog_WithValidToken()
     {
         await _factory.ResetDatabaseAsync();
 
@@ -75,7 +90,8 @@ public class TouristEndpointsTests : IClassFixture<CustomWebApplicationFactory>
             poiId = poi.Id;
         });
 
-        var client = _factory.CreateClient();
+        // Use token belonging to the correct tourist — should succeed
+        var client = _factory.CreateAuthenticatedTouristClient(touristId);
         var response = await client.PostAsJsonAsync($"/api/Tourist/{touristId}/visits", new
         {
             poiId,
@@ -93,5 +109,90 @@ public class TouristEndpointsTests : IClassFixture<CustomWebApplicationFactory>
             Assert.Single(visits);
             Assert.Equal(poiId, visits[0].PointOfInterestId);
         });
+    }
+
+    [Fact]
+    public async Task LogVisitEndpoint_Returns401_WithNoToken()
+    {
+        await _factory.ResetDatabaseAsync();
+
+        var client = _factory.CreateClient(); // no bearer token
+        var response = await client.PostAsJsonAsync("/api/Tourist/99/visits", new
+        {
+            poiId = 1,
+            triggerMethod = "manual"
+        });
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    // ── IDOR guard ────────────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task GetStats_Returns403_WhenTokenDoesNotMatchTouristId()
+    {
+        await _factory.ResetDatabaseAsync();
+
+        int tourist1Id = 0;
+        int tourist2Id = 0;
+
+        await _factory.ExecuteDbContextAsync(async db =>
+        {
+            var t1 = new Tourist { DeviceId = "device-idor-1", PreferredLanguage = "vi" };
+            var t2 = new Tourist { DeviceId = "device-idor-2", PreferredLanguage = "vi" };
+            db.Tourists.AddRange(t1, t2);
+            await db.SaveChangesAsync();
+            tourist1Id = t1.Id;
+            tourist2Id = t2.Id;
+        });
+
+        // Client authenticated as tourist1, but requests tourist2's stats → IDOR
+        var client = _factory.CreateAuthenticatedTouristClient(tourist1Id);
+        var response = await client.GetAsync($"/api/Tourist/{tourist2Id}/stats");
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetStats_Returns200_WhenTokenMatchesTouristId()
+    {
+        await _factory.ResetDatabaseAsync();
+
+        int touristId = 0;
+
+        await _factory.ExecuteDbContextAsync(async db =>
+        {
+            var tourist = new Tourist { DeviceId = "device-owner-1", PreferredLanguage = "vi" };
+            db.Tourists.Add(tourist);
+            await db.SaveChangesAsync();
+            touristId = tourist.Id;
+        });
+
+        var client = _factory.CreateAuthenticatedTouristClient(touristId);
+        var response = await client.GetAsync($"/api/Tourist/{touristId}/stats");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetStats_Returns200_WhenAdminAccessesAnyTouristId()
+    {
+        await _factory.ResetDatabaseAsync();
+
+        int touristId = 0;
+
+        await _factory.ExecuteDbContextAsync(async db =>
+        {
+            var tourist = new Tourist { DeviceId = "device-admin-access", PreferredLanguage = "vi" };
+            db.Tourists.Add(tourist);
+            await db.SaveChangesAsync();
+            touristId = tourist.Id;
+        });
+
+        // Admin token bypasses IDOR check
+        var adminClient = _factory.CreateAuthenticatedAdminClient();
+        var response = await adminClient.GetAsync($"/api/Tourist/{touristId}/stats");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 }
