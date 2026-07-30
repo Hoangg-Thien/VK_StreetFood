@@ -1,12 +1,16 @@
+using System.Text;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.Extensions.FileProviders;
+using Microsoft.IdentityModel.Tokens;
 using VK.Core.Interfaces;
 using VK.Infrastructure.Data;
 using VK.Infrastructure.Repositories;
 using VK.API.Extensions;
 using VK.API.Services;
 using VK.API.Services.AppServices;
+using VK.API.Auth;
 
 // Force IPv4 so DNS doesn't resolve Supabase to IPv6 (unreachable on dev machines)
 AppContext.SetSwitch("System.Net.preferIPv4Stack", true);
@@ -51,16 +55,50 @@ builder.Services.AddScoped<ITouristAppService, TouristAppService>();
 builder.Services.AddScoped<IAnalyticsAppService, AnalyticsAppService>();
 builder.Services.AddScoped<IPaymentAppService, PaymentAppService>();
 
-// Add Swagger
+// Auth services
+builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
+
+// ── JWT Bearer Authentication ────────────────────────────────────────────────
+var jwtKey = builder.Configuration["Jwt:Key"];
+if (!builder.Environment.IsEnvironment("Testing") && string.IsNullOrWhiteSpace(jwtKey))
+    throw new InvalidOperationException("Jwt:Key must be set via the Jwt__Key environment variable.");
+
+var keyBytes = Encoding.UTF8.GetBytes(
+    string.IsNullOrWhiteSpace(jwtKey) ? new string('x', 64) : jwtKey); // testing fallback
+
+builder.Services
+    .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = builder.Configuration["Jwt:Issuer"],
+            ValidAudience = builder.Configuration["Jwt:Audience"],
+            IssuerSigningKey = new SymmetricSecurityKey(keyBytes),
+            ClockSkew = TimeSpan.FromMinutes(5)
+        };
+    });
+
+builder.Services.AddAuthorizationBuilder()
+    .AddPolicy("AdminOnly", policy => policy.RequireRole("Admin"));
+
+// ── Swagger ────────────────────────────────────────────────────────────────
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new()
     {
         Title = "VK Street Food API",
         Version = "v1",
-        Description = "API for Vietnamese Food Street Tour - Multilingual Audio Guide System"
+        Description = "API for Vietnamese Food Street Tour - Multilingual Audio Guide System. " +
+                      "Authenticate via POST /api/Tourist/register (tourists) or POST /api/Auth/login (admins). " +
+                      "Then pass the returned token as: Authorization: Bearer {token}"
     });
 });
+
 
 var app = builder.Build();
 
@@ -103,6 +141,10 @@ if (enableHttpsRedirection)
 // Dedicated health endpoint for container/platform probes.
 app.MapGet("/healthz", () => Results.Ok(new { status = "ok" }));
 
+// ── Auth middleware (must come before MapControllers) ────────────────────────
+app.UseAuthentication();
+app.UseAuthorization();
+
 app.MapControllers();
 
 // Seed database in background — don't block startup
@@ -114,3 +156,4 @@ if (!app.Environment.IsEnvironment("Testing"))
 app.Run();
 
 public partial class Program;
+

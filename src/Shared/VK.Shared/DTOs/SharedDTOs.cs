@@ -27,4 +27,11 @@ public class TouristDto
     public string DeviceId { get; set; } = string.Empty;
     public string PreferredLanguage { get; set; } = "vi";
     public int TotalVisits { get; set; }
+
+    /// <summary>
+    /// JWT bearer token. Populated ONLY on the initial register response.
+    /// The client must store this securely and attach it as Authorization: Bearer {Token}
+    /// on all subsequent tourist-scoped API calls.
+    /// </summary>
+    public string? Token { get; set; }
 }

@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using VK.API.Auth;
 using VK.Core.Entities;
 using VK.Core.Interfaces;
 using VK.Shared.Constants;
@@ -18,6 +19,7 @@ public class TouristAppService : ITouristAppService
     private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<TouristAppService> _logger;
     private readonly IHttpContextAccessor _httpContextAccessor;
+    private readonly IJwtTokenService _jwtTokenService;
 
     public TouristAppService(
         IRepository<Tourist> touristRepository,
@@ -28,7 +30,8 @@ public class TouristAppService : ITouristAppService
         IRepository<Analytics> analyticsRepository,
         IUnitOfWork unitOfWork,
         ILogger<TouristAppService> logger,
-        IHttpContextAccessor httpContextAccessor)
+        IHttpContextAccessor httpContextAccessor,
+        IJwtTokenService jwtTokenService)
     {
         _touristRepository = touristRepository;
         _poiRepository = poiRepository;
@@ -39,6 +42,7 @@ public class TouristAppService : ITouristAppService
         _unitOfWork = unitOfWork;
         _logger = logger;
         _httpContextAccessor = httpContextAccessor;
+        _jwtTokenService = jwtTokenService;
     }
 
     public async Task<IActionResult> RegisterTouristAsync(RegisterTouristRequest request)
@@ -68,12 +72,15 @@ public class TouristAppService : ITouristAppService
             await _unitOfWork.SaveChangesAsync();
         }
 
+        var token = _jwtTokenService.GenerateTouristToken(tourist.Id);
+
         return new OkObjectResult(new TouristDto
         {
             TouristId = tourist.Id,
             DeviceId = tourist.DeviceId,
             PreferredLanguage = tourist.PreferredLanguage,
-            TotalVisits = tourist.TotalVisits
+            TotalVisits = tourist.TotalVisits,
+            Token = token
         });
     }
 
