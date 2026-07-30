@@ -52,6 +52,7 @@ public class AnalyticsAppServiceTests
             new Repository<VisitLog>(context),
             new Repository<Rating>(context),
             new Repository<PointOfInterest>(context),
+            new Repository<Tourist>(context),
             new UnitOfWork(context),
             NullLogger<AnalyticsAppService>.Instance);
 
