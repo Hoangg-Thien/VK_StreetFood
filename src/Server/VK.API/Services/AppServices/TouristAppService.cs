@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using VK.API.Auth;
+using VK.API.Extensions;
 using VK.Core.Entities;
 using VK.Core.Interfaces;
 using VK.Shared.Constants;
@@ -105,10 +106,10 @@ public class TouristAppService : ITouristAppService
             {
                 poiId = p.Id,
                 name = p.Name,
-                distanceMeters = CalculateDistance(
+                distanceMeters = GeoHelper.CalculateDistanceKm(
                     request.Latitude, request.Longitude,
                     p.Latitude, p.Longitude) * 1000,
-                shouldTriggerAudio = CalculateDistance(
+                shouldTriggerAudio = GeoHelper.CalculateDistanceKm(
                     request.Latitude, request.Longitude,
                     p.Latitude, p.Longitude) <= 0.05
             })
@@ -247,7 +248,7 @@ public class TouristAppService : ITouristAppService
 
     public async Task<IActionResult> GetFavoritesAsync(int touristId, string languageCode = LanguageConstants.Vietnamese)
     {
-        var normalizedLanguageCode = NormalizeLanguageCode(languageCode);
+        var normalizedLanguageCode = LocalizationHelper.NormalizeLanguageCode(languageCode);
 
         var favoriteEntities = await _favoriteRepository.Query()
             .Where(f => f.TouristId == touristId)
@@ -277,7 +278,7 @@ public class TouristAppService : ITouristAppService
                     Tags = f.PointOfInterest.Tags.Select(t => t.Name).ToList()
                 };
 
-                ApplyLocalizedFields(dto, f.PointOfInterest, normalizedLanguageCode);
+                LocalizationHelper.ApplyLocalizedPoiFields(dto, f.PointOfInterest, normalizedLanguageCode);
                 return dto;
             })
             .ToList();
@@ -409,56 +410,8 @@ public class TouristAppService : ITouristAppService
             .ToListAsync();
 
         return allPOIs
-            .Where(p => CalculateDistance(latitude.Value, longitude.Value, p.Latitude, p.Longitude) <= 0.2)
+            .Where(p => GeoHelper.CalculateDistanceKm(latitude.Value, longitude.Value, p.Latitude, p.Longitude) <= 0.2)
             .ToList();
     }
 
-    private double CalculateDistance(double lat1, double lon1, double lat2, double lon2)
-    {
-        const double r = 6371;
-        var dLat = ToRadians(lat2 - lat1);
-        var dLon = ToRadians(lon2 - lon1);
-
-        var a = Math.Sin(dLat / 2) * Math.Sin(dLat / 2) +
-                Math.Cos(ToRadians(lat1)) * Math.Cos(ToRadians(lat2)) *
-                Math.Sin(dLon / 2) * Math.Sin(dLon / 2);
-
-        var c = 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
-        return r * c;
-    }
-
-    private static double ToRadians(double degrees) => degrees * Math.PI / 180;
-
-    private static void ApplyLocalizedFields(POIListItemDto dto, PointOfInterest poi, string languageCode)
-    {
-        var translation = ResolveTranslation(poi, languageCode);
-        if (translation == null)
-            return;
-
-        if (!string.IsNullOrWhiteSpace(translation.Name))
-            dto.Name = translation.Name;
-
-        if (!string.IsNullOrWhiteSpace(translation.Description))
-            dto.Description = translation.Description;
-
-        if (!string.IsNullOrWhiteSpace(translation.Address))
-            dto.Address = translation.Address;
-    }
-
-    private static PointOfInterestTranslation? ResolveTranslation(PointOfInterest poi, string languageCode)
-    {
-        var normalized = NormalizeLanguageCode(languageCode);
-        return poi.Translations.FirstOrDefault(t => NormalizeLanguageCode(t.LanguageCode) == normalized)
-            ?? poi.Translations.FirstOrDefault(t => NormalizeLanguageCode(t.LanguageCode) == LanguageConstants.Vietnamese);
-    }
-
-    private static string NormalizeLanguageCode(string? languageCode)
-    {
-        if (string.IsNullOrWhiteSpace(languageCode))
-            return LanguageConstants.Vietnamese;
-
-        var code = languageCode.Trim().ToLowerInvariant();
-        var separatorIndex = code.IndexOfAny(new[] { '-', '_' });
-        return separatorIndex > 0 ? code[..separatorIndex] : code;
-    }
 }
