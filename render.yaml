@@ -25,7 +25,14 @@ services:
         value: "false"
       - key: ConnectionStrings__DefaultConnection
         sync: false
-
+      - key: Jwt__Key
+        sync: false
+      - key: Jwt__Issuer
+        sync: false
+      - key: Jwt__Audience
+        sync: false
+      - key: Auth__AdminSeedPassword
+        sync: false
   - type: web
     name: vk-web
     env: docker
