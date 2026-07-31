@@ -6,7 +6,7 @@
 
 ![.NET](https://img.shields.io/badge/.NET-10.0-512BD4?style=flat-square&logo=dotnet)
 ![ASP.NET Core](https://img.shields.io/badge/ASP.NET%20Core-Web%20API%20%2B%20MVC-512BD4?style=flat-square&logo=dotnet)
-![MAUI](https://img.shields.io/badge/.NET%20MAUI-Android%20%2F%20iOS-512BD4?style=flat-square&logo=dotnet)
+![MAUI](https://img.shields.io/badge/.NET%20MAUI-Android%20%2F%20-512BD4?style=flat-square&logo=dotnet)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Supabase-4169E1?style=flat-square&logo=postgresql&logoColor=white)
 ![EF Core](https://img.shields.io/badge/EF%20Core-9.0-512BD4?style=flat-square)
 ![Docker](https://img.shields.io/badge/Docker-Multi--stage-2496ED?style=flat-square&logo=docker&logoColor=white)
@@ -130,7 +130,7 @@ VK StreetFood follows a **layered architecture** with a clear dependency directi
 |---|---|
 | **Backend** | ASP.NET Core Web API (.NET 10), C# |
 | **Frontend (Admin Portal)** | ASP.NET Core MVC, Razor Views, Bootstrap |
-| **Mobile** | .NET MAUI (`net10.0-android`, `net10.0-ios`), CommunityToolkit.Mvvm |
+| **Mobile** | .NET MAUI (`net10.0-android`), CommunityToolkit.Mvvm |
 | **Database** | PostgreSQL (hosted on Supabase) |
 | **ORM / Data Access** | Entity Framework Core 9.0, Npgsql provider |
 | **Authentication** | JWT Bearer (API) via `Microsoft.AspNetCore.Authentication.JwtBearer`; session-based auth (Web portal) |
@@ -154,11 +154,11 @@ VK StreetFood follows a **layered architecture** with a clear dependency directi
 VK_StreetFood/
 ├── src/
 │   ├── Client/
-│   │   └── VK.Mobile/              # .NET MAUI app (Android/iOS)
+│   │   └── VK.Mobile/              # .NET MAUI app (Android)
 │   │       ├── Views/               # XAML pages
 │   │       ├── ViewModels/          # MVVM view models
 │   │       ├── Services/            # API clients, location, audio, offline cache
-│   │       └── Platforms/           # Android/iOS-specific code
+│   │       └── Platforms/           # Android-specific code
 │   │
 │   └── Server/
 │       ├── VK.API/                  # REST API — controllers, app services, auth, TTS
@@ -290,7 +290,7 @@ The REST API follows conventional resource-oriented routing (`/api/{Controller}/
 - .NET 10.0 SDK
 - PostgreSQL database (a Supabase project is recommended, matching the current deployment setup)
 - Python 3.x with `edge-tts` installed (required for TTS generation)
-- For mobile development: the `maui` .NET workload, plus Android SDK (API 21+) and/or Xcode 15+ (iOS, macOS only)
+- For mobile development: the `maui` .NET workload, plus Android SDK (API 21+)
 
 ### Clone
 
@@ -338,8 +338,6 @@ cd src/Client/VK.Mobile
 # Android
 dotnet build -t:Run -f net10.0-android
 
-# iOS (macOS only)
-dotnet build -t:Run -f net10.0-ios
 ```
 
 Update the API base URL in the mobile app's service configuration to point at your running API instance (e.g., `10.0.2.2` for the Android emulator, or your machine's LAN IP for a physical device).
