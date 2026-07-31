@@ -346,7 +346,7 @@ Update the API base URL in the mobile app's service configuration to point at yo
 
 ---
 
-## 13. Individual Contribution
+## 13. Implementation Highlights
 
 My contribution to this project centered on the API's authentication, authorization, and security infrastructure, along with its automated testing and CI setup:
 
