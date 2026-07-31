@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using System.Text.RegularExpressions;
 using VK.Core.Interfaces;
 using VK.Web.Models;
-using VK.Web.Services;
+using VK.Shared.Security;
 using VK.Core.Entities;
 
 namespace VK.Web.Controllers;
@@ -58,83 +58,66 @@ public class HomeController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Login(string email, string password)
     {
-        try
+        var user = await _userRepository.Query()
+            .Include(u => u.Vendor)
+            .FirstOrDefaultAsync(u => !u.IsDeleted && u.Email == email);
+
+        if (user == null || string.IsNullOrWhiteSpace(user.PasswordHash))
         {
-            // Admin credentials from appsettings.json
-            var adminEmail = _config["AdminAuth:Email"] ?? "admin@vkstreetfood.vn";
-            var adminPassword = _config["AdminAuth:Password"] ?? "Admin@2026";
-
-            if (email == adminEmail && password == adminPassword)
-            {
-                // Look up the user record in the DB (for display info)
-                var user = await _userRepository.Query()
-                    .FirstOrDefaultAsync(u => u.Email == adminEmail && u.Role == "Admin");
-
-                HttpContext.Session.SetString("UserLoggedIn", "true");
-                HttpContext.Session.SetString("UserRole", "admin");
-                HttpContext.Session.SetString("AdminLoggedIn", "true");
-                HttpContext.Session.SetString("AdminUsername", user?.FullName ?? adminEmail.Split('@')[0]);
-                HttpContext.Session.SetString("AdminEmail", adminEmail);
-
-                TempData["InitAdminTab"] = "1";
-                return RedirectToAction("Index", "Dashboard");
-            }
-
-            var owner = await _userRepository.Query()
-                .Include(u => u.Vendor)
-                .FirstOrDefaultAsync(u =>
-                    !u.IsDeleted &&
-                    u.Email == email &&
-                    u.Role == "poi_owner");
-
-            if (owner != null && PasswordHasher.Verify(password, owner.PasswordHash))
-            {
-                if (!owner.IsVerified)
-                {
-                    ViewBag.Error = "Tài khoản chủ quán đang chờ duyệt. Vui lòng đợi admin xác nhận.";
-                    return View("Index");
-                }
-
-                owner.LastLoginAt = DateTime.UtcNow;
-                await _unitOfWork.SaveChangesAsync();
-
-                HttpContext.Session.SetString("UserLoggedIn", "true");
-                HttpContext.Session.SetString("UserRole", "poi_owner");
-                HttpContext.Session.SetString("UserEmail", owner.Email);
-                HttpContext.Session.SetString("UserDisplayName", owner.FullName ?? owner.Email.Split('@')[0]);
-
-                if (owner.VendorId.HasValue)
-                    HttpContext.Session.SetInt32("VendorId", owner.VendorId.Value);
-
-                HttpContext.Session.Remove("AdminLoggedIn");
-                HttpContext.Session.Remove("AdminUsername");
-                HttpContext.Session.Remove("AdminEmail");
-
-                TempData["InitAdminTab"] = "1";
-                return RedirectToAction("Index", "Owner");
-            }
-        }
-        catch (Exception ex)
-        {
-            _logger.LogWarning(ex, "Could not reach DB during login – falling back to config credentials.");
-
-            // Fallback: allow login with pure config credentials even when DB is down
-            var adminEmail = _config["AdminAuth:Email"] ?? "admin@vkstreetfood.vn";
-            var adminPassword = _config["AdminAuth:Password"] ?? "Admin@2026";
-
-            if (email == adminEmail && password == adminPassword)
-            {
-                HttpContext.Session.SetString("UserLoggedIn", "true");
-                HttpContext.Session.SetString("UserRole", "admin");
-                HttpContext.Session.SetString("AdminLoggedIn", "true");
-                HttpContext.Session.SetString("AdminUsername", "Admin");
-                HttpContext.Session.SetString("AdminEmail", adminEmail);
-                TempData["InitAdminTab"] = "1";
-                return RedirectToAction("Index", "Dashboard");
-            }
+            PasswordHasher.Verify(password, "dummy:dummyhash"); // Constant time burn
+            ViewBag.Error = "Email hoặc mật khẩu không đúng.";
+            return View("Index");
         }
 
-        ViewBag.Error = "Email hoặc mật khẩu không đúng.";
+        if (!PasswordHasher.Verify(password, user.PasswordHash))
+        {
+            ViewBag.Error = "Email hoặc mật khẩu không đúng.";
+            return View("Index");
+        }
+
+        if (user.Role == "Admin")
+        {
+            HttpContext.Session.SetString("UserLoggedIn", "true");
+            HttpContext.Session.SetString("UserRole", "admin");
+            HttpContext.Session.SetString("AdminLoggedIn", "true");
+            HttpContext.Session.SetString("AdminUsername", user.FullName ?? email.Split('@')[0]);
+            HttpContext.Session.SetString("AdminEmail", user.Email);
+
+            TempData["InitAdminTab"] = "1";
+            
+            user.LastLoginAt = DateTime.UtcNow;
+            await _unitOfWork.SaveChangesAsync();
+            
+            return RedirectToAction("Index", "Dashboard");
+        }
+        else if (user.Role == "poi_owner")
+        {
+            if (!user.IsVerified)
+            {
+                ViewBag.Error = "Tài khoản chủ quán đang chờ duyệt. Vui lòng đợi admin xác nhận.";
+                return View("Index");
+            }
+
+            user.LastLoginAt = DateTime.UtcNow;
+            await _unitOfWork.SaveChangesAsync();
+
+            HttpContext.Session.SetString("UserLoggedIn", "true");
+            HttpContext.Session.SetString("UserRole", "poi_owner");
+            HttpContext.Session.SetString("UserEmail", user.Email);
+            HttpContext.Session.SetString("UserDisplayName", user.FullName ?? user.Email.Split('@')[0]);
+
+            if (user.VendorId.HasValue)
+                HttpContext.Session.SetInt32("VendorId", user.VendorId.Value);
+
+            HttpContext.Session.Remove("AdminLoggedIn");
+            HttpContext.Session.Remove("AdminUsername");
+            HttpContext.Session.Remove("AdminEmail");
+
+            TempData["InitAdminTab"] = "1";
+            return RedirectToAction("Index", "Owner");
+        }
+
+        ViewBag.Error = "Tài khoản không có quyền truy cập.";
         return View("Index");
     }
 
