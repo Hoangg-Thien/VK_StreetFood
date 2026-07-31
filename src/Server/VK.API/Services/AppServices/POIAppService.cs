@@ -5,6 +5,7 @@ using VK.Core.Entities;
 using VK.Core.Interfaces;
 using VK.Shared.Constants;
 using VK.Shared.DTOs;
+using VK.Contracts.Responses;
 
 namespace VK.API.Services.AppServices;
 
@@ -104,6 +105,76 @@ public class POIAppService : IPOIAppService
     }
 
     return new OkObjectResult(pois);
+    }
+
+    public async Task<IActionResult> GetPagedPOIsAsync(
+        int pageNumber = 1,
+        int pageSize = 50,
+        int? categoryId = null, 
+        string? search = null, 
+        string languageCode = LanguageConstants.Vietnamese)
+    {
+        var normalizedLanguageCode = LocalizationHelper.NormalizeLanguageCode(languageCode);
+
+        var query = _poiRepository.Query()
+            .Where(p => !p.IsDeleted && p.IsActive)
+            .Include(p => p.Category)
+            .Include(p => p.Tags)
+            .Include(p => p.Translations)
+            .AsQueryable();
+
+        if (categoryId.HasValue)
+            query = query.Where(p => p.CategoryId == categoryId.Value);
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var searchLower = search.ToLower();
+            query = query.Where(p =>
+            p.Name.ToLower().Contains(searchLower) ||
+            p.Description.ToLower().Contains(searchLower) ||
+            p.Address.ToLower().Contains(searchLower));
+        }
+
+        var totalCount = await query.CountAsync();
+        var entities = await query.OrderBy(p => p.Id).Skip((pageNumber - 1) * pageSize).Take(pageSize).ToListAsync();
+
+        var pois = entities.Select(p =>
+        {
+            var dto = new POIListItemDto
+            {
+                POIId = p.Id,
+                Name = p.Name,
+                Description = p.Description,
+                Latitude = p.Latitude,
+                Longitude = p.Longitude,
+                Address = p.Address,
+                ImageUrl = p.ImageUrl,
+                AverageRating = p.AverageRating,
+                TotalRatings = p.TotalRatings,
+                Category = p.Category?.Name ?? string.Empty,
+                Tags = p.Tags.Select(t => t.Name).ToList()
+            };
+
+            LocalizationHelper.ApplyLocalizedPoiFields(dto, p, normalizedLanguageCode);
+            return dto;
+        }).ToList();
+
+        var baseUrl = CurrentBaseUrl();
+        foreach (var poi in pois)
+        {
+            poi.ImageUrl = PrependBase(baseUrl, poi.ImageUrl);
+            var profile = GetTriggerProfile(poi.POIId);
+            poi.Priority = profile.Priority;
+            poi.TriggerRadiusMeters = profile.TriggerRadiusMeters;
+        }
+
+        return new OkObjectResult(new PagedResponse<POIListItemDto>
+        {
+            Items = pois,
+            TotalCount = totalCount,
+            PageNumber = pageNumber,
+            PageSize = pageSize
+        });
     }
 
     public async Task<IActionResult> GetNearbyPOIsAsync(double latitude, double longitude, double radiusKm = 1.0, string languageCode = LanguageConstants.Vietnamese)

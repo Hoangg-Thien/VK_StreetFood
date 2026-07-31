@@ -26,6 +26,18 @@ public class POIController : ControllerBase
         => _poiAppService.GetAllPOIsAsync(categoryId, search, languageCode);
 
     /// <summary>
+    /// Get paged POIs (Points of Interest)
+    /// </summary>
+    [HttpGet("paged")]
+    public Task<IActionResult> GetPagedPOIs(
+        [FromQuery] int pageNumber = 1,
+        [FromQuery] int pageSize = 50,
+        [FromQuery] int? categoryId = null,
+        [FromQuery] string? search = null,
+        [FromQuery] string languageCode = LanguageConstants.Vietnamese)
+        => _poiAppService.GetPagedPOIsAsync(pageNumber, pageSize, categoryId, search, languageCode);
+
+    /// <summary>
     /// Get POIs near a specific location (GPS-based)
     /// </summary>
     [HttpGet("nearby")]
