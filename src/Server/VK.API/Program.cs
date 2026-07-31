@@ -11,6 +11,7 @@ using VK.API.Extensions;
 using VK.API.Services;
 using VK.API.Services.AppServices;
 using VK.API.Auth;
+using VK.API.Middlewares;
 
 // Force IPv4 so DNS doesn't resolve Supabase to IPv6 (unreachable on dev machines)
 AppContext.SetSwitch("System.Net.preferIPv4Stack", true);
@@ -101,6 +102,8 @@ builder.Services.AddSwaggerGen(c =>
 
 
 var app = builder.Build();
+
+app.UseMiddleware<GlobalExceptionMiddleware>();
 
 app.UseForwardedHeaders();
 
