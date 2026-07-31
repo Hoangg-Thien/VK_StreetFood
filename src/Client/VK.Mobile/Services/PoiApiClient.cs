@@ -1,5 +1,6 @@
 using System.Text.Json;
 using VK.Mobile.Models;
+using VK.Contracts.Responses;
 
 namespace VK.Mobile.Services;
 
@@ -39,6 +40,32 @@ public class PoiApiClient : IPoiApiClient
         {
             _logger.LogError(ex, "Error getting POIs");
             return new List<POIModel>();
+        }
+    }
+
+    public async Task<PagedResponse<POIModel>?> GetPagedPOIsAsync(int pageNumber = 1, int pageSize = 50, string? search = null, string languageCode = "vi")
+    {
+        try
+        {
+            var url = $"poi/paged?pageNumber={pageNumber}&pageSize={pageSize}&languageCode={Uri.EscapeDataString(languageCode)}";
+            if (!string.IsNullOrEmpty(search))
+                url += $"&search={Uri.EscapeDataString(search)}";
+
+            using var response = await _httpClient.GetAsync(url);
+            var rawJson = await response.Content.ReadAsStringAsync();
+
+            if (!response.IsSuccessStatusCode)
+            {
+                _logger.LogError("POI API paged returned {StatusCode}: {Body}", response.StatusCode, rawJson);
+                return null;
+            }
+
+            return JsonSerializer.Deserialize<PagedResponse<POIModel>>(rawJson, ApiClientJson.Options);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting paged POIs");
+            return null;
         }
     }
 

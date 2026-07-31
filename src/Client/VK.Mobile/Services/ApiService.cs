@@ -1,4 +1,5 @@
 using VK.Mobile.Models;
+using VK.Contracts.Responses;
 
 namespace VK.Mobile.Services;
 
@@ -8,6 +9,7 @@ public interface IApiService
     Task<bool> UpdateLocationAsync(int touristId, double latitude, double longitude);
 
     Task<List<POIModel>> GetAllPOIsAsync(string? search = null, string languageCode = "vi");
+    Task<PagedResponse<POIModel>?> GetPagedPOIsAsync(int pageNumber = 1, int pageSize = 50, string? search = null, string languageCode = "vi");
     Task<List<POIModel>> GetNearbyPOIsAsync(double latitude, double longitude, double radiusKm = 1.0, string languageCode = "vi");
     Task<POIDetailModel?> GetPOIDetailAsync(int poiId, string languageCode = "vi");
     Task<POIDetailModel?> ScanQRCodeAsync(string qrCode, string languageCode = "vi");
@@ -69,6 +71,9 @@ public class ApiService : IApiService
 
     public Task<List<POIModel>> GetAllPOIsAsync(string? search = null, string languageCode = "vi")
         => _poiClient.GetAllPOIsAsync(search, languageCode);
+
+    public Task<PagedResponse<POIModel>?> GetPagedPOIsAsync(int pageNumber = 1, int pageSize = 50, string? search = null, string languageCode = "vi")
+        => _poiClient.GetPagedPOIsAsync(pageNumber, pageSize, search, languageCode);
 
     public Task<List<POIModel>> GetNearbyPOIsAsync(double latitude, double longitude, double radiusKm = 1.0, string languageCode = "vi")
         => _poiClient.GetNearbyPOIsAsync(latitude, longitude, radiusKm, languageCode);
