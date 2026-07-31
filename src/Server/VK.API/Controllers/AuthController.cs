@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using VK.API.Auth;
+using VK.Shared.Security;
 using VK.Infrastructure.Data;
 
 namespace VK.API.Controllers;

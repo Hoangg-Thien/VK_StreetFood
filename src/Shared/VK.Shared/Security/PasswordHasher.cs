@@ -1,7 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
 
-namespace VK.API.Auth;
+namespace VK.Shared.Security;
 
 /// <summary>
 /// PBKDF2-SHA256 password hashing helper.

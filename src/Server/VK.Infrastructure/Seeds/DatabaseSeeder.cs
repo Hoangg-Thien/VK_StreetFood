@@ -1,10 +1,9 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using System.Security.Cryptography;
-using System.Text;
 using VK.Core.Entities;
 using VK.Infrastructure.Data;
 using VK.Shared.Constants;
+using VK.Shared.Security;
 
 namespace VK.Infrastructure.Seeds;
 
@@ -620,7 +619,7 @@ public static class DatabaseSeeder
             .Where(u => !u.IsDeleted)
             .ToListAsync();
 
-        var defaultPasswordHash = HashPassword("Owner@2026");
+        var defaultPasswordHash = PasswordHasher.Hash("Owner@2026");
 
         foreach (var vendor in baselineVendors)
         {
@@ -838,7 +837,7 @@ public static class DatabaseSeeder
         if (exists)
             return;
 
-        var hash = HashPasswordPbkdf2(defaultPassword);
+        var hash = PasswordHasher.Hash(defaultPassword);
 
         context.Users.Add(new User
         {
@@ -856,27 +855,5 @@ public static class DatabaseSeeder
             "[SECURITY] Default admin user seeded ({Email}). " +
             "Change the password immediately via POST /api/Auth/login then update the account.",
             adminEmail);
-    }
-
-    /// <summary>PBKDF2-SHA256 hash (matches VK.API.Auth.PasswordHasher). Used for admin accounts.</summary>
-    private static string HashPasswordPbkdf2(string password)
-    {
-        const int saltSize = 16;
-        const int keySize = 32;
-        const int iterations = 100_000;
-        var salt = RandomNumberGenerator.GetBytes(saltSize);
-        var hash = Rfc2898DeriveBytes.Pbkdf2(
-            Encoding.UTF8.GetBytes(password), salt, iterations, HashAlgorithmName.SHA256, keySize);
-        return $"{Convert.ToBase64String(salt)}:{Convert.ToBase64String(hash)}";
-    }
-
-    /// <summary>
-    /// Legacy SHA-256 hex hash — kept only for existing poi_owner accounts seeded before PBKDF2 migration.
-    /// Do NOT use for new accounts.
-    /// </summary>
-    private static string HashPassword(string plainText)
-    {
-        var bytes = SHA256.HashData(Encoding.UTF8.GetBytes(plainText));
-        return Convert.ToHexString(bytes);
     }
 }
