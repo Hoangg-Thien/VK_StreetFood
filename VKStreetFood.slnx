@@ -16,5 +16,6 @@
   <Folder Name="/tests/">
     <Project Path="tests/VK.API.Tests/VK.API.Tests.csproj" />
     <Project Path="tests/VK.Core.Tests/VK.Core.Tests.csproj" />
+    <Project Path="tests/VK.Web.Tests/VK.Web.Tests.csproj" />
   </Folder>
 </Solution>
