@@ -59,7 +59,7 @@ var app = builder.Build();
 
 app.UseForwardedHeaders();
 
-await SchemaBootstrapper.EnsureOwnerAuthSchemaAsync(app.Services, app.Logger);
+
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())

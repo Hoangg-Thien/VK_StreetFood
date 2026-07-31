@@ -112,7 +112,7 @@ var audioRootPath = app.Services
     .Value.RootPath;
 Directory.CreateDirectory(audioRootPath);
 
-await app.EnsureOwnerAuthSchemaAsync();
+
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
