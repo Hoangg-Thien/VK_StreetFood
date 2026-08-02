@@ -16,17 +16,17 @@ public class OwnerControllerTests
     public async Task Index_ValidSession_ReturnsViewWithViewBagData()
     {
         using var context = CreateContext();
-        
+
         var poi = new PointOfInterest { Name = "My POI", IsActive = true };
         context.PointsOfInterest.Add(poi);
-        
+
         var vendor = new Vendor { PointOfInterest = poi, IsActive = true };
         context.Vendors.Add(vendor);
         await context.SaveChangesAsync();
 
         var user = new User { Email = "owner@test.com", Role = "poi_owner", VendorId = vendor.Id, IsVerified = true };
         context.Users.Add(user);
-        
+
         var audio = new AudioContent { PointOfInterest = poi, LanguageCode = "en", TextContent = "Hello", CreatedAt = DateTime.UtcNow };
         context.AudioContents.Add(audio);
 
@@ -38,10 +38,10 @@ public class OwnerControllerTests
 
         var view = Assert.IsType<ViewResult>(result);
         Assert.Equal("OwnerPage", view.ViewName);
-        
+
         var audiosList = Assert.IsAssignableFrom<IEnumerable<AudioContent>>(view.ViewData["Audios"]);
         Assert.Single(audiosList);
-        
+
         var poiObj = Assert.IsType<PointOfInterest>(view.ViewData["Poi"]);
         Assert.Equal("My POI", poiObj.Name);
     }
@@ -63,7 +63,7 @@ public class OwnerControllerTests
     {
         var httpContext = new DefaultHttpContext();
         var session = new FakeSession();
-        
+
         if (email != null)
         {
             session.SetString("UserLoggedIn", "true");
@@ -74,7 +74,7 @@ public class OwnerControllerTests
         {
             session.SetInt32("VendorId", vendorId.Value);
         }
-        
+
         httpContext.Session = session;
 
         return new OwnerController(

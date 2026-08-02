@@ -88,7 +88,7 @@ public class HomeControllerTests
         Assert.Equal("Index", view.ViewName);
         Assert.Equal("Email hoặc mật khẩu không đúng.", controller.ViewBag.Error);
     }
-    
+
     [Fact]
     public async Task Login_UnverifiedOwner_ReturnsViewWithError()
     {
@@ -115,7 +115,7 @@ public class HomeControllerTests
     private static HomeController CreateController(VKStreetFoodDbContext context, out Mock<ISession> sessionMock)
     {
         var config = new ConfigurationBuilder().Build();
-        
+
         sessionMock = new Mock<ISession>();
         var httpContext = new DefaultHttpContext();
         httpContext.Session = sessionMock.Object;

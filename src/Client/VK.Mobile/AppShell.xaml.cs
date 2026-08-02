@@ -5,29 +5,29 @@ namespace VK.Mobile;
 
 public partial class AppShell : Shell
 {
-	public AppShell()
-	{
-		InitializeComponent();
+    public AppShell()
+    {
+        InitializeComponent();
 
-		// Register routes for navigation
-		Routing.RegisterRoute("POIDetail", typeof(POIDetailPage));
-		Routing.RegisterRoute("poidetail", typeof(POIDetailPage));
-		Routing.RegisterRoute("NowPlaying", typeof(NowPlayingPage));
-		Routing.RegisterRoute("FavoritesPage", typeof(FavoritesPage));
-		Routing.RegisterRoute("Payment", typeof(PaymentPage));
+        // Register routes for navigation
+        Routing.RegisterRoute("POIDetail", typeof(POIDetailPage));
+        Routing.RegisterRoute("poidetail", typeof(POIDetailPage));
+        Routing.RegisterRoute("NowPlaying", typeof(NowPlayingPage));
+        Routing.RegisterRoute("FavoritesPage", typeof(FavoritesPage));
+        Routing.RegisterRoute("Payment", typeof(PaymentPage));
 
-		// Lắng nghe thay đổi ngôn ngữ để cập nhật tab titles
-		LocalizationResourceManager.Instance.PropertyChanged += (_, _) => UpdateTabTitles();
-		UpdateTabTitles();
-	}
+        // Lắng nghe thay đổi ngôn ngữ để cập nhật tab titles
+        LocalizationResourceManager.Instance.PropertyChanged += (_, _) => UpdateTabTitles();
+        UpdateTabTitles();
+    }
 
-	private void UpdateTabTitles()
-	{
-		var L = LocalizationResourceManager.Instance;
-		TabMap.Title = L["TabMap"];
-		TabMenu.Title = L["TabExplore"];
-		TabTours.Title = L["TabTours"];
-		TabProfile.Title = L["TabProfile"];
-		TabSettings.Title = L["TabSettings"];
-	}
+    private void UpdateTabTitles()
+    {
+        var L = LocalizationResourceManager.Instance;
+        TabMap.Title = L["TabMap"];
+        TabMenu.Title = L["TabExplore"];
+        TabTours.Title = L["TabTours"];
+        TabProfile.Title = L["TabProfile"];
+        TabSettings.Title = L["TabSettings"];
+    }
 }

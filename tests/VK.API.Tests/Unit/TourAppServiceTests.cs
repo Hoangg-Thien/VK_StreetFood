@@ -49,7 +49,7 @@ public class TourAppServiceTests
 
         var poi1 = new PointOfInterest { Name = "POI 1", IsActive = true };
         var poi2 = new PointOfInterest { Name = "POI 2", IsActive = true };
-        
+
         var tour = new Tour
         {
             Name = "Ordered Tour",

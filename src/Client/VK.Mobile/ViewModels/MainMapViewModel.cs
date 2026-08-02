@@ -67,11 +67,11 @@ public partial class MainMapViewModel : ObservableObject
     /// <summary>Picker index tương ứng: 0=vi, 1=en, 2=ko</summary>
     public int SelectedLanguageIndex
     {
-        get => _selectedLanguage switch { "en" => 1, "ko" => 2, _ => 0 };
+        get => SelectedLanguage switch { "en" => 1, "ko" => 2, _ => 0 };
         set
         {
             var code = value switch { 1 => "en", 2 => "ko", _ => "vi" };
-            if (code != _selectedLanguage)
+            if (code != SelectedLanguage)
                 _ = ChangeLanguageCommand.ExecuteAsync(code);
         }
     }

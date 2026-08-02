@@ -46,8 +46,8 @@ public class POIAppService : IPOIAppService
     }
 
     public async Task<IActionResult> GetAllPOIsAsync(
-        int? categoryId = null, 
-        string? search = null, 
+        int? categoryId = null,
+        string? search = null,
         string languageCode = LanguageConstants.Vietnamese)
     {
         var normalizedLanguageCode = LocalizationHelper.NormalizeLanguageCode(languageCode);
@@ -62,7 +62,7 @@ public class POIAppService : IPOIAppService
         if (categoryId.HasValue)
             query = query.Where(p => p.CategoryId == categoryId.Value);
 
-          if (!string.IsNullOrWhiteSpace(search))
+        if (!string.IsNullOrWhiteSpace(search))
         {
             var searchLower = search.ToLower();
             query = query.Where(p =>
@@ -75,43 +75,43 @@ public class POIAppService : IPOIAppService
 
         var pois = entities.Select(p =>
         {
-        var dto = new POIListItemDto
+            var dto = new POIListItemDto
+            {
+                POIId = p.Id,
+                Name = p.Name,
+                Description = p.Description,
+                Latitude = p.Latitude,
+                Longitude = p.Longitude,
+                Address = p.Address,
+                ImageUrl = p.ImageUrl,
+                AverageRating = p.AverageRating,
+                TotalRatings = p.TotalRatings,
+                Category = p.Category?.Name ?? string.Empty,
+                Tags = p.Tags.Select(t => t.Name).ToList()
+            };
+
+            LocalizationHelper.ApplyLocalizedPoiFields(dto, p, normalizedLanguageCode);
+            return dto;
+        }).ToList();
+
+
+        var baseUrl = CurrentBaseUrl();
+        foreach (var poi in pois)
         {
-            POIId = p.Id,
-            Name = p.Name,
-            Description = p.Description,
-            Latitude = p.Latitude,
-            Longitude = p.Longitude,
-            Address = p.Address,
-            ImageUrl = p.ImageUrl,
-            AverageRating = p.AverageRating,
-            TotalRatings = p.TotalRatings,
-            Category = p.Category?.Name ?? string.Empty,
-            Tags = p.Tags.Select(t => t.Name).ToList()
-        };
+            poi.ImageUrl = PrependBase(baseUrl, poi.ImageUrl);
+            var profile = GetTriggerProfile(poi.POIId);
+            poi.Priority = profile.Priority;
+            poi.TriggerRadiusMeters = profile.TriggerRadiusMeters;
+        }
 
-        LocalizationHelper.ApplyLocalizedPoiFields(dto, p, normalizedLanguageCode);
-        return dto;
-    }).ToList();
-
-
-    var baseUrl = CurrentBaseUrl();
-    foreach (var poi in pois)
-    {
-        poi.ImageUrl = PrependBase(baseUrl, poi.ImageUrl);
-        var profile = GetTriggerProfile(poi.POIId);
-        poi.Priority = profile.Priority;
-        poi.TriggerRadiusMeters = profile.TriggerRadiusMeters;
-    }
-
-    return new OkObjectResult(pois);
+        return new OkObjectResult(pois);
     }
 
     public async Task<IActionResult> GetPagedPOIsAsync(
         int pageNumber = 1,
         int pageSize = 50,
-        int? categoryId = null, 
-        string? search = null, 
+        int? categoryId = null,
+        string? search = null,
         string languageCode = LanguageConstants.Vietnamese)
     {
         var normalizedLanguageCode = LocalizationHelper.NormalizeLanguageCode(languageCode);

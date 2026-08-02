@@ -32,7 +32,7 @@ public class GoogleCloudTtsService : ITtsService
         }
 
         // Get audio output path from configuration
-        _audioOutputPath = _configuration["TtsSettings:AudioOutputPath"] 
+        _audioOutputPath = _configuration["TtsSettings:AudioOutputPath"]
                            ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "audio");
 
         // Create directory if not exists

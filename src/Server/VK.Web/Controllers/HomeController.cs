@@ -84,10 +84,10 @@ public class HomeController : Controller
             HttpContext.Session.SetString("AdminEmail", user.Email);
 
             TempData["InitAdminTab"] = "1";
-            
+
             user.LastLoginAt = DateTime.UtcNow;
             await _unitOfWork.SaveChangesAsync();
-            
+
             return RedirectToAction("Index", "Dashboard");
         }
         else if (user.Role == "poi_owner")

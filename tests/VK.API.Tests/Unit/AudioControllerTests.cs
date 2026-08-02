@@ -19,11 +19,11 @@ public class AudioControllerTests
         using var context = CreateContext();
         var ttsMock = new Mock<ITtsGenerationService>();
         var audioTaskMock = new Mock<IAudioTaskManager>();
-        
+
         var controller = new AudioController(
-            context, 
-            ttsMock.Object, 
-            audioTaskMock.Object, 
+            context,
+            ttsMock.Object,
+            audioTaskMock.Object,
             NullLogger<AudioController>.Instance);
 
         var httpContext = new DefaultHttpContext();
@@ -57,16 +57,16 @@ public class AudioControllerTests
 
         var request = new OnDemandTtsRequest { PoiId = poi.Id, LanguageCode = "en" };
         var result = await controller.GetOrGenerateTts(request, CancellationToken.None);
-        
+
         var ok = Assert.IsType<OkObjectResult>(result);
         var value = ok.Value as dynamic;
         Assert.NotNull(value);
-        
+
         var type = value.GetType();
         var urlProp = type.GetProperty("audioFileUrl");
         Assert.NotNull(urlProp);
         Assert.Equal("http://localhost/audio/sample.mp3", urlProp.GetValue(value).ToString());
-        
+
         audioTaskMock.Verify(x => x.GetOrGenerateAsync(poi.Id, "en", It.IsAny<CancellationToken>()), Times.Once);
     }
 
@@ -76,18 +76,18 @@ public class AudioControllerTests
         using var context = CreateContext();
         var ttsMock = new Mock<ITtsGenerationService>();
         var audioTaskMock = new Mock<IAudioTaskManager>();
-        
+
         // Mock the task manager to return a generated URL
         audioTaskMock
             .Setup(x => x.GetOrGenerateAsync(It.IsAny<int>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync("/audio/generated.mp3");
 
         var controller = new AudioController(
-            context, 
-            ttsMock.Object, 
-            audioTaskMock.Object, 
+            context,
+            ttsMock.Object,
+            audioTaskMock.Object,
             NullLogger<AudioController>.Instance);
-            
+
         // Setup a mock HttpContext to avoid null reference on HttpContext.Request
         var httpContext = new DefaultHttpContext();
         httpContext.Request.Scheme = "http";
@@ -117,15 +117,15 @@ public class AudioControllerTests
 
         var request = new OnDemandTtsRequest { PoiId = poi.Id, LanguageCode = "en" };
         var result = await controller.GetOrGenerateTts(request, CancellationToken.None);
-        
+
         var ok = Assert.IsType<OkObjectResult>(result);
         var value = ok.Value as dynamic;
-        
+
         var type = value.GetType();
         var urlProp = type.GetProperty("audioFileUrl");
         Assert.NotNull(urlProp);
         Assert.Equal("http://localhost/audio/generated.mp3", urlProp.GetValue(value).ToString());
-        
+
         // Verify task manager was called
         audioTaskMock.Verify(x => x.GetOrGenerateAsync(poi.Id, "en", It.IsAny<CancellationToken>()), Times.Once);
     }
