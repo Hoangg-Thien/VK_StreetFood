@@ -59,7 +59,7 @@ VK StreetFood is a full-stack platform that helps tourists explore the street-fo
 ### QR App Launcher (not a real payment gateway)
 - Each QR code encodes a landing-page URL (`/open-app?target=...`), not a transaction.
   Scanning it opens a page that either deep-links straight into the installed app
-  (`vkstreetfood://{target}`) or falls back to the Android/iOS store listing if the
+  (`vkstreetfood://{target}`) or falls back to the Android store listing if the
   app isn't installed yet.
 - The "target" (e.g. `pay`) only tells the app which screen to land on after opening —
   there is no server-side transaction, amount capture, or payment processing involved.
@@ -382,7 +382,7 @@ My contribution to this project centered on the API's authentication, authorizat
 
 Realistic, scoped improvements — not yet implemented:
 
-- **Refresh tokens** — tourist/admin JWTs currently use a long, fixed expiry with no revocation mechanism; a refresh-token flow would allow shorter-lived access tokens.
+- **Refresh tokens(Admin only)** — Admin JWTs currently use a long, fixed expiry (365 days) with no revocation mechanism; a refresh-token flow would allow shorter-lived access tokens for the credential-based Admin login. Tourist JWTs are intentionally excluded — they're per-device tokens issued via anonymous registration (no login step to avoid repeating), so a short-lived-access + refresh pattern doesn't fit; a simple revocation flag on the Tourist record would be a better fit there if device-level blocking is ever needed.
 - **Rate limiting** — no rate limiting currently exists on authentication or registration endpoints.
 - **Redis cache** — POI/category listings are re-queried from PostgreSQL on every request; a cache layer would reduce database load for largely static data.
 - **Structured logging** — current logging uses `ILogger` with structured message templates, but there is no centralized log aggregation or distributed tracing (e.g., OpenTelemetry).
