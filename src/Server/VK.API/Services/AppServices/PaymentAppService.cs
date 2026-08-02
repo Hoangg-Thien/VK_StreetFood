@@ -1,4 +1,3 @@
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using VK.Core.Entities;
 using VK.Core.Interfaces;
@@ -17,7 +16,7 @@ public class PaymentAppService : IPaymentAppService
         _unitOfWork = unitOfWork;
     }
 
-    public async Task<IActionResult> GetQrPaymentConfigAsync()
+    public async Task<QrPaymentConfigDto> GetQrPaymentConfigAsync()
     {
         var config = await _configRepository.Query()
             .OrderBy(c => c.Id)
@@ -36,11 +35,11 @@ public class PaymentAppService : IPaymentAppService
             await _unitOfWork.SaveChangesAsync();
         }
 
-        return new OkObjectResult(new QrPaymentConfigDto
+        return new QrPaymentConfigDto
         {
             DefaultAmountVnd = config.DefaultAmountVnd,
             DeepLinkName = config.DeepLinkName,
             QrTtlMinutes = config.QrTtlMinutes
-        });
+        };
     }
 }

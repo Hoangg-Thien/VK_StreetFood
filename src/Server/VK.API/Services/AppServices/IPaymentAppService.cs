@@ -1,8 +1,8 @@
-using Microsoft.AspNetCore.Mvc;
+using VK.Shared.DTOs;
 
 namespace VK.API.Services.AppServices;
 
 public interface IPaymentAppService
 {
-    Task<IActionResult> GetQrPaymentConfigAsync();
+    Task<QrPaymentConfigDto> GetQrPaymentConfigAsync();
 }

@@ -15,6 +15,6 @@ public class PaymentController : ControllerBase
     }
 
     [HttpGet("qr-config")]
-    public Task<IActionResult> GetQrConfig()
-        => _paymentAppService.GetQrPaymentConfigAsync();
+    public async Task<IActionResult> GetQrConfig()
+        => Ok(await _paymentAppService.GetQrPaymentConfigAsync());
 }
