@@ -25,7 +25,7 @@ VK StreetFood is a full-stack platform that helps tourists explore the street-fo
 
 **The problem it solves:** in a dense street-food area, visitors typically have no easy way to learn what a vendor sells, its history, or why it's worth stopping at — information is scattered, undocumented, or only available in Vietnamese.
 
-**What it does:** the mobile app plots street-food Points of Interest (POIs) on a map, tracks the tourist's GPS position, and automatically plays a short audio narration (Vietnamese, English, or Korean) when the tourist enters a geofence around a POI. Tourists can also browse POIs manually, favorite them, rate them, view vendor details and opening hours, and scan a QR code to jump straight to a POI or a vendor's payment QR. A companion admin/owner web portal lets staff manage POI content, translations, audio, tour groupings, and vendor-owner registration requests.
+**What it does:** the mobile app plots street-food Points of Interest (POIs) on a map, tracks the tourist's GPS position, and automatically plays a short audio narration (Vietnamese, English, or Korean) when the tourist enters a geofence around a POI. Tourists can also browse POIs manually, favorite them, rate them, view vendor details and opening hours, and scan a QR code that opens the mobile app (or, if not installed, a landing page to download it) directly to a given POI or screen. A companion admin/owner web portal lets staff manage POI content, translations, audio, tour groupings, and vendor-owner registration requests.
 
 **Target users:**
 - **Tourists** — anonymous, device-registered users of the mobile app.
@@ -56,9 +56,24 @@ VK StreetFood is a full-stack platform that helps tourists explore the street-fo
 - Category listing
 - Tour listing and tour detail with ordered waypoints (`TourPointOfInterest`)
 
-### QR & Payments
-- QR payment configuration lookup for a POI (`GET /api/Payment/qr-config`)
-- Admin-managed QR payment configuration via the web portal
+### QR App Launcher (not a real payment gateway)
+- Each QR code encodes a landing-page URL (`/open-app?target=...`), not a transaction.
+  Scanning it opens a page that either deep-links straight into the installed app
+  (`vkstreetfood://{target}`) or falls back to the Android/iOS store listing if the
+  app isn't installed yet.
+- The "target" (e.g. `pay`) only tells the app which screen to land on after opening —
+  there is no server-side transaction, amount capture, or payment processing involved.
+  `DefaultAmountVnd` and `QrTtlMinutes` exist as configurable metadata for that landing
+  screen, not as a real payment amount/expiry enforced by the backend.
+- Admin can configure the deep-link host, default display amount, and QR validity
+  window (`/Payment` in the web portal), and view a log of `qr_payment` /
+  `qr_payment_success` / `qr_payment_failed` **analytics events** — these are
+  client-reported UI events for tracking scan-to-open funnel, not verified financial
+  transactions.
+- **Not implemented:** no payment gateway integration, no transaction ledger, no
+  idempotency/webhook handling. This is intentionally out of scope for the current
+  version — the QR flow's real job is distributing the mobile app (APK hosted on
+  Supabase Storage) to tourists on-site who don't have it installed yet.
 
 ### Offline Support
 - Route/map package endpoints for offline caching (`/api/Offline/route-package`, `/api/Offline/map-package`)
@@ -78,7 +93,7 @@ VK StreetFood is a full-stack platform that helps tourists explore the street-fo
 - Audio content management
 - Owner registration review/approval workflow (`PoiOwnerRegistration`)
 - Content-change request workflow for vendor owners (`PoiContentChangeRequest`)
-- Payment configuration management
+- QR app-launcher configuration management (deep-link host, display amount, QR validity window)
 - Usage history view
 - POI image upload to Supabase Storage
 
