@@ -260,7 +260,7 @@ A GitHub Actions workflow (`.github/workflows/dotnet.yml`) runs on every push an
 2. Sets up the .NET 10 SDK
 3. Runs `dotnet test` for `VK.Core.Tests`
 4. Runs `dotnet test` for `VK.API.Tests`
-5. Runs `dotnet test` for `VK.Web .Tests`
+5. Runs `dotnet test` for `VK.Web.Tests`
 
 Deployment is handled separately via **Render.com**, configured through `render.yaml`, which defines two Docker-based web services (`vk-api` and `vk-web`) built from `Dockerfile.api` and `Dockerfile.web` respectively, each with a health-check path and environment-variable-driven secrets. Deployment to Render triggers on push (`autoDeploy: true`) but is not currently wired as an explicit step inside the GitHub Actions workflow itself.
 

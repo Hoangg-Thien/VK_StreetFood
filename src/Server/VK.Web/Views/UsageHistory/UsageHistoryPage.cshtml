@@ -264,9 +264,9 @@
             anonymousRoutes.Take(10).Select(r => new {
                 id = r.AnonymousVisitorId,
                 pointCount = r.PointCount,
-                firstSeen = r.FirstSeenAt.ToLocalTime().ToString("dd/MM HH:mm"),
-                lastSeen = r.LastSeenAt.ToLocalTime().ToString("HH:mm"),
-                points = r.Points.Select(p => new { lat = p.Latitude, lng = p.Longitude }).ToList()
+                firstSeen = r.FirstSeenAt.HasValue ? r.FirstSeenAt.Value.ToLocalTime().ToString("dd/MM HH:mm") : "",
+                lastSeen = r.LastSeenAt.HasValue ? r.LastSeenAt.Value.ToLocalTime().ToString("HH:mm") : "",
+                points = r.Points.Where(p => p.Latitude.HasValue && p.Longitude.HasValue).Select(p => new { lat = p.Latitude.Value, lng = p.Longitude.Value }).ToList()
             }).ToList()
         ));
 
