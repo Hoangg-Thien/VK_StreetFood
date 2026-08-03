@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.HttpOverrides;
 using VK.Core.Interfaces;
 using VK.Infrastructure.Data;
 using VK.Infrastructure.Repositories;
+using VK.Infrastructure.Seeds;
 using VK.Web.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -88,6 +89,25 @@ app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}")
     .WithStaticAssets();
+
+if (!app.Environment.IsEnvironment("Testing"))
+{
+    _ = Task.Run(async () =>
+    {
+        await Task.Delay(TimeSpan.FromSeconds(2));
+        try
+        {
+            using var scope = app.Services.CreateScope();
+            var context = scope.ServiceProvider.GetRequiredService<VKStreetFoodDbContext>();
+            await DatabaseSeeder.SeedAsync(context);
+        }
+        catch (Exception ex)
+        {
+            var logger = app.Services.GetRequiredService<ILogger<Program>>();
+            logger.LogWarning(ex, "Background database seeding skipped (DB unreachable).");
+        }
+    });
+}
 
 app.Run();
 

@@ -846,38 +846,62 @@ public static class DatabaseSeeder
     }
 
     /// <summary>
-    /// Seeds a single admin user if none exists.
-    /// Password is read from the Users table seed; in production override via environment variable.
-    /// Uses PBKDF2-SHA256 (same scheme as API's PasswordHasher) — NOT the legacy SHA256 hex used for owner users.
+    /// Seeds default admin users if they do not exist.
+    /// Supports both admin@vkstreetfood.vn and admin@vkstreetfood.local.
+    /// Uses PBKDF2-SHA256 (same scheme as API's PasswordHasher).
     /// </summary>
     private static async Task EnsureAdminUserAsync(VKStreetFoodDbContext context)
     {
-        const string adminEmail = "admin@vkstreetfood.local";
+        var adminEmails = new[] { "admin@vkstreetfood.vn", "admin@vkstreetfood.local" };
         const string defaultPassword = "ChangeMe@2025!";
-
-        var exists = await context.Users
-            .AnyAsync(u => u.Email == adminEmail && !u.IsDeleted);
-
-        if (exists)
-            return;
-
         var hash = PasswordHasher.Hash(defaultPassword);
 
-        context.Users.Add(new User
+        var existingUsers = await context.Users
+            .Where(u => !u.IsDeleted && adminEmails.Contains(u.Email))
+            .ToListAsync();
+
+        var modified = false;
+        foreach (var adminEmail in adminEmails)
         {
-            Email = adminEmail,
-            FullName = "System Admin",
-            Role = "Admin",
-            IsVerified = true,
-            PasswordHash = hash,
-            LastLoginAt = null
-        });
+            var user = existingUsers.FirstOrDefault(u =>
+                string.Equals(u.Email, adminEmail, StringComparison.OrdinalIgnoreCase));
 
-        await context.SaveChangesAsync();
+            if (user == null)
+            {
+                context.Users.Add(new User
+                {
+                    Email = adminEmail,
+                    FullName = "System Admin",
+                    Role = "Admin",
+                    IsVerified = true,
+                    PasswordHash = hash,
+                    LastLoginAt = null
+                });
+                modified = true;
 
-        Logger.LogWarning(
-            "[SECURITY] Default admin user seeded ({Email}). " +
-            "Change the password immediately via POST /api/Auth/login then update the account.",
-            adminEmail);
+                Logger.LogWarning(
+                    "[SECURITY] Default admin user seeded ({Email}). " +
+                    "Change the password immediately via POST /api/Auth/login then update the account.",
+                    adminEmail);
+            }
+            else
+            {
+                if (user.Role != "Admin" || !user.IsVerified || string.IsNullOrWhiteSpace(user.PasswordHash))
+                {
+                    user.Role = "Admin";
+                    user.IsVerified = true;
+                    if (string.IsNullOrWhiteSpace(user.PasswordHash))
+                    {
+                        user.PasswordHash = hash;
+                    }
+                    modified = true;
+                }
+            }
+        }
+
+        if (modified)
+        {
+            await context.SaveChangesAsync();
+        }
     }
 }
