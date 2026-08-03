@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.DataProtection;
 using VK.Core.Interfaces;
 using VK.Infrastructure.Data;
 using VK.Infrastructure.Repositories;
@@ -19,6 +20,21 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
     options.KnownProxies.Clear();
 });
 
+// Configure Data Protection to use a stable application name.
+// On Render free tier the container restarts periodically; a new key is generated each time,
+// which invalidates old session cookies. We set the application name so at least the
+// error is handled gracefully (users are redirected to login cleanly).
+var dpBuilder = builder.Services.AddDataProtection()
+    .SetApplicationName("VKStreetFood-Web");
+
+// If a persistent key directory is configured (e.g. a mounted volume on paid plans), use it.
+var keyStorePath = builder.Configuration["DataProtection:KeyStorePath"];
+if (!string.IsNullOrWhiteSpace(keyStorePath))
+{
+    Directory.CreateDirectory(keyStorePath);
+    dpBuilder.PersistKeysToFileSystem(new DirectoryInfo(keyStorePath));
+}
+
 // Add Session
 builder.Services.AddDistributedMemoryCache();
 builder.Services.AddSession(options =>
@@ -26,6 +42,7 @@ builder.Services.AddSession(options =>
     options.IdleTimeout = TimeSpan.FromHours(8);
     options.Cookie.HttpOnly = true;
     options.Cookie.IsEssential = true;
+    options.Cookie.Name = ".VKStreetFood.Session";
 });
 
 // Add DbContext

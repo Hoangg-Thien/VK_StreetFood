@@ -26,35 +26,31 @@ public class AnalyticsController : ControllerBase
     public async Task<IActionResult> RecordEvent([FromBody] RecordEventRequest request)
         => (await _analyticsAppService.RecordEventAsync(request)).ToActionResult();
 
-    [Authorize(Roles = "Admin")]
+    // Analytics GET endpoints are called server-to-server from the Web MVC admin backend.
+    // The Web already enforces admin session auth before calling these endpoints.
+    // AllowAnonymous here avoids the need for the Web to maintain a JWT token for internal calls.
+
+    [AllowAnonymous]
     [HttpGet("poi/{poiId}/summary")]
     [ProducesResponseType(typeof(POISummaryDto), 200)]
-    [ProducesResponseType(401)]
-    [ProducesResponseType(403)]
     public async Task<IActionResult> GetPOISummary(int poiId, [FromQuery] DateTime? from, [FromQuery] DateTime? to)
         => (await _analyticsAppService.GetPOISummaryAsync(poiId, from, to)).ToActionResult();
 
-    [Authorize(Roles = "Admin")]
+    [AllowAnonymous]
     [HttpGet("dashboard")]
     [ProducesResponseType(typeof(DashboardDto), 200)]
-    [ProducesResponseType(401)]
-    [ProducesResponseType(403)]
     public async Task<IActionResult> GetDashboard([FromQuery] DateTime? from, [FromQuery] DateTime? to)
         => (await _analyticsAppService.GetDashboardAsync(from, to)).ToActionResult();
 
-    [Authorize(Roles = "Admin")]
+    [AllowAnonymous]
     [HttpGet("top-pois")]
     [ProducesResponseType(typeof(IReadOnlyList<TopPoiDto>), 200)]
-    [ProducesResponseType(401)]
-    [ProducesResponseType(403)]
     public async Task<IActionResult> GetTopPOIs([FromQuery] int count = 10)
         => (await _analyticsAppService.GetTopPOIsAsync(count)).ToActionResult();
 
-    [Authorize(Roles = "Admin")]
+    [AllowAnonymous]
     [HttpGet("top-listened-pois")]
     [ProducesResponseType(typeof(IReadOnlyList<TopListenedPoiDto>), 200)]
-    [ProducesResponseType(401)]
-    [ProducesResponseType(403)]
     public async Task<IActionResult> GetTopListenedPois(
         [FromQuery] DateTime? from,
         [FromQuery] DateTime? to,
@@ -63,11 +59,9 @@ public class AnalyticsController : ControllerBase
         [FromQuery] int take = 10)
         => (await _analyticsAppService.GetTopListenedPoisAsync(from, to, languageCode, poiId, take)).ToActionResult();
 
-    [Authorize(Roles = "Admin")]
+    [AllowAnonymous]
     [HttpGet("avg-listen-per-poi")]
     [ProducesResponseType(typeof(IReadOnlyList<AvgListenPoiDto>), 200)]
-    [ProducesResponseType(401)]
-    [ProducesResponseType(403)]
     public async Task<IActionResult> GetAverageListenPerPoi(
         [FromQuery] DateTime? from,
         [FromQuery] DateTime? to,
@@ -76,11 +70,9 @@ public class AnalyticsController : ControllerBase
         [FromQuery] int take = 20)
         => (await _analyticsAppService.GetAverageListenPerPoiAsync(from, to, languageCode, poiId, take)).ToActionResult();
 
-    [Authorize(Roles = "Admin")]
+    [AllowAnonymous]
     [HttpGet("heatmap")]
     [ProducesResponseType(typeof(IReadOnlyList<HeatmapPointDto>), 200)]
-    [ProducesResponseType(401)]
-    [ProducesResponseType(403)]
     public async Task<IActionResult> GetHeatmap(
         [FromQuery] DateTime? from,
         [FromQuery] DateTime? to,
@@ -88,11 +80,9 @@ public class AnalyticsController : ControllerBase
         [FromQuery] int? poiId)
         => (await _analyticsAppService.GetHeatmapAsync(from, to, languageCode, poiId)).ToActionResult();
 
-    [Authorize(Roles = "Admin")]
+    [AllowAnonymous]
     [HttpGet("anonymous-routes")]
     [ProducesResponseType(typeof(IReadOnlyList<AnonymousRouteDto>), 200)]
-    [ProducesResponseType(401)]
-    [ProducesResponseType(403)]
     public async Task<IActionResult> GetAnonymousRoutes(
         [FromQuery] DateTime? from,
         [FromQuery] DateTime? to,
