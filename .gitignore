@@ -78,6 +78,9 @@ wwwroot/images/poi/*.jpg
 wwwroot/images/poi/*.png
 !wwwroot/images/poi/.gitkeep
 
+# Env
+.env
+
 bin/
 obj/
 .vs/
