@@ -68,13 +68,17 @@ public class OwnerContentApprovalController : AdminBaseController
                 return RedirectToAction(nameof(Index));
             }
 
-            await ApplyChangeRequestAsync(request);
+            await _unitOfWork.ExecuteInTransactionAsync(async () =>
+            {
+                await ApplyChangeRequestAsync(request);
 
-            request.Status = "approved";
-            request.ReviewedAt = DateTime.UtcNow;
-            request.ReviewNote = reviewNote;
+                request.Status = "approved";
+                request.ReviewedAt = DateTime.UtcNow;
+                request.ReviewNote = reviewNote;
 
-            await _unitOfWork.SaveChangesAsync();
+                await _unitOfWork.SaveChangesAsync();
+            });
+
             TempData["Success"] = "Đã duyệt và áp dụng thay đổi nội dung.";
         }
         catch (Exception ex)
@@ -186,8 +190,7 @@ public class OwnerContentApprovalController : AdminBaseController
             };
 
             await _audioRepository.AddAsync(audio);
-            await _unitOfWork.SaveChangesAsync();
-            request.AudioContentId = audio.Id;
+            request.AudioContent = audio;
         }
     }
 

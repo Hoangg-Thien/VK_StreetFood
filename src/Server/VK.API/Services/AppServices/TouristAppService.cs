@@ -311,38 +311,41 @@ public class TouristAppService : ITouristAppService
         var existingRating = await _ratingRepository.Query()
             .FirstOrDefaultAsync(r => r.TouristId == touristId && r.PointOfInterestId == request.POIId);
 
-        if (existingRating != null)
+        await _unitOfWork.ExecuteInTransactionAsync(async () =>
         {
-            existingRating.Score = request.Score;
-            existingRating.Comment = request.Comment;
-            existingRating.UpdatedAt = DateTime.UtcNow;
-        }
-        else
-        {
-            var rating = new Rating
+            if (existingRating != null)
             {
-                TouristId = touristId,
-                PointOfInterestId = request.POIId,
-                Score = request.Score,
-                Comment = request.Comment,
-                LanguageCode = request.LanguageCode ?? "vi"
-            };
+                existingRating.Score = request.Score;
+                existingRating.Comment = request.Comment;
+                existingRating.UpdatedAt = DateTime.UtcNow;
+            }
+            else
+            {
+                var rating = new Rating
+                {
+                    TouristId = touristId,
+                    PointOfInterestId = request.POIId,
+                    Score = request.Score,
+                    Comment = request.Comment,
+                    LanguageCode = request.LanguageCode ?? "vi"
+                };
 
-            await _ratingRepository.AddAsync(rating);
-            poi.TotalRatings++;
-        }
+                await _ratingRepository.AddAsync(rating);
+                poi.TotalRatings++;
+            }
 
-        await _unitOfWork.SaveChangesAsync();
-
-        var allRatings = await _ratingRepository.Query()
-            .Where(r => r.PointOfInterestId == request.POIId)
-            .ToListAsync();
-
-        if (allRatings.Any())
-        {
-            poi.AverageRating = (decimal)allRatings.Average(r => r.Score);
             await _unitOfWork.SaveChangesAsync();
-        }
+
+            var allRatings = await _ratingRepository.Query()
+                .Where(r => r.PointOfInterestId == request.POIId)
+                .ToListAsync();
+
+            if (allRatings.Any())
+            {
+                poi.AverageRating = (decimal)allRatings.Average(r => r.Score);
+                await _unitOfWork.SaveChangesAsync();
+            }
+        });
 
         return ServiceResult.Success();
     }
