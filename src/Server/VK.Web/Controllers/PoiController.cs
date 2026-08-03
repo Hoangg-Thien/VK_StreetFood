@@ -4,6 +4,7 @@ using System.Text.Json;
 using VK.Core.Entities;
 using VK.Core.Interfaces;
 using VK.Shared.Constants;
+using VK.Web.Models;
 using VK.Web.Services;
 
 namespace VK.Web.Controllers;
@@ -103,7 +104,7 @@ public class PoiController : Controller
     }
 
     [HttpPost]
-    public async Task<IActionResult> Create(PointOfInterest model)
+    public async Task<IActionResult> Create(PoiCreateViewModel model)
     {
         if (string.Equals(HttpContext.Session.GetString("UserRole"), "poi_owner", StringComparison.OrdinalIgnoreCase))
         {
@@ -119,16 +120,30 @@ public class PoiController : Controller
                 return RedirectToAction(nameof(Index));
             }
 
+            var poi = new PointOfInterest
+            {
+                Name = model.Name.Trim(),
+                Description = (model.Description ?? string.Empty).Trim(),
+                Address = model.Address.Trim(),
+                Latitude = model.Latitude,
+                Longitude = model.Longitude,
+                CategoryId = model.CategoryId,
+                ImageUrl = model.ImageUrl,
+                IsActive = model.IsActive,
+                TriggerPriority = model.TriggerPriority,
+                TriggerRadiusMeters = model.TriggerRadiusMeters
+            };
+
             await _unitOfWork.ExecuteInTransactionAsync(async () =>
             {
-                await _poiManagementRepository.AddPoiAsync(model);
+                await _poiManagementRepository.AddPoiAsync(poi);
                 await _unitOfWork.SaveChangesAsync();
 
                 await EnsureDefaultTranslationsAsync(
-                    model.Id,
-                    model.Name,
-                    model.Description,
-                    model.Address,
+                    poi.Id,
+                    poi.Name,
+                    poi.Description,
+                    poi.Address,
                     updateVietnamese: true);
 
                 await _unitOfWork.SaveChangesAsync();
@@ -146,7 +161,7 @@ public class PoiController : Controller
     }
 
     [HttpPost]
-    public async Task<IActionResult> Edit(PointOfInterest model)
+    public async Task<IActionResult> Edit(PoiEditViewModel model)
     {
         var isOwner = string.Equals(HttpContext.Session.GetString("UserRole"), "poi_owner", StringComparison.OrdinalIgnoreCase);
         int? ownerVendorId = null;
@@ -186,9 +201,9 @@ public class PoiController : Controller
 
                 var payload = new PoiEditPayload
                 {
-                    Name = model.Name,
-                    Description = model.Description,
-                    Address = model.Address,
+                    Name = model.Name?.Trim() ?? string.Empty,
+                    Description = model.Description?.Trim() ?? string.Empty,
+                    Address = model.Address?.Trim() ?? string.Empty,
                     Latitude = model.Latitude,
                     Longitude = model.Longitude,
                     IsActive = model.IsActive,
@@ -223,6 +238,12 @@ public class PoiController : Controller
 
         try
         {
+            if (!ModelState.IsValid)
+            {
+                TempData["Error"] = "Dữ liệu không hợp lệ.";
+                return RedirectToAction(nameof(Index));
+            }
+
             var existing = await _poiManagementRepository.GetPoiByIdAsync(model.Id);
             if (existing == null)
             {
@@ -230,9 +251,9 @@ public class PoiController : Controller
                 return RedirectToAction(nameof(Index));
             }
 
-            existing.Name = model.Name;
-            existing.Description = model.Description;
-            existing.Address = model.Address;
+            existing.Name = model.Name.Trim();
+            existing.Description = (model.Description ?? string.Empty).Trim();
+            existing.Address = model.Address.Trim();
             existing.Latitude = model.Latitude;
             existing.Longitude = model.Longitude;
             existing.IsActive = model.IsActive;
