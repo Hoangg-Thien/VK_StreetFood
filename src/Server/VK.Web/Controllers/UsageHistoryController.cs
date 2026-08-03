@@ -251,17 +251,17 @@ public class UsageHistoryController : AdminBaseController
 
     public class AnonymousRoutePointVm
     {
-        public double Latitude { get; set; }
-        public double Longitude { get; set; }
-        public DateTime VisitedAt { get; set; }
+        public double? Latitude { get; set; }
+        public double? Longitude { get; set; }
+        public DateTime? VisitedAt { get; set; }
     }
 
     public class AnonymousRouteVm
     {
         public string AnonymousVisitorId { get; set; } = string.Empty;
         public int PointCount { get; set; }
-        public DateTime FirstSeenAt { get; set; }
-        public DateTime LastSeenAt { get; set; }
+        public DateTime? FirstSeenAt { get; set; }
+        public DateTime? LastSeenAt { get; set; }
         public List<AnonymousRoutePointVm> Points { get; set; } = new();
     }
 }
