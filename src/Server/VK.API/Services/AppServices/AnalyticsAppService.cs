@@ -1,10 +1,11 @@
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Cryptography;
 using System.Text;
+using VK.API.Common;
 using VK.API.Models;
 using VK.Core.Entities;
 using VK.Core.Interfaces;
+using VK.Shared.DTOs;
 
 namespace VK.API.Services.AppServices;
 
@@ -36,7 +37,7 @@ public class AnalyticsAppService : IAnalyticsAppService
         _logger = logger;
     }
 
-    public async Task<IActionResult> RecordEventAsync(RecordEventRequest request)
+    public async Task<ServiceResult<RecordEventResultDto>> RecordEventAsync(RecordEventRequest request)
     {
         try
         {
@@ -77,16 +78,20 @@ public class AnalyticsAppService : IAnalyticsAppService
                 "Analytics event recorded: {EventType} for POI {PoiId} by Tourist {TouristId}",
                 request.EventType, request.POIId, request.TouristId);
 
-            return new OkObjectResult(new { success = true, eventId = analyticsEvent.Id });
+            return ServiceResult<RecordEventResultDto>.Success(new RecordEventResultDto
+            {
+                Success = true,
+                EventId = analyticsEvent.Id
+            });
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error recording analytics event");
-            return new ObjectResult(new { message = "Lỗi khi ghi nhận sự kiện" }) { StatusCode = 500 };
+            return ServiceResult<RecordEventResultDto>.Error("Lỗi khi ghi nhận sự kiện");
         }
     }
 
-    public async Task<IActionResult> GetPOISummaryAsync(int poiId, DateTime? from, DateTime? to)
+    public async Task<ServiceResult<POISummaryDto>> GetPOISummaryAsync(int poiId, DateTime? from, DateTime? to)
     {
         var fromDate = from ?? DateTime.UtcNow.AddDays(-30);
         var toDate = to ?? DateTime.UtcNow;
@@ -95,31 +100,31 @@ public class AnalyticsAppService : IAnalyticsAppService
             .Where(a => a.PointOfInterestId == poiId && a.CreatedAt >= fromDate && a.CreatedAt <= toDate)
             .ToListAsync();
 
-        var summary = new
+        var summary = new POISummaryDto
         {
-            totalViews = events.Count(e => e.EventType == "view"),
-            totalScans = events.Count(e => e.EventType == "qr_scan"),
-            totalAudioPlays = events.Count(e => e.EventType == "audio_play"),
-            totalAudioCompletes = events.Count(e => e.EventType == "audio_complete"),
-            uniqueVisitors = events.Select(e => e.TouristId).Distinct().Count(),
-            averageDuration = events.Where(e => e.DurationSeconds > 0).Average(e => (double?)e.DurationSeconds) ?? 0,
-            languageBreakdown = events
+            TotalViews = events.Count(e => e.EventType == "view"),
+            TotalScans = events.Count(e => e.EventType == "qr_scan"),
+            TotalAudioPlays = events.Count(e => e.EventType == "audio_play"),
+            TotalAudioCompletes = events.Count(e => e.EventType == "audio_complete"),
+            UniqueVisitors = events.Select(e => e.TouristId).Distinct().Count(),
+            AverageDuration = events.Where(e => e.DurationSeconds > 0).Average(e => (double?)e.DurationSeconds) ?? 0,
+            LanguageBreakdown = events
                 .Where(e => !string.IsNullOrEmpty(e.LanguageCode))
                 .GroupBy(e => e.LanguageCode)
-                .Select(g => new { language = g.Key, count = g.Count() })
-                .OrderByDescending(x => x.count)
+                .Select(g => new LanguageBreakdownDto { Language = g.Key!, Count = g.Count() })
+                .OrderByDescending(x => x.Count)
                 .ToList(),
-            eventsByDay = events
+            EventsByDay = events
                 .GroupBy(e => e.CreatedAt.Date)
-                .Select(g => new { date = g.Key, count = g.Count() })
-                .OrderBy(x => x.date)
+                .Select(g => new EventsByDayDto { Date = g.Key, Count = g.Count() })
+                .OrderBy(x => x.Date)
                 .ToList()
         };
 
-        return new OkObjectResult(summary);
+        return ServiceResult<POISummaryDto>.Success(summary);
     }
 
-    public async Task<IActionResult> GetDashboardAsync(DateTime? from, DateTime? to)
+    public async Task<ServiceResult<DashboardDto>> GetDashboardAsync(DateTime? from, DateTime? to)
     {
         var fromDate = from ?? DateTime.UtcNow.AddDays(-30);
         var toDate = to ?? DateTime.UtcNow;
@@ -136,57 +141,59 @@ public class AnalyticsAppService : IAnalyticsAppService
             .Where(r => r.CreatedAt >= fromDate && r.CreatedAt <= toDate)
             .ToListAsync();
 
-        var dashboard = new
-        {
-            overview = new
+        var topPois = await _poiRepository.Query()
+            .Include(p => p.Analytics)
+            .Where(p => !p.IsDeleted && p.IsActive)
+            .Select(p => new DashboardTopPoiDto
             {
-                totalEvents = events.Count,
-                totalVisits = visits.Count,
-                totalRatings = ratings.Count,
-                uniqueVisitors = events.Select(e => e.TouristId).Distinct().Count(),
-                averageRating = ratings.Any() ? ratings.Average(r => (double)r.Score) : 0
+                PoiId = p.Id,
+                Name = p.Name,
+                TotalEvents = p.Analytics.Count(a => a.CreatedAt >= fromDate && a.CreatedAt <= toDate),
+                AverageRating = p.AverageRating,
+                TotalRatings = p.TotalRatings
+            })
+            .OrderByDescending(p => p.TotalEvents)
+            .Take(10)
+            .ToListAsync();
+
+        var dashboard = new DashboardDto
+        {
+            Overview = new DashboardOverviewDto
+            {
+                TotalEvents = events.Count,
+                TotalVisits = visits.Count,
+                TotalRatings = ratings.Count,
+                UniqueVisitors = events.Select(e => e.TouristId).Distinct().Count(),
+                AverageRating = ratings.Any() ? ratings.Average(r => (double)r.Score) : 0
             },
-            topPOIs = await _poiRepository.Query()
-                .Include(p => p.Analytics)
-                .Where(p => !p.IsDeleted && p.IsActive)
-                .Select(p => new
-                {
-                    poiId = p.Id,
-                    name = p.Name,
-                    totalEvents = p.Analytics.Count(a => a.CreatedAt >= fromDate && a.CreatedAt <= toDate),
-                    averageRating = p.AverageRating,
-                    totalRatings = p.TotalRatings
-                })
-                .OrderByDescending(p => p.totalEvents)
-                .Take(10)
-                .ToListAsync(),
-            eventsByType = events
+            TopPOIs = topPois,
+            EventsByType = events
                 .GroupBy(e => e.EventType)
-                .Select(g => new { eventType = g.Key, count = g.Count() })
-                .OrderByDescending(x => x.count)
+                .Select(g => new EventsByTypeDto { EventType = g.Key, Count = g.Count() })
+                .OrderByDescending(x => x.Count)
                 .ToList(),
-            visitorsByLanguage = events
+            VisitorsByLanguage = events
                 .Where(e => !string.IsNullOrEmpty(e.LanguageCode))
                 .GroupBy(e => e.LanguageCode)
-                .Select(g => new { language = g.Key, count = g.Count() })
-                .OrderByDescending(x => x.count)
+                .Select(g => new LanguageBreakdownDto { Language = g.Key!, Count = g.Count() })
+                .OrderByDescending(x => x.Count)
                 .ToList(),
-            dailyTrend = events
+            DailyTrend = events
                 .GroupBy(e => e.CreatedAt.Date)
-                .Select(g => new
+                .Select(g => new DailyTrendDto
                 {
-                    date = g.Key,
-                    events = g.Count(),
-                    uniqueVisitors = g.Select(e => e.TouristId).Distinct().Count()
+                    Date = g.Key,
+                    Events = g.Count(),
+                    UniqueVisitors = g.Select(e => e.TouristId).Distinct().Count()
                 })
-                .OrderBy(x => x.date)
+                .OrderBy(x => x.Date)
                 .ToList()
         };
 
-        return new OkObjectResult(dashboard);
+        return ServiceResult<DashboardDto>.Success(dashboard);
     }
 
-    public async Task<IActionResult> GetTopPOIsAsync(int count = 10)
+    public async Task<ServiceResult<IReadOnlyList<TopPoiDto>>> GetTopPOIsAsync(int count = 10)
     {
         var pois = await _poiRepository.Query()
             .Include(p => p.Category)
@@ -211,24 +218,24 @@ public class AnalyticsAppService : IAnalyticsAppService
             .ToDictionaryAsync(x => x.PoiId, x => x.AvgMin);
 
         var result = pois
-            .Select(p => new
+            .Select(p => new TopPoiDto
             {
-                id = p.Id,
-                name = p.Name,
-                categoryName = p.Category?.Name,
-                visitCount = visitCounts.GetValueOrDefault(p.Id, 0),
-                audioPlayCount = audioCounts.GetValueOrDefault(p.Id, 0),
-                averageRating = (double)p.AverageRating,
-                averageListenMinutes = Math.Round(avgListenMinutes.GetValueOrDefault(p.Id, 0.0), 2)
+                Id = p.Id,
+                Name = p.Name,
+                CategoryName = p.Category?.Name,
+                VisitCount = visitCounts.GetValueOrDefault(p.Id, 0),
+                AudioPlayCount = audioCounts.GetValueOrDefault(p.Id, 0),
+                AverageRating = (double)p.AverageRating,
+                AverageListenMinutes = Math.Round(avgListenMinutes.GetValueOrDefault(p.Id, 0.0), 2)
             })
-            .OrderByDescending(p => p.visitCount + p.audioPlayCount)
+            .OrderByDescending(p => p.VisitCount + p.AudioPlayCount)
             .Take(count)
             .ToList();
 
-        return new OkObjectResult(result);
+        return ServiceResult<IReadOnlyList<TopPoiDto>>.Success(result);
     }
 
-    public async Task<IActionResult> GetTopListenedPoisAsync(DateTime? from, DateTime? to, string? languageCode, int? poiId, int take = 10)
+    public async Task<ServiceResult<IReadOnlyList<TopListenedPoiDto>>> GetTopListenedPoisAsync(DateTime? from, DateTime? to, string? languageCode, int? poiId, int take = 10)
     {
         var fromDate = from ?? DateTime.UtcNow.AddDays(-30);
         var toDate = to ?? DateTime.UtcNow;
@@ -276,22 +283,22 @@ public class AnalyticsAppService : IAnalyticsAppService
             .Take(safeTake)
             .ToListAsync();
 
-        var data = raw.Select(x => new
+        var data = raw.Select(x => new TopListenedPoiDto
         {
-            x.poiId,
-            x.poiName,
-            x.audioPlayCount,
-            x.audioCompleteCount,
-            x.uniqueListeners,
-            completionRate = x.audioPlayCount > 0
+            PoiId = x.poiId,
+            PoiName = x.poiName,
+            AudioPlayCount = x.audioPlayCount,
+            AudioCompleteCount = x.audioCompleteCount,
+            UniqueListeners = x.uniqueListeners,
+            CompletionRate = x.audioPlayCount > 0
                 ? Math.Round(Math.Min(100, (double)x.audioCompleteCount * 100.0 / x.audioPlayCount), 2)
                 : 0
-        });
+        }).ToList();
 
-        return new OkObjectResult(data);
+        return ServiceResult<IReadOnlyList<TopListenedPoiDto>>.Success(data);
     }
 
-    public async Task<IActionResult> GetAverageListenPerPoiAsync(DateTime? from, DateTime? to, string? languageCode, int? poiId, int take = 20)
+    public async Task<ServiceResult<IReadOnlyList<AvgListenPoiDto>>> GetAverageListenPerPoiAsync(DateTime? from, DateTime? to, string? languageCode, int? poiId, int take = 20)
     {
         var fromDate = from ?? DateTime.UtcNow.AddDays(-30);
         var toDate = to ?? DateTime.UtcNow;
@@ -331,18 +338,18 @@ public class AnalyticsAppService : IAnalyticsAppService
             .Take(safeTake)
             .ToListAsync();
 
-        var data = raw.Select(x => new
+        var data = raw.Select(x => new AvgListenPoiDto
         {
-            x.poiId,
-            x.poiName,
-            averageDurationSeconds = Math.Round(x.averageDurationSeconds, 2),
-            x.sampleCount
-        });
+            PoiId = x.poiId,
+            PoiName = x.poiName,
+            AverageDurationSeconds = Math.Round(x.averageDurationSeconds, 2),
+            SampleCount = x.sampleCount
+        }).ToList();
 
-        return new OkObjectResult(data);
+        return ServiceResult<IReadOnlyList<AvgListenPoiDto>>.Success(data);
     }
 
-    public async Task<IActionResult> GetHeatmapAsync(DateTime? from, DateTime? to, string? languageCode, int? poiId)
+    public async Task<ServiceResult<IReadOnlyList<HeatmapPointDto>>> GetHeatmapAsync(DateTime? from, DateTime? to, string? languageCode, int? poiId)
     {
         // Lấy heatmap từ vị trí cuối cùng của mỗi Tourist
         var query = _touristRepository.Query()
@@ -360,14 +367,14 @@ public class AnalyticsAppService : IAnalyticsAppService
 
         var grouped = points
             .GroupBy(v => new { v.Lat, v.Lng })
-            .Select(g => new { latitude = g.Key.Lat, longitude = g.Key.Lng, weight = g.Count() })
-            .OrderByDescending(x => x.weight)
+            .Select(g => new HeatmapPointDto { Latitude = g.Key.Lat, Longitude = g.Key.Lng, Weight = g.Count() })
+            .OrderByDescending(x => x.Weight)
             .ToList();
 
-        return new OkObjectResult(grouped);
+        return ServiceResult<IReadOnlyList<HeatmapPointDto>>.Success(grouped);
     }
 
-    public async Task<IActionResult> GetAnonymousRoutesAsync(DateTime? from, DateTime? to, string? languageCode, int? poiId, int take = 50)
+    public async Task<ServiceResult<IReadOnlyList<AnonymousRouteDto>>> GetAnonymousRoutesAsync(DateTime? from, DateTime? to, string? languageCode, int? poiId, int take = 50)
     {
         // Tuyến ẩn danh: mỗi tourist là 1 tuyến, chỉ lấy điểm cuối cùng
         var safeTake = Math.Clamp(take, 1, 200);
@@ -380,23 +387,24 @@ public class AnalyticsAppService : IAnalyticsAppService
 
         var tourists = await query.OrderByDescending(t => t.LastLocationUpdate).Take(safeTake).ToListAsync();
 
-        var routes = tourists.Select(t => new
+        var routes = tourists.Select(t => new AnonymousRouteDto
         {
-            anonymousVisitorId = BuildAnonymousVisitorId(t.Id),
-            pointCount = 1,
-            firstSeenAt = t.LastLocationUpdate,
-            lastSeenAt = t.LastLocationUpdate,
-            points = new[]
+            AnonymousVisitorId = BuildAnonymousVisitorId(t.Id),
+            PointCount = 1,
+            FirstSeenAt = t.LastLocationUpdate,
+            LastSeenAt = t.LastLocationUpdate,
+            Points = new List<AnonymousRoutePointDto>
             {
-                new {
-                    latitude = t.LastLatitude,
-                    longitude = t.LastLongitude,
-                    visitedAt = t.LastLocationUpdate
+                new AnonymousRoutePointDto
+                {
+                    Latitude = t.LastLatitude,
+                    Longitude = t.LastLongitude,
+                    VisitedAt = t.LastLocationUpdate
                 }
             }
         }).ToList();
 
-        return new OkObjectResult(routes);
+        return ServiceResult<IReadOnlyList<AnonymousRouteDto>>.Success(routes);
     }
 
     private static string BuildAnonymousVisitorId(int touristId)

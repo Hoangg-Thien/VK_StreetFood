@@ -1,7 +1,9 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using VK.API.Common;
 using VK.API.Models;
 using VK.API.Services.AppServices;
+using VK.Shared.DTOs;
 
 namespace VK.API.Controllers;
 
@@ -19,60 +21,83 @@ public class AnalyticsController : ControllerBase
     /// <summary>Record an analytics event (tourist-facing, no auth required).</summary>
     [AllowAnonymous]
     [HttpPost("event")]
-    public Task<IActionResult> RecordEvent([FromBody] RecordEventRequest request)
-        => _analyticsAppService.RecordEventAsync(request);
+    [ProducesResponseType(typeof(RecordEventResultDto), 200)]
+    [ProducesResponseType(500)]
+    public async Task<IActionResult> RecordEvent([FromBody] RecordEventRequest request)
+        => (await _analyticsAppService.RecordEventAsync(request)).ToActionResult();
 
     [Authorize(Roles = "Admin")]
     [HttpGet("poi/{poiId}/summary")]
-    public Task<IActionResult> GetPOISummary(int poiId, [FromQuery] DateTime? from, [FromQuery] DateTime? to)
-        => _analyticsAppService.GetPOISummaryAsync(poiId, from, to);
+    [ProducesResponseType(typeof(POISummaryDto), 200)]
+    [ProducesResponseType(401)]
+    [ProducesResponseType(403)]
+    public async Task<IActionResult> GetPOISummary(int poiId, [FromQuery] DateTime? from, [FromQuery] DateTime? to)
+        => (await _analyticsAppService.GetPOISummaryAsync(poiId, from, to)).ToActionResult();
 
     [Authorize(Roles = "Admin")]
     [HttpGet("dashboard")]
-    public Task<IActionResult> GetDashboard([FromQuery] DateTime? from, [FromQuery] DateTime? to)
-        => _analyticsAppService.GetDashboardAsync(from, to);
+    [ProducesResponseType(typeof(DashboardDto), 200)]
+    [ProducesResponseType(401)]
+    [ProducesResponseType(403)]
+    public async Task<IActionResult> GetDashboard([FromQuery] DateTime? from, [FromQuery] DateTime? to)
+        => (await _analyticsAppService.GetDashboardAsync(from, to)).ToActionResult();
 
     [Authorize(Roles = "Admin")]
     [HttpGet("top-pois")]
-    public Task<IActionResult> GetTopPOIs([FromQuery] int count = 10)
-        => _analyticsAppService.GetTopPOIsAsync(count);
+    [ProducesResponseType(typeof(IReadOnlyList<TopPoiDto>), 200)]
+    [ProducesResponseType(401)]
+    [ProducesResponseType(403)]
+    public async Task<IActionResult> GetTopPOIs([FromQuery] int count = 10)
+        => (await _analyticsAppService.GetTopPOIsAsync(count)).ToActionResult();
 
     [Authorize(Roles = "Admin")]
     [HttpGet("top-listened-pois")]
-    public Task<IActionResult> GetTopListenedPois(
+    [ProducesResponseType(typeof(IReadOnlyList<TopListenedPoiDto>), 200)]
+    [ProducesResponseType(401)]
+    [ProducesResponseType(403)]
+    public async Task<IActionResult> GetTopListenedPois(
         [FromQuery] DateTime? from,
         [FromQuery] DateTime? to,
         [FromQuery] string? languageCode,
         [FromQuery] int? poiId,
         [FromQuery] int take = 10)
-        => _analyticsAppService.GetTopListenedPoisAsync(from, to, languageCode, poiId, take);
+        => (await _analyticsAppService.GetTopListenedPoisAsync(from, to, languageCode, poiId, take)).ToActionResult();
 
     [Authorize(Roles = "Admin")]
     [HttpGet("avg-listen-per-poi")]
-    public Task<IActionResult> GetAverageListenPerPoi(
+    [ProducesResponseType(typeof(IReadOnlyList<AvgListenPoiDto>), 200)]
+    [ProducesResponseType(401)]
+    [ProducesResponseType(403)]
+    public async Task<IActionResult> GetAverageListenPerPoi(
         [FromQuery] DateTime? from,
         [FromQuery] DateTime? to,
         [FromQuery] string? languageCode,
         [FromQuery] int? poiId,
         [FromQuery] int take = 20)
-        => _analyticsAppService.GetAverageListenPerPoiAsync(from, to, languageCode, poiId, take);
+        => (await _analyticsAppService.GetAverageListenPerPoiAsync(from, to, languageCode, poiId, take)).ToActionResult();
 
     [Authorize(Roles = "Admin")]
     [HttpGet("heatmap")]
-    public Task<IActionResult> GetHeatmap(
+    [ProducesResponseType(typeof(IReadOnlyList<HeatmapPointDto>), 200)]
+    [ProducesResponseType(401)]
+    [ProducesResponseType(403)]
+    public async Task<IActionResult> GetHeatmap(
         [FromQuery] DateTime? from,
         [FromQuery] DateTime? to,
         [FromQuery] string? languageCode,
         [FromQuery] int? poiId)
-        => _analyticsAppService.GetHeatmapAsync(from, to, languageCode, poiId);
+        => (await _analyticsAppService.GetHeatmapAsync(from, to, languageCode, poiId)).ToActionResult();
 
     [Authorize(Roles = "Admin")]
     [HttpGet("anonymous-routes")]
-    public Task<IActionResult> GetAnonymousRoutes(
+    [ProducesResponseType(typeof(IReadOnlyList<AnonymousRouteDto>), 200)]
+    [ProducesResponseType(401)]
+    [ProducesResponseType(403)]
+    public async Task<IActionResult> GetAnonymousRoutes(
         [FromQuery] DateTime? from,
         [FromQuery] DateTime? to,
         [FromQuery] string? languageCode,
         [FromQuery] int? poiId,
         [FromQuery] int take = 50)
-        => _analyticsAppService.GetAnonymousRoutesAsync(from, to, languageCode, poiId, take);
+        => (await _analyticsAppService.GetAnonymousRoutesAsync(from, to, languageCode, poiId, take)).ToActionResult();
 }
