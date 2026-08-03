@@ -84,3 +84,29 @@ public class SubmitRatingRequest
     [MaxLength(10)]
     public string? LanguageCode { get; set; }
 }
+
+public class UpdateLocationResultDto
+{
+    public bool Success { get; set; } = true;
+    public List<NearbyPoiCheckDto> NearbyPOIs { get; set; } = new();
+}
+
+public class NearbyPoiCheckDto
+{
+    public int PoiId { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public double DistanceMeters { get; set; }
+    public bool ShouldTriggerAudio { get; set; }
+}
+
+public class TouristStatsDto
+{
+    public int TotalVisits { get; set; }
+    public int TotalAudioPlays { get; set; }
+    public int TotalQRScans { get; set; }
+    public int TotalGeofenceEnters { get; set; }
+    public double TotalAudioMinutes { get; set; }
+    public string? MostVisitedPOI { get; set; }
+    public string? FavoriteLanguage { get; set; }
+}
+

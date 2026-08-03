@@ -1,9 +1,9 @@
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging.Abstractions;
 using VK.API.Auth;
+using VK.API.Common;
 using VK.API.Services.AppServices;
 using VK.Core.Entities;
 using VK.Infrastructure.Data;
@@ -28,10 +28,7 @@ public class TouristAppServiceTests
             Longitude = 106.69
         };
 
-        var result = await service.RegisterTouristAsync(request);
-
-        var ok = Assert.IsType<OkObjectResult>(result);
-        var dto = Assert.IsType<TouristDto>(ok.Value);
+        var dto = await service.RegisterTouristAsync(request);
 
         Assert.Equal("device-new-001", dto.DeviceId);
         Assert.Equal("en", dto.PreferredLanguage);
@@ -55,9 +52,7 @@ public class TouristAppServiceTests
         await service.RegisterTouristAsync(request);
 
         // Second call — tourist already exists; should still return a token (re-login)
-        var result = await service.RegisterTouristAsync(request);
-        var ok = Assert.IsType<OkObjectResult>(result);
-        var dto = Assert.IsType<TouristDto>(ok.Value);
+        var dto = await service.RegisterTouristAsync(request);
 
         Assert.False(string.IsNullOrWhiteSpace(dto.Token),
             "RegisterTourist should return a JWT token even for an existing device.");
@@ -101,11 +96,208 @@ public class TouristAppServiceTests
             LanguageCode = "vi"
         };
 
-        await service.LogVisitAsync(tourist.Id, request);
-        await service.LogVisitAsync(tourist.Id, request);
+        var res1 = await service.LogVisitAsync(tourist.Id, request);
+        var res2 = await service.LogVisitAsync(tourist.Id, request);
 
+        Assert.Equal(ServiceResultStatus.Success, res1.Status);
+        Assert.Equal(ServiceResultStatus.Success, res2.Status);
         Assert.Equal(1, await context.VisitLogs.CountAsync());
         Assert.Equal(1, (await context.Tourists.SingleAsync()).TotalVisits);
+    }
+
+    [Fact]
+    public async Task LogVisitAsync_ReturnsBadRequest_WhenPoiIdInvalid()
+    {
+        using var context = CreateContext();
+        var service = CreateService(context);
+
+        var result = await service.LogVisitAsync(1, new LogVisitRequest { POIId = 0 });
+        Assert.Equal(ServiceResultStatus.BadRequest, result.Status);
+    }
+
+    [Fact]
+    public async Task LogVisitAsync_ReturnsNotFound_WhenTouristOrPoiDoesNotExist()
+    {
+        using var context = CreateContext();
+        var service = CreateService(context);
+
+        var result1 = await service.LogVisitAsync(999, new LogVisitRequest { POIId = 1 });
+        Assert.Equal(ServiceResultStatus.NotFound, result1.Status);
+
+        var tourist = new Tourist { DeviceId = "dev-1" };
+        context.Tourists.Add(tourist);
+        await context.SaveChangesAsync();
+
+        var result2 = await service.LogVisitAsync(tourist.Id, new LogVisitRequest { POIId = 999 });
+        Assert.Equal(ServiceResultStatus.NotFound, result2.Status);
+    }
+
+    [Fact]
+    public async Task UpdateLocationAsync_ReturnsNotFound_WhenTouristDoesNotExist()
+    {
+        using var context = CreateContext();
+        var service = CreateService(context);
+
+        var result = await service.UpdateLocationAsync(999, new UpdateLocationRequest { Latitude = 10.0, Longitude = 106.0 });
+        Assert.Equal(ServiceResultStatus.NotFound, result.Status);
+    }
+
+    [Fact]
+    public async Task SubmitRatingAsync_ReturnsBadRequest_WhenScoreOutOfRange()
+    {
+        using var context = CreateContext();
+        var service = CreateService(context);
+
+        var result = await service.SubmitRatingAsync(1, new SubmitRatingRequest { POIId = 1, Score = 6 });
+        Assert.Equal(ServiceResultStatus.BadRequest, result.Status);
+    }
+
+    [Fact]
+    public async Task GetStatsAsync_ReturnsNull_WhenTouristDoesNotExist()
+    {
+        using var context = CreateContext();
+        var service = CreateService(context);
+
+        var result = await service.GetStatsAsync(999);
+        Assert.Null(result);
+    }
+
+    [Fact]
+    public async Task UpdateLocationAsync_Success_UpdatesCoordinatesAndReturnsNearbyPois()
+    {
+        using var context = CreateContext();
+        var service = CreateService(context);
+
+        var tourist = new Tourist { DeviceId = "dev-loc-01" };
+        var poi = new PointOfInterest { Name = "Nearby Stall", Latitude = 10.001, Longitude = 106.001, IsActive = true };
+        context.Tourists.Add(tourist);
+        context.PointsOfInterest.Add(poi);
+        await context.SaveChangesAsync();
+
+        var result = await service.UpdateLocationAsync(tourist.Id, new UpdateLocationRequest { Latitude = 10.0, Longitude = 106.0 });
+
+        Assert.Equal(ServiceResultStatus.Success, result.Status);
+        Assert.NotNull(result.Data);
+        Assert.NotEmpty(result.Data.NearbyPOIs);
+        var updatedTourist = await context.Tourists.FindAsync(tourist.Id);
+        Assert.Equal(10.0, updatedTourist!.LastLatitude);
+        Assert.Equal(106.0, updatedTourist.LastLongitude);
+    }
+
+    [Fact]
+    public async Task GetVisitHistoryAsync_ReturnsVisitHistoryList()
+    {
+        using var context = CreateContext();
+        var service = CreateService(context);
+
+        var tourist = new Tourist { DeviceId = "dev-hist-01" };
+        var poi = new PointOfInterest { Name = "Bun Bo Hue", Latitude = 10, Longitude = 106, IsActive = true };
+        context.Tourists.Add(tourist);
+        context.PointsOfInterest.Add(poi);
+        await context.SaveChangesAsync();
+
+        context.VisitLogs.Add(new VisitLog
+        {
+            TouristId = tourist.Id,
+            PointOfInterestId = poi.Id,
+            VisitedAt = DateTime.UtcNow,
+            LanguageUsed = "vi"
+        });
+        await context.SaveChangesAsync();
+
+        var history = await service.GetVisitHistoryAsync(tourist.Id);
+        Assert.NotNull(history);
+        Assert.Single(history);
+        Assert.Equal("Bun Bo Hue", history[0].POIName);
+    }
+
+    [Fact]
+    public async Task AddAndRemoveFavoriteAsync_WorksCorrectly()
+    {
+        using var context = CreateContext();
+        var service = CreateService(context);
+
+        var tourist = new Tourist { DeviceId = "dev-fav-01" };
+        var poi = new PointOfInterest { Name = "Goi Cuon", Latitude = 10, Longitude = 106, IsActive = true };
+        context.Tourists.Add(tourist);
+        context.PointsOfInterest.Add(poi);
+        await context.SaveChangesAsync();
+
+        // 1. Add favorite
+        var addRes = await service.AddFavoriteAsync(tourist.Id, new AddFavoriteRequest { POIId = poi.Id });
+        Assert.Equal(ServiceResultStatus.Success, addRes.Status);
+        Assert.Equal(1, await context.Favorites.CountAsync(f => !f.IsDeleted));
+
+        // 2. Get favorites
+        var favs = await service.GetFavoritesAsync(tourist.Id);
+        Assert.Single(favs);
+        Assert.Equal("Goi Cuon", favs[0].Name);
+
+        // 3. Remove favorite
+        var remRes = await service.RemoveFavoriteAsync(tourist.Id, poi.Id);
+        Assert.Equal(ServiceResultStatus.Success, remRes.Status);
+        Assert.Equal(0, await context.Favorites.CountAsync(f => !f.IsDeleted));
+    }
+
+    [Fact]
+    public async Task SubmitRatingAsync_CalculatesAverageAndTotalRatings()
+    {
+        using var context = CreateContext();
+        var service = CreateService(context);
+
+        var tourist1 = new Tourist { DeviceId = "dev-rate-01" };
+        var tourist2 = new Tourist { DeviceId = "dev-rate-02" };
+        var poi = new PointOfInterest { Name = "Hu Tieu", Latitude = 10, Longitude = 106, IsActive = true };
+        context.Tourists.AddRange(tourist1, tourist2);
+        context.PointsOfInterest.Add(poi);
+        await context.SaveChangesAsync();
+
+        var res1 = await service.SubmitRatingAsync(tourist1.Id, new SubmitRatingRequest { POIId = poi.Id, Score = 5, Comment = "Tuyet voi" });
+        Assert.Equal(ServiceResultStatus.Success, res1.Status);
+
+        var res2 = await service.SubmitRatingAsync(tourist2.Id, new SubmitRatingRequest { POIId = poi.Id, Score = 3, Comment = "Binh thuong" });
+        Assert.Equal(ServiceResultStatus.Success, res2.Status);
+
+        var updatedPoi = await context.PointsOfInterest.FindAsync(poi.Id);
+        Assert.Equal(2, updatedPoi!.TotalRatings);
+        Assert.Equal(4.0m, updatedPoi.AverageRating);
+    }
+
+    [Fact]
+    public async Task GetStatsAsync_ReturnsCalculatedStats_WhenTouristExists()
+    {
+        using var context = CreateContext();
+        var service = CreateService(context);
+
+        var tourist = new Tourist { DeviceId = "dev-stats-01", TotalVisits = 5 };
+        var poi = new PointOfInterest { Name = "Che Ba Mau", Latitude = 10, Longitude = 106, IsActive = true };
+        context.Tourists.Add(tourist);
+        context.PointsOfInterest.Add(poi);
+        await context.SaveChangesAsync();
+
+        context.Analytics.AddRange(
+            new Analytics
+            {
+                TouristId = tourist.Id,
+                PointOfInterestId = poi.Id,
+                EventType = "audio_play",
+                DurationSeconds = 0
+            },
+            new Analytics
+            {
+                TouristId = tourist.Id,
+                PointOfInterestId = poi.Id,
+                EventType = "audio_complete",
+                DurationSeconds = 120
+            }
+        );
+        await context.SaveChangesAsync();
+
+        var stats = await service.GetStatsAsync(tourist.Id);
+        Assert.NotNull(stats);
+        Assert.Equal(5, stats.TotalVisits);
+        Assert.Equal(1, stats.TotalAudioPlays);
+        Assert.Equal(2.0, stats.TotalAudioMinutes);
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────

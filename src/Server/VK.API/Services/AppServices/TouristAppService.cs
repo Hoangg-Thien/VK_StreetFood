@@ -1,6 +1,6 @@
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using VK.API.Auth;
+using VK.API.Common;
 using VK.API.Extensions;
 using VK.Core.Entities;
 using VK.Core.Interfaces;
@@ -46,7 +46,7 @@ public class TouristAppService : ITouristAppService
         _jwtTokenService = jwtTokenService;
     }
 
-    public async Task<IActionResult> RegisterTouristAsync(RegisterTouristRequest request)
+    public async Task<TouristDto> RegisterTouristAsync(RegisterTouristRequest request)
     {
         var tourist = await _touristRepository.Query()
             .FirstOrDefaultAsync(t => t.DeviceId == request.DeviceId && !t.IsDeleted);
@@ -75,23 +75,23 @@ public class TouristAppService : ITouristAppService
 
         var token = _jwtTokenService.GenerateTouristToken(tourist.Id);
 
-        return new OkObjectResult(new TouristDto
+        return new TouristDto
         {
             TouristId = tourist.Id,
             DeviceId = tourist.DeviceId,
             PreferredLanguage = tourist.PreferredLanguage,
             TotalVisits = tourist.TotalVisits,
             Token = token
-        });
+        };
     }
 
-    public async Task<IActionResult> UpdateLocationAsync(int touristId, UpdateLocationRequest request)
+    public async Task<ServiceResult<UpdateLocationResultDto>> UpdateLocationAsync(int touristId, UpdateLocationRequest request)
     {
         var tourist = await _touristRepository.Query()
             .FirstOrDefaultAsync(t => t.Id == touristId && !t.IsDeleted);
 
         if (tourist == null)
-            return new NotFoundObjectResult(new { message = "Tourist không tồn tại" });
+            return ServiceResult<UpdateLocationResultDto>.NotFound("Tourist không tồn tại");
 
         tourist.LastLatitude = request.Latitude;
         tourist.LastLongitude = request.Longitude;
@@ -99,40 +99,40 @@ public class TouristAppService : ITouristAppService
 
         var nearbyPOIs = await CheckNearbyPOIs(request.Latitude, request.Longitude);
 
-        return new OkObjectResult(new
+        return ServiceResult<UpdateLocationResultDto>.Success(new UpdateLocationResultDto
         {
-            success = true,
-            nearbyPOIs = nearbyPOIs.Select(p => new
+            Success = true,
+            NearbyPOIs = nearbyPOIs.Select(p => new NearbyPoiCheckDto
             {
-                poiId = p.Id,
-                name = p.Name,
-                distanceMeters = GeoHelper.CalculateDistanceKm(
+                PoiId = p.Id,
+                Name = p.Name,
+                DistanceMeters = GeoHelper.CalculateDistanceKm(
                     request.Latitude, request.Longitude,
                     p.Latitude, p.Longitude) * 1000,
-                shouldTriggerAudio = GeoHelper.CalculateDistanceKm(
+                ShouldTriggerAudio = GeoHelper.CalculateDistanceKm(
                     request.Latitude, request.Longitude,
                     p.Latitude, p.Longitude) <= 0.05
-            })
+            }).ToList()
         });
     }
 
-    public async Task<IActionResult> LogVisitAsync(int touristId, LogVisitRequest request)
+    public async Task<ServiceResult> LogVisitAsync(int touristId, LogVisitRequest request)
     {
         var poiId = request.EffectivePOIId;
         if (poiId <= 0)
-            return new BadRequestObjectResult(new { message = "Thiếu poiId hợp lệ" });
+            return ServiceResult.BadRequest("Thiếu poiId hợp lệ");
 
         var tourist = await _touristRepository.Query()
             .FirstOrDefaultAsync(t => t.Id == touristId && !t.IsDeleted);
 
         if (tourist == null)
-            return new NotFoundObjectResult(new { message = "Tourist không tồn tại" });
+            return ServiceResult.NotFound("Tourist không tồn tại");
 
         var poi = await _poiRepository.Query()
             .FirstOrDefaultAsync(p => p.Id == poiId && !p.IsDeleted);
 
         if (poi == null)
-            return new NotFoundObjectResult(new { message = "POI không tồn tại" });
+            return ServiceResult.NotFound("POI không tồn tại");
 
         var nowUtc = DateTime.UtcNow;
         var dedupeSinceUtc = nowUtc.AddMinutes(-5);
@@ -167,10 +167,10 @@ public class TouristAppService : ITouristAppService
                 request.TriggerMethod ?? "unknown");
         }
 
-        return new OkObjectResult(new { success = true, message = "Visit logged successfully" });
+        return ServiceResult.Success();
     }
 
-    public async Task<IActionResult> GetVisitHistoryAsync(int touristId)
+    public async Task<IReadOnlyList<VisitHistoryDto>> GetVisitHistoryAsync(int touristId)
     {
         var visits = await _visitLogRepository.Query()
             .Where(v => v.TouristId == touristId)
@@ -192,16 +192,16 @@ public class TouristAppService : ITouristAppService
             if (!string.IsNullOrEmpty(v.POIImageUrl) && !v.POIImageUrl.StartsWith("http"))
                 v.POIImageUrl = $"{baseUrl}{v.POIImageUrl}";
 
-        return new OkObjectResult(visits);
+        return visits;
     }
 
-    public async Task<IActionResult> AddFavoriteAsync(int touristId, AddFavoriteRequest request)
+    public async Task<ServiceResult> AddFavoriteAsync(int touristId, AddFavoriteRequest request)
     {
         var tourist = await _touristRepository.Query()
             .FirstOrDefaultAsync(t => t.Id == touristId && !t.IsDeleted);
 
         if (tourist == null)
-            return new NotFoundObjectResult(new { message = "Tourist không tồn tại" });
+            return ServiceResult.NotFound("Tourist không tồn tại");
 
         var existingFavorite = await _favoriteRepository.Query()
             .IgnoreQueryFilters()
@@ -210,12 +210,12 @@ public class TouristAppService : ITouristAppService
         if (existingFavorite != null)
         {
             if (!existingFavorite.IsDeleted)
-                return new OkObjectResult(new { success = true, message = "POI đã có trong danh sách yêu thích" });
+                return ServiceResult.Success();
 
             existingFavorite.IsDeleted = false;
             existingFavorite.DeletedAt = null;
             await _unitOfWork.SaveChangesAsync();
-            return new OkObjectResult(new { success = true, message = "Đã thêm vào yêu thích" });
+            return ServiceResult.Success();
         }
 
         var favorite = new Favorite
@@ -228,25 +228,25 @@ public class TouristAppService : ITouristAppService
         await _favoriteRepository.AddAsync(favorite);
         await _unitOfWork.SaveChangesAsync();
 
-        return new OkObjectResult(new { success = true, message = "Đã thêm vào yêu thích" });
+        return ServiceResult.Success();
     }
 
-    public async Task<IActionResult> RemoveFavoriteAsync(int touristId, int poiId)
+    public async Task<ServiceResult> RemoveFavoriteAsync(int touristId, int poiId)
     {
         var favorite = await _favoriteRepository.Query()
             .IgnoreQueryFilters()
             .FirstOrDefaultAsync(f => f.TouristId == touristId && f.PointOfInterestId == poiId);
 
         if (favorite == null || favorite.IsDeleted)
-            return new OkObjectResult(new { success = true, message = "Yêu thích đã được xóa" });
+            return ServiceResult.Success();
 
         _favoriteRepository.Remove(favorite);
         await _unitOfWork.SaveChangesAsync();
 
-        return new OkObjectResult(new { success = true, message = "Đã xóa khỏi yêu thích" });
+        return ServiceResult.Success();
     }
 
-    public async Task<IActionResult> GetFavoritesAsync(int touristId, string languageCode = LanguageConstants.Vietnamese)
+    public async Task<IReadOnlyList<POIListItemDto>> GetFavoritesAsync(int touristId, string languageCode = LanguageConstants.Vietnamese)
     {
         var normalizedLanguageCode = LocalizationHelper.NormalizeLanguageCode(languageCode);
 
@@ -288,22 +288,25 @@ public class TouristAppService : ITouristAppService
             if (!string.IsNullOrEmpty(fav.ImageUrl) && !fav.ImageUrl.StartsWith("http"))
                 fav.ImageUrl = $"{baseUrl}{fav.ImageUrl}";
 
-        return new OkObjectResult(favorites);
+        return favorites;
     }
 
-    public async Task<IActionResult> SubmitRatingAsync(int touristId, SubmitRatingRequest request)
+    public async Task<ServiceResult> SubmitRatingAsync(int touristId, SubmitRatingRequest request)
     {
+        if (request.Score < 1 || request.Score > 5)
+            return ServiceResult.BadRequest("Điểm đánh giá phải từ 1 đến 5");
+
         var tourist = await _touristRepository.Query()
             .FirstOrDefaultAsync(t => t.Id == touristId && !t.IsDeleted);
 
         if (tourist == null)
-            return new NotFoundObjectResult(new { message = "Tourist không tồn tại" });
+            return ServiceResult.NotFound("Tourist không tồn tại");
 
         var poi = await _poiRepository.Query()
             .FirstOrDefaultAsync(p => p.Id == request.POIId && !p.IsDeleted);
 
         if (poi == null)
-            return new NotFoundObjectResult(new { message = "POI không tồn tại" });
+            return ServiceResult.NotFound("POI không tồn tại");
 
         var existingRating = await _ratingRepository.Query()
             .FirstOrDefaultAsync(r => r.TouristId == touristId && r.PointOfInterestId == request.POIId);
@@ -329,24 +332,28 @@ public class TouristAppService : ITouristAppService
             poi.TotalRatings++;
         }
 
+        await _unitOfWork.SaveChangesAsync();
+
         var allRatings = await _ratingRepository.Query()
             .Where(r => r.PointOfInterestId == request.POIId)
             .ToListAsync();
 
         if (allRatings.Any())
+        {
             poi.AverageRating = (decimal)allRatings.Average(r => r.Score);
+            await _unitOfWork.SaveChangesAsync();
+        }
 
-        await _unitOfWork.SaveChangesAsync();
-        return new OkObjectResult(new { success = true, message = "Cảm ơn đánh giá của bạn!" });
+        return ServiceResult.Success();
     }
 
-    public async Task<IActionResult> GetStatsAsync(int touristId)
+    public async Task<TouristStatsDto?> GetStatsAsync(int touristId)
     {
         var tourist = await _touristRepository.Query()
             .FirstOrDefaultAsync(t => t.Id == touristId && !t.IsDeleted);
 
         if (tourist == null)
-            return new NotFoundObjectResult(new { message = "Tourist không tồn tại" });
+            return null;
 
         var events = await _analyticsRepository.Query()
             .Where(a => a.TouristId == touristId)
@@ -379,16 +386,16 @@ public class TouristAppService : ITouristAppService
             .Select(g => g.Key)
             .FirstOrDefault() ?? tourist.PreferredLanguage;
 
-        return new OkObjectResult(new
+        return new TouristStatsDto
         {
-            totalVisits = tourist.TotalVisits,
-            totalAudioPlays = events.Count(a => a.EventType == "audio_play"),
-            totalQRScans = events.Count(a => a.EventType == "qr_scan"),
-            totalGeofenceEnters = events.Count(a => a.EventType == "geofence_enter"),
-            totalAudioMinutes = Math.Round(totalAudioSeconds / 60.0, 1),
-            mostVisitedPOI = mostVisitedPoiName,
-            favoriteLanguage
-        });
+            TotalVisits = tourist.TotalVisits,
+            TotalAudioPlays = events.Count(a => a.EventType == "audio_play"),
+            TotalQRScans = events.Count(a => a.EventType == "qr_scan"),
+            TotalGeofenceEnters = events.Count(a => a.EventType == "geofence_enter"),
+            TotalAudioMinutes = Math.Round(totalAudioSeconds / 60.0, 1),
+            MostVisitedPOI = mostVisitedPoiName,
+            FavoriteLanguage = favoriteLanguage
+        };
     }
 
     private string CurrentBaseUrl()
@@ -413,5 +420,4 @@ public class TouristAppService : ITouristAppService
             .Where(p => GeoHelper.CalculateDistanceKm(latitude.Value, longitude.Value, p.Latitude, p.Longitude) <= 0.2)
             .ToList();
     }
-
 }

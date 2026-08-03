@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using VK.API.Common;
 using VK.API.Services.AppServices;
 using VK.Shared.Constants;
 using VK.Shared.DTOs;
@@ -26,89 +27,124 @@ public class TouristController : ControllerBase
     /// </summary>
     [AllowAnonymous]
     [HttpPost("register")]
-    public Task<IActionResult> RegisterTourist([FromBody] RegisterTouristRequest request)
-        => _touristAppService.RegisterTouristAsync(request);
+    [ProducesResponseType(typeof(TouristDto), 200)]
+    public async Task<IActionResult> RegisterTourist([FromBody] RegisterTouristRequest request)
+        => Ok(await _touristAppService.RegisterTouristAsync(request));
 
     /// <summary>Update the authenticated tourist's GPS location.</summary>
     [Authorize]
     [HttpPut("{touristId}/location")]
+    [ProducesResponseType(typeof(UpdateLocationResultDto), 200)]
+    [ProducesResponseType(401)]
+    [ProducesResponseType(403)]
+    [ProducesResponseType(404)]
     public async Task<IActionResult> UpdateLocation(int touristId, [FromBody] UpdateLocationRequest request)
     {
         var ownership = VerifyOwnership(touristId);
         if (ownership != null) return ownership;
-        return await _touristAppService.UpdateLocationAsync(touristId, request);
+        return (await _touristAppService.UpdateLocationAsync(touristId, request)).ToActionResult();
     }
 
     /// <summary>Log a POI visit for the authenticated tourist.</summary>
     [Authorize]
     [HttpPost("{touristId}/visits")]
+    [ProducesResponseType(200)]
+    [ProducesResponseType(400)]
+    [ProducesResponseType(401)]
+    [ProducesResponseType(403)]
+    [ProducesResponseType(404)]
     public async Task<IActionResult> LogVisit(int touristId, [FromBody] LogVisitRequest request)
     {
         var ownership = VerifyOwnership(touristId);
         if (ownership != null) return ownership;
-        return await _touristAppService.LogVisitAsync(touristId, request);
+        return (await _touristAppService.LogVisitAsync(touristId, request)).ToActionResult();
     }
 
     /// <summary>Get the authenticated tourist's visit history.</summary>
     [Authorize]
     [HttpGet("{touristId}/visits")]
+    [ProducesResponseType(typeof(IReadOnlyList<VisitHistoryDto>), 200)]
+    [ProducesResponseType(401)]
+    [ProducesResponseType(403)]
     public async Task<IActionResult> GetVisitHistory(int touristId)
     {
         var ownership = VerifyOwnership(touristId);
         if (ownership != null) return ownership;
-        return await _touristAppService.GetVisitHistoryAsync(touristId);
+        return Ok(await _touristAppService.GetVisitHistoryAsync(touristId));
     }
 
     /// <summary>Add a POI to the authenticated tourist's favourites.</summary>
     [Authorize]
     [HttpPost("{touristId}/favorites")]
+    [ProducesResponseType(200)]
+    [ProducesResponseType(401)]
+    [ProducesResponseType(403)]
+    [ProducesResponseType(404)]
     public async Task<IActionResult> AddFavorite(int touristId, [FromBody] AddFavoriteRequest request)
     {
         var ownership = VerifyOwnership(touristId);
         if (ownership != null) return ownership;
-        return await _touristAppService.AddFavoriteAsync(touristId, request);
+        return (await _touristAppService.AddFavoriteAsync(touristId, request)).ToActionResult();
     }
 
     /// <summary>Remove a POI from the authenticated tourist's favourites.</summary>
     [Authorize]
     [HttpDelete("{touristId}/favorites/{poiId}")]
+    [ProducesResponseType(200)]
+    [ProducesResponseType(401)]
+    [ProducesResponseType(403)]
     public async Task<IActionResult> RemoveFavorite(int touristId, int poiId)
     {
         var ownership = VerifyOwnership(touristId);
         if (ownership != null) return ownership;
-        return await _touristAppService.RemoveFavoriteAsync(touristId, poiId);
+        return (await _touristAppService.RemoveFavoriteAsync(touristId, poiId)).ToActionResult();
     }
 
     /// <summary>Get the authenticated tourist's favourite POIs.</summary>
     [Authorize]
     [HttpGet("{touristId}/favorites")]
+    [ProducesResponseType(typeof(IReadOnlyList<POIListItemDto>), 200)]
+    [ProducesResponseType(401)]
+    [ProducesResponseType(403)]
     public async Task<IActionResult> GetFavorites(
         int touristId,
         [FromQuery] string languageCode = LanguageConstants.Vietnamese)
     {
         var ownership = VerifyOwnership(touristId);
         if (ownership != null) return ownership;
-        return await _touristAppService.GetFavoritesAsync(touristId, languageCode);
+        return Ok(await _touristAppService.GetFavoritesAsync(touristId, languageCode));
     }
 
     /// <summary>Submit a rating for a POI on behalf of the authenticated tourist.</summary>
     [Authorize]
     [HttpPost("{touristId}/ratings")]
+    [ProducesResponseType(200)]
+    [ProducesResponseType(400)]
+    [ProducesResponseType(401)]
+    [ProducesResponseType(403)]
+    [ProducesResponseType(404)]
     public async Task<IActionResult> SubmitRating(int touristId, [FromBody] SubmitRatingRequest request)
     {
         var ownership = VerifyOwnership(touristId);
         if (ownership != null) return ownership;
-        return await _touristAppService.SubmitRatingAsync(touristId, request);
+        return (await _touristAppService.SubmitRatingAsync(touristId, request)).ToActionResult();
     }
 
     /// <summary>Get the authenticated tourist's activity statistics.</summary>
     [Authorize]
     [HttpGet("{touristId}/stats")]
+    [ProducesResponseType(typeof(TouristStatsDto), 200)]
+    [ProducesResponseType(401)]
+    [ProducesResponseType(403)]
+    [ProducesResponseType(404)]
     public async Task<IActionResult> GetStats(int touristId)
     {
         var ownership = VerifyOwnership(touristId);
         if (ownership != null) return ownership;
-        return await _touristAppService.GetStatsAsync(touristId);
+        var stats = await _touristAppService.GetStatsAsync(touristId);
+        return stats is null
+            ? NotFound(new { message = "Tourist không tồn tại" })
+            : Ok(stats);
     }
 
     // ── IDOR guard ────────────────────────────────────────────────────────────
