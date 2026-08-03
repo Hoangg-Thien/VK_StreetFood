@@ -19,7 +19,6 @@ public static class DatabaseSeeder
 
         if (context.PointsOfInterest.Any())
         {
-            await EnsurePoiTriggerProfilesAsync(context);
             await EnsurePoiTranslationsAsync(context);
             await EnsureBaselineToursAsync(context);
             await EnsureTourTranslationsAsync(context);
@@ -880,47 +879,5 @@ public static class DatabaseSeeder
             "[SECURITY] Default admin user seeded ({Email}). " +
             "Change the password immediately via POST /api/Auth/login then update the account.",
             adminEmail);
-    }
-
-    private static async Task EnsurePoiTriggerProfilesAsync(VKStreetFoodDbContext context)
-    {
-        var pois = await context.PointsOfInterest
-            .Where(p => !p.IsDeleted)
-            .ToListAsync();
-
-        var profiles = new Dictionary<string, (int Priority, double? Radius)>
-        {
-            ["Cổng chào Phố Ẩm thực Vĩnh Khánh"] = (100, 80),
-            ["Ốc Vũ"] = (70, 55),
-            ["Ốc Thảo"] = (68, 55),
-            ["Ốc Sáu Nở"] = (66, 55),
-            ["Ốc Oanh"] = (85, 60),
-            ["A Fat Hot Pot"] = (62, 60),
-            ["Chilli Lẩu Nướng Tự Chọn"] = (60, 60),
-            ["Alo Quán – Seafood & Beer"] = (58, 55),
-            ["Ốc Đào 2"] = (64, 55),
-            ["Lãng Quán"] = (56, 60),
-            ["Ớt Xiêm Quán"] = (57, 55),
-            ["Bún Cá Châu Đốc Dì Tư"] = (54, 50)
-        };
-
-        var modified = false;
-        foreach (var poi in pois)
-        {
-            if (profiles.TryGetValue(poi.Name, out var profile))
-            {
-                if (poi.TriggerPriority != profile.Priority || poi.TriggerRadiusMeters != profile.Radius)
-                {
-                    poi.TriggerPriority = profile.Priority;
-                    poi.TriggerRadiusMeters = profile.Radius;
-                    modified = true;
-                }
-            }
-        }
-
-        if (modified)
-        {
-            await context.SaveChangesAsync();
-        }
     }
 }
