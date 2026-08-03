@@ -91,6 +91,92 @@ public class POIAppServiceTests
         Assert.Equal("Close", response.First().Name);
     }
 
+    [Fact]
+    public async Task GetAllPOIsAsync_FiltersByCategoryIdAndSearch()
+    {
+        using var context = CreateContext();
+        var service = CreateService(context);
+
+        var cat1 = new Category { Name = "Street Food", IsActive = true };
+        var cat2 = new Category { Name = "Drinks", IsActive = true };
+        context.Categories.AddRange(cat1, cat2);
+        await context.SaveChangesAsync();
+
+        context.PointsOfInterest.AddRange(
+            new PointOfInterest { Name = "Banh Mi Huynh Hoa", CategoryId = cat1.Id, IsActive = true, Latitude = 10, Longitude = 106 },
+            new PointOfInterest { Name = "Pho 24", CategoryId = cat1.Id, IsActive = true, Latitude = 10, Longitude = 106 },
+            new PointOfInterest { Name = "Ca Phe Sua Da", CategoryId = cat2.Id, IsActive = true, Latitude = 10, Longitude = 106 }
+        );
+        await context.SaveChangesAsync();
+
+        var cat1Filtered = await service.GetAllPOIsAsync(categoryId: cat1.Id);
+        Assert.Equal(2, cat1Filtered.Count);
+
+        var searchFiltered = await service.GetAllPOIsAsync(search: "Banh Mi");
+        Assert.Single(searchFiltered);
+        Assert.Equal("Banh Mi Huynh Hoa", searchFiltered.First().Name);
+    }
+
+    [Fact]
+    public async Task GetPOIByIdAsync_ReturnsPoiDetail_WhenFound()
+    {
+        using var context = CreateContext();
+        var service = CreateService(context);
+
+        var cat = new Category { Name = "Street Food", IsActive = true };
+        context.Categories.Add(cat);
+        await context.SaveChangesAsync();
+
+        var poi = new PointOfInterest
+        {
+            Name = "Com Tam Cali",
+            Description = "Broken rice Cali",
+            Address = "District 1",
+            Latitude = 10.77,
+            Longitude = 106.69,
+            CategoryId = cat.Id,
+            IsActive = true,
+            Translations = new List<PointOfInterestTranslation>
+            {
+                new PointOfInterestTranslation { LanguageCode = "en", Name = "Cali Broken Rice", Description = "English broken rice" }
+            }
+        };
+        context.PointsOfInterest.Add(poi);
+        await context.SaveChangesAsync();
+
+        var result = await service.GetPOIByIdAsync(poi.Id, languageCode: "en");
+        Assert.NotNull(result);
+        Assert.Equal("Cali Broken Rice", result.Name);
+        Assert.Equal("English broken rice", result.Description);
+        Assert.Equal("Street Food", result.Category);
+    }
+
+    [Fact]
+    public async Task GetPOIByIdAsync_ReturnsNull_WhenNotFound()
+    {
+        using var context = CreateContext();
+        var service = CreateService(context);
+
+        var result = await service.GetPOIByIdAsync(999);
+        Assert.Null(result);
+    }
+
+    [Fact]
+    public async Task GetCategoriesAsync_ReturnsAllCategories()
+    {
+        using var context = CreateContext();
+        var service = CreateService(context);
+
+        var cat = new Category { Name = "Street Food", IsActive = true };
+        context.Categories.Add(cat);
+        await context.SaveChangesAsync();
+
+        var categories = await service.GetCategoriesAsync();
+        Assert.NotNull(categories);
+        Assert.Single(categories);
+        Assert.Equal("Street Food", categories.First().Name);
+    }
+
     private static POIAppService CreateService(VKStreetFoodDbContext context)
     {
         var accessor = new HttpContextAccessor { HttpContext = new DefaultHttpContext() };

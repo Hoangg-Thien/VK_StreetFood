@@ -72,6 +72,58 @@ public class TourAppServiceTests
         Assert.Equal("POI 2", dto.Points[1].Name);
     }
 
+    [Fact]
+    public async Task GetTourByIdAsync_ReturnsNull_WhenTourNotFound()
+    {
+        using var context = CreateContext();
+        var service = CreateService(context);
+
+        var dto = await service.GetTourByIdAsync(999);
+        Assert.Null(dto);
+    }
+
+    [Fact]
+    public async Task GetTourByIdAsync_ReturnsLocalizedDetails()
+    {
+        using var context = CreateContext();
+        var service = CreateService(context);
+
+        var poi = new PointOfInterest
+        {
+            Name = "Default POI",
+            IsActive = true,
+            Translations = new List<PointOfInterestTranslation>
+            {
+                new PointOfInterestTranslation { LanguageCode = "en", Name = "English POI", Description = "English POI Desc" }
+            }
+        };
+
+        var tour = new Tour
+        {
+            Name = "Default Tour",
+            Description = "Default Tour Desc",
+            Status = "active",
+            Translations = new List<TourTranslation>
+            {
+                new TourTranslation { LanguageCode = "en", Name = "English Tour", Description = "English Tour Desc" }
+            },
+            TourPoints = new List<TourPointOfInterest>
+            {
+                new TourPointOfInterest { PointOfInterest = poi, SortOrder = 1 }
+            }
+        };
+
+        context.Tours.Add(tour);
+        await context.SaveChangesAsync();
+
+        var dtoEn = await service.GetTourByIdAsync(tour.Id, languageCode: "en");
+        Assert.NotNull(dtoEn);
+        Assert.Equal("English Tour", dtoEn.Name);
+        Assert.Equal("English Tour Desc", dtoEn.Description);
+        Assert.Single(dtoEn.Points);
+        Assert.Equal("English POI", dtoEn.Points[0].Name);
+    }
+
     private static TourAppService CreateService(VKStreetFoodDbContext context)
     {
         var accessor = new HttpContextAccessor { HttpContext = new DefaultHttpContext() };
