@@ -314,7 +314,18 @@ git clone https://github.com/<your-username>/VK_StreetFood.git
 cd VK_StreetFood
 ```
 
-### Restore
+### Chạy nhanh bằng Docker Compose (khuyến khích cho local dev)
+
+```bash
+cp .env.example .env
+docker compose up --build
+```
+
+- API: `http://localhost:5001/swagger`
+- Web Admin: `http://localhost:5002`
+- Database sẽ được seed tự động khi API khởi động (xem `DatabaseSeeder.cs`)
+
+### Restore (Chạy thủ công không dùng Docker)
 
 ```bash
 dotnet restore VKStreetFood.slnx
