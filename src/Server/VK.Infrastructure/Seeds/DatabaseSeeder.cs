@@ -68,208 +68,184 @@ public static class DatabaseSeeder
         var pois = new List<PointOfInterest>
         {
             // 1. Cổng vào
-            new PointOfInterest
-            {
-                Name = "Cổng chào Phố Ẩm thực Vĩnh Khánh",
-                Description = "Chào mừng bạn đến với Phố Ẩm thực Vĩnh Khánh – thiên đường ẩm thực đêm của Sài Gòn.",
-                Latitude = 10.7619058983358,
-                Longitude = 106.702227165271,
-                Address = "Vĩnh Khánh, Phường 9, Quận 4, TP.HCM",
-                ImageUrl = "/images/poi/cong-chao.jpg",
-                IsActive = true,
-                CategoryId = 4,
-                AverageRating = 0,
-                TotalRatings = 0,
-                TriggerPriority = 100,
-                TriggerRadiusMeters = 80
-            },
+            CreateSeedPoi(
+                name: "Cổng chào Phố Ẩm thực Vĩnh Khánh",
+                description: "Chào mừng bạn đến với Phố Ẩm thực Vĩnh Khánh – thiên đường ẩm thực đêm của Sài Gòn.",
+                latitude: 10.7619058983358,
+                longitude: 106.702227165271,
+                address: "Vĩnh Khánh, Phường 9, Quận 4, TP.HCM",
+                imageUrl: "/images/poi/cong-chao.jpg",
+                isActive: true,
+                categoryId: 4,
+                averageRating: 0,
+                totalRatings: 0,
+                triggerPriority: 100,
+                triggerRadiusMeters: 80),
 
             // 2. Ốc Vũ
-            new PointOfInterest
-            {
-                Name = "Ốc Vũ",
-                Description = "Quán ốc lâu năm nổi tiếng với nước chấm sốt me đặc trưng.",
-                Latitude = 10.7615184310278,
-                Longitude = 106.7027154252,
-                Address = "37 Vĩnh Khánh, Phường 9, Quận 4, TP.HCM",
-                ImageUrl = "/images/poi/oc-vu.jpg",
-                IsActive = true,
-                CategoryId = 1,
-                AverageRating = 4.5m,
-                TotalRatings = 0,
-                TriggerPriority = 70,
-                TriggerRadiusMeters = 55
-            },
+            CreateSeedPoi(
+                name: "Ốc Vũ",
+                description: "Quán ốc lâu năm nổi tiếng với nước chấm sốt me đặc trưng.",
+                latitude: 10.7615184310278,
+                longitude: 106.7027154252,
+                address: "37 Vĩnh Khánh, Phường 9, Quận 4, TP.HCM",
+                imageUrl: "/images/poi/oc-vu.jpg",
+                isActive: true,
+                categoryId: 1,
+                averageRating: 4.5m,
+                totalRatings: 0,
+                triggerPriority: 70,
+                triggerRadiusMeters: 55),
 
             // 3. Ốc Thảo
-            new PointOfInterest
-            {
-                Name = "Ốc Thảo",
-                Description = "Quán ốc nổi tiếng với món ốc len xào dừa béo ngậy.",
-                Latitude = 10.7617951625975,
-                Longitude = 106.702392988972,
-                Address = "383 Vĩnh Khánh, Phường 9, Quận 4, TP.HCM",
-                ImageUrl = "/images/poi/oc-thao.jpg",
-                IsActive = true,
-                CategoryId = 1,
-                AverageRating = 4.3m,
-                TotalRatings = 0,
-                TriggerPriority = 68,
-                TriggerRadiusMeters = 55
-            },
+            CreateSeedPoi(
+                name: "Ốc Thảo",
+                description: "Quán ốc nổi tiếng với món ốc len xào dừa béo ngậy.",
+                latitude: 10.7617951625975,
+                longitude: 106.702392988972,
+                address: "383 Vĩnh Khánh, Phường 9, Quận 4, TP.HCM",
+                imageUrl: "/images/poi/oc-thao.jpg",
+                isActive: true,
+                categoryId: 1,
+                averageRating: 4.3m,
+                totalRatings: 0,
+                triggerPriority: 68,
+                triggerRadiusMeters: 55),
 
             // 4. Ốc Sáu Nở
-            new PointOfInterest
-            {
-                Name = "Ốc Sáu Nở",
-                Description = "Quán ốc vỉa hè đậm chất Sài Gòn với món ốc hương trứng muối.",
-                Latitude = 10.7610380785009,
-                Longitude = 106.702904448097,
-                Address = "128 Vĩnh Khánh, Phường 9, Quận 4, TP.HCM",
-                ImageUrl = "/images/poi/oc-sau-no.jpg",
-                IsActive = true,
-                CategoryId = 1,
-                AverageRating = 4.4m,
-                TotalRatings = 0,
-                TriggerPriority = 66,
-                TriggerRadiusMeters = 55
-            },
+            CreateSeedPoi(
+                name: "Ốc Sáu Nở",
+                description: "Quán ốc vỉa hè đậm chất Sài Gòn với món ốc hương trứng muối.",
+                latitude: 10.7610380785009,
+                longitude: 106.702904448097,
+                address: "128 Vĩnh Khánh, Phường 9, Quận 4, TP.HCM",
+                imageUrl: "/images/poi/oc-sau-no.jpg",
+                isActive: true,
+                categoryId: 1,
+                averageRating: 4.4m,
+                totalRatings: 0,
+                triggerPriority: 66,
+                triggerRadiusMeters: 55),
 
             // 5. Ốc Oanh (Michelin Bib Gourmand)
-            new PointOfInterest
-            {
-                Name = "Ốc Oanh",
-                Description = "Quán ốc nổi tiếng được Michelin Bib Gourmand.",
-                Latitude = 10.7608486298266,
-                Longitude = 106.703295774422,
-                Address = "534 Vĩnh Khánh, Phường 9, Quận 4, TP.HCM",
-                ImageUrl = "/images/poi/oc-oanh.jpg",
-                IsActive = true,
-                CategoryId = 1,
-                AverageRating = 4.8m,
-                TotalRatings = 0,
-                TriggerPriority = 85,
-                TriggerRadiusMeters = 60
-            },
+            CreateSeedPoi(
+                name: "Ốc Oanh",
+                description: "Quán ốc nổi tiếng được Michelin Bib Gourmand.",
+                latitude: 10.7608486298266,
+                longitude: 106.703295774422,
+                address: "534 Vĩnh Khánh, Phường 9, Quận 4, TP.HCM",
+                imageUrl: "/images/poi/oc-oanh.jpg",
+                isActive: true,
+                categoryId: 1,
+                averageRating: 4.8m,
+                totalRatings: 0,
+                triggerPriority: 85,
+                triggerRadiusMeters: 60),
 
             // 6. A Fat Hot Pot
-            new PointOfInterest
-            {
-                Name = "A Fat Hot Pot",
-                Description = "Nhà hàng lẩu phong cách Hong Kong nổi tiếng với lẩu collagen.",
-                Latitude = 10.7608069330753,
-                Longitude = 106.703478752187,
-                Address = "668 Vĩnh Khánh, Phường 9, Quận 4, TP.HCM",
-                ImageUrl = "/images/poi/a-fat.jpg",
-                IsActive = true,
-                CategoryId = 2,
-                AverageRating = 4.2m,
-                TotalRatings = 0,
-                TriggerPriority = 62,
-                TriggerRadiusMeters = 60
-            },
+            CreateSeedPoi(
+                name: "A Fat Hot Pot",
+                description: "Nhà hàng lẩu phong cách Hong Kong nổi tiếng với lẩu collagen.",
+                latitude: 10.7608069330753,
+                longitude: 106.703478752187,
+                address: "668 Vĩnh Khánh, Phường 9, Quận 4, TP.HCM",
+                imageUrl: "/images/poi/a-fat.jpg",
+                isActive: true,
+                categoryId: 2,
+                averageRating: 4.2m,
+                totalRatings: 0,
+                triggerPriority: 62,
+                triggerRadiusMeters: 60),
 
             // 7. Chilli Lẩu Nướng
-            new PointOfInterest
-            {
-                Name = "Chilli Lẩu Nướng Tự Chọn",
-                Description = "Buffet nướng ngoài trời rất được giới trẻ yêu thích.",
-                Latitude = 10.7607944319756,
-                Longitude = 106.703659068107,
-                Address = "232/105 Vĩnh Khánh, Phường 9, Quận 4, TP.HCM",
-                ImageUrl = "/images/poi/chilli.jpg",
-                IsActive = true,
-                CategoryId = 2,
-                AverageRating = 4.1m,
-                TotalRatings = 0,
-                TriggerPriority = 60,
-                TriggerRadiusMeters = 60
-            },
+            CreateSeedPoi(
+                name: "Chilli Lẩu Nướng Tự Chọn",
+                description: "Buffet nướng ngoài trời rất được giới trẻ yêu thích.",
+                latitude: 10.7607944319756,
+                longitude: 106.703659068107,
+                address: "232/105 Vĩnh Khánh, Phường 9, Quận 4, TP.HCM",
+                imageUrl: "/images/poi/chilli.jpg",
+                isActive: true,
+                categoryId: 2,
+                averageRating: 4.1m,
+                totalRatings: 0,
+                triggerPriority: 60,
+                triggerRadiusMeters: 60),
 
             // 8. Alo Quán
-            new PointOfInterest
-            {
-                Name = "Alo Quán – Seafood & Beer",
-                Description = "Quán hải sản hiện đại với không gian chill.",
-                Latitude = 10.761127163188,
-                Longitude = 106.704754254081,
-                Address = "333 Vĩnh Khánh, Phường 9, Quận 4, TP.HCM",
-                ImageUrl = "/images/poi/alo-quan.jpg",
-                IsActive = true,
-                CategoryId = 1,
-                AverageRating = 4.3m,
-                TotalRatings = 0,
-                TriggerPriority = 58,
-                TriggerRadiusMeters = 55
-            },
+            CreateSeedPoi(
+                name: "Alo Quán – Seafood & Beer",
+                description: "Quán hải sản hiện đại với không gian chill.",
+                latitude: 10.761127163188,
+                longitude: 106.704754254081,
+                address: "333 Vĩnh Khánh, Phường 9, Quận 4, TP.HCM",
+                imageUrl: "/images/poi/alo-quan.jpg",
+                isActive: true,
+                categoryId: 1,
+                averageRating: 4.3m,
+                totalRatings: 0,
+                triggerPriority: 58,
+                triggerRadiusMeters: 55),
 
             // 9. Ốc Đào 2
-            new PointOfInterest
-            {
-                Name = "Ốc Đào 2",
-                Description = "Quán ốc nổi tiếng với khách du lịch quốc tế.",
-                Latitude = 10.7613479651701,
-                Longitude = 106.704967847399,
-                Address = "232/123 Vĩnh Khánh, Phường 9, Quận 4, TP.HCM",
-                ImageUrl = "/images/poi/oc-dao-2.jpg",
-                IsActive = true,
-                CategoryId = 1,
-                AverageRating = 4.4m,
-                TotalRatings = 0,
-                TriggerPriority = 64,
-                TriggerRadiusMeters = 55
-            },
+            CreateSeedPoi(
+                name: "Ốc Đào 2",
+                description: "Quán ốc nổi tiếng với khách du lịch quốc tế.",
+                latitude: 10.7613479651701,
+                longitude: 106.704967847399,
+                address: "232/123 Vĩnh Khánh, Phường 9, Quận 4, TP.HCM",
+                imageUrl: "/images/poi/oc-dao-2.jpg",
+                isActive: true,
+                categoryId: 1,
+                averageRating: 4.4m,
+                totalRatings: 0,
+                triggerPriority: 64,
+                triggerRadiusMeters: 55),
 
             // 10. Lãng Quán
-            new PointOfInterest
-            {
-                Name = "Lãng Quán",
-                Description = "Quán nhậu mở cửa đến 4 giờ sáng.",
-                Latitude = 10.7611499881882,
-                Longitude = 106.705384011963,
-                Address = "531 Vĩnh Khánh, Phường 9, Quận 4, TP.HCM",
-                ImageUrl = "/images/poi/lang-quan.jpg",
-                IsActive = true,
-                CategoryId = 2,
-                AverageRating = 4.2m,
-                TotalRatings = 0,
-                TriggerPriority = 56,
-                TriggerRadiusMeters = 60
-            },
+            CreateSeedPoi(
+                name: "Lãng Quán",
+                description: "Quán nhậu mở cửa đến 4 giờ sáng.",
+                latitude: 10.7611499881882,
+                longitude: 106.705384011963,
+                address: "531 Vĩnh Khánh, Phường 9, Quận 4, TP.HCM",
+                imageUrl: "/images/poi/lang-quan.jpg",
+                isActive: true,
+                categoryId: 2,
+                averageRating: 4.2m,
+                totalRatings: 0,
+                triggerPriority: 56,
+                triggerRadiusMeters: 60),
 
             // 11. Ớt Xiêm Quán
-            new PointOfInterest
-            {
-                Name = "Ớt Xiêm Quán",
-                Description = "Quán nổi tiếng với các món ăn cực cay.",
-                Latitude = 10.7611852360527,
-                Longitude = 106.705703610392,
-                Address = "568 Vĩnh Khánh, Phường 9, Quận 4, TP.HCM",
-                ImageUrl = "/images/poi/ot-xiem.jpg",
-                IsActive = true,
-                CategoryId = 2,
-                AverageRating = 4.3m,
-                TotalRatings = 0,
-                TriggerPriority = 57,
-                TriggerRadiusMeters = 55
-            },
+            CreateSeedPoi(
+                name: "Ớt Xiêm Quán",
+                description: "Quán nổi tiếng với các món ăn cực cay.",
+                latitude: 10.7611852360527,
+                longitude: 106.705703610392,
+                address: "568 Vĩnh Khánh, Phường 9, Quận 4, TP.HCM",
+                imageUrl: "/images/poi/ot-xiem.jpg",
+                isActive: true,
+                categoryId: 2,
+                averageRating: 4.3m,
+                totalRatings: 0,
+                triggerPriority: 57,
+                triggerRadiusMeters: 55),
 
             // 12. Bún Cá Châu Đốc
-            new PointOfInterest
-            {
-                Name = "Bún Cá Châu Đốc Dì Tư",
-                Description = "Quán bún cá miền Tây nổi tiếng.",
-                Latitude = 10.761123552507,
-                Longitude = 106.706606909857,
-                Address = "320/79 Vĩnh Khánh, Phường 9, Quận 4, TP.HCM",
-                ImageUrl = "/images/poi/bun-ca.jpg",
-                IsActive = true,
-                CategoryId = 3,
-                AverageRating = 4.5m,
-                TotalRatings = 0,
-                TriggerPriority = 54,
-                TriggerRadiusMeters = 50
-            }
+            CreateSeedPoi(
+                name: "Bún Cá Châu Đốc Dì Tư",
+                description: "Quán bún cá miền Tây nổi tiếng.",
+                latitude: 10.761123552507,
+                longitude: 106.706606909857,
+                address: "320/79 Vĩnh Khánh, Phường 9, Quận 4, TP.HCM",
+                imageUrl: "/images/poi/bun-ca.jpg",
+                isActive: true,
+                categoryId: 3,
+                averageRating: 4.5m,
+                totalRatings: 0,
+                triggerPriority: 54,
+                triggerRadiusMeters: 50)
         };
 
         context.PointsOfInterest.AddRange(pois);
@@ -918,5 +894,36 @@ public static class DatabaseSeeder
         {
             await context.SaveChangesAsync();
         }
+    }
+
+    private static PointOfInterest CreateSeedPoi(
+        string name,
+        string description,
+        double latitude,
+        double longitude,
+        string address,
+        string imageUrl,
+        bool isActive,
+        int? categoryId,
+        decimal averageRating,
+        int totalRatings,
+        int triggerPriority,
+        double? triggerRadiusMeters)
+    {
+        var poi = new PointOfInterest
+        {
+            Name = name,
+            Description = description,
+            Latitude = latitude,
+            Longitude = longitude,
+            Address = address,
+            ImageUrl = imageUrl,
+            IsActive = isActive,
+            CategoryId = categoryId,
+            AverageRating = averageRating,
+            TotalRatings = totalRatings
+        };
+        poi.SetTriggerProfile(triggerPriority, triggerRadiusMeters);
+        return poi;
     }
 }

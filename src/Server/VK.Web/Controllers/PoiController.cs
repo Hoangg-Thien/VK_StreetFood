@@ -129,10 +129,9 @@ public class PoiController : Controller
                 Longitude = model.Longitude,
                 CategoryId = model.CategoryId,
                 ImageUrl = model.ImageUrl,
-                IsActive = model.IsActive,
-                TriggerPriority = model.TriggerPriority,
-                TriggerRadiusMeters = model.TriggerRadiusMeters
+                IsActive = model.IsActive
             };
+            poi.SetTriggerProfile(model.TriggerPriority, model.TriggerRadiusMeters);
 
             await _unitOfWork.ExecuteInTransactionAsync(async () =>
             {
@@ -259,8 +258,7 @@ public class PoiController : Controller
             existing.IsActive = model.IsActive;
             existing.CategoryId = model.CategoryId;
             existing.ImageUrl = model.ImageUrl;
-            existing.TriggerPriority = model.TriggerPriority;
-            existing.TriggerRadiusMeters = model.TriggerRadiusMeters;
+            existing.SetTriggerProfile(model.TriggerPriority, model.TriggerRadiusMeters);
 
             await EnsureDefaultTranslationsAsync(
                 existing.Id,

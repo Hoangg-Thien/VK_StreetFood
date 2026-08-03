@@ -190,10 +190,9 @@ public class POIAppServiceTests
             Latitude = 10.7608,
             Longitude = 106.7032,
             Address = "534 Vinh Khanh",
-            IsActive = true,
-            TriggerPriority = 85,
-            TriggerRadiusMeters = 60.5
+            IsActive = true
         };
+        poi.SetTriggerProfile(85, 60.5);
         context.PointsOfInterest.Add(poi);
         await context.SaveChangesAsync();
 

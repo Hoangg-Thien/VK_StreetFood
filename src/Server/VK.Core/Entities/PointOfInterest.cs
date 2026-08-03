@@ -31,9 +31,9 @@ public class PointOfInterest : BaseEntity
 
     public int TotalRatings { get; set; } = 0;
 
-    public int TriggerPriority { get; set; } = 50;
+    public int TriggerPriority { get; private set; } = 50;
 
-    public double? TriggerRadiusMeters { get; set; }
+    public double? TriggerRadiusMeters { get; private set; }
 
     public void SetTriggerProfile(int priority, double? radiusMeters)
     {
