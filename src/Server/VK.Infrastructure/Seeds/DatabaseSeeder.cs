@@ -12,6 +12,19 @@ public static class DatabaseSeeder
     private static readonly ILogger Logger =
         LoggerFactory.Create(b => b.AddConsole()).CreateLogger(nameof(DatabaseSeeder));
 
+    /// <summary>
+    /// Applies any pending migrations and seeds initial database records.
+    /// </summary>
+    public static async Task InitializeAndSeedAsync(VKStreetFoodDbContext context)
+    {
+        if (context.Database.IsRelational())
+        {
+            await context.Database.MigrateAsync();
+        }
+
+        await SeedAsync(context);
+    }
+
     public static async Task SeedAsync(VKStreetFoodDbContext context)
     {
         // Patch: fix ImageUrl paths that were stored without /images/poi/ prefix
@@ -852,25 +865,30 @@ public static class DatabaseSeeder
     /// </summary>
     private static async Task EnsureAdminUserAsync(VKStreetFoodDbContext context)
     {
-        var adminEmails = new[] { "admin@vkstreetfood.vn", "admin@vkstreetfood.local" };
-        const string defaultPassword = "ChangeMe@2025!";
-        var hash = PasswordHasher.Hash(defaultPassword);
+        var adminAccounts = new[]
+        {
+            new { Email = "admin@vkstreetfood.vn", Password = "Admin@2026" },
+            new { Email = "admin@vkstreetfood.local", Password = "ChangeMe@2025!" }
+        };
 
+        var adminEmails = adminAccounts.Select(a => a.Email).ToArray();
         var existingUsers = await context.Users
             .Where(u => !u.IsDeleted && adminEmails.Contains(u.Email))
             .ToListAsync();
 
         var modified = false;
-        foreach (var adminEmail in adminEmails)
+        foreach (var adminAccount in adminAccounts)
         {
             var user = existingUsers.FirstOrDefault(u =>
-                string.Equals(u.Email, adminEmail, StringComparison.OrdinalIgnoreCase));
+                string.Equals(u.Email, adminAccount.Email, StringComparison.OrdinalIgnoreCase));
+
+            var hash = PasswordHasher.Hash(adminAccount.Password);
 
             if (user == null)
             {
                 context.Users.Add(new User
                 {
-                    Email = adminEmail,
+                    Email = adminAccount.Email,
                     FullName = "System Admin",
                     Role = "Admin",
                     IsVerified = true,
@@ -882,7 +900,7 @@ public static class DatabaseSeeder
                 Logger.LogWarning(
                     "[SECURITY] Default admin user seeded ({Email}). " +
                     "Change the password immediately via POST /api/Auth/login then update the account.",
-                    adminEmail);
+                    adminAccount.Email);
             }
             else
             {

@@ -99,7 +99,7 @@ if (!app.Environment.IsEnvironment("Testing"))
         {
             using var scope = app.Services.CreateScope();
             var context = scope.ServiceProvider.GetRequiredService<VKStreetFoodDbContext>();
-            await DatabaseSeeder.SeedAsync(context);
+            await DatabaseSeeder.InitializeAndSeedAsync(context);
         }
         catch (Exception ex)
         {
