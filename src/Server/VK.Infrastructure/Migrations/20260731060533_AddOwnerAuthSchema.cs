@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -12,8 +12,8 @@ namespace VK.Infrastructure.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropTable(
-                name: "Products");
+            // Drop Products table only if it exists (fresh deployments never had this table).
+            migrationBuilder.Sql("DROP TABLE IF EXISTS \"Products\" CASCADE;");
 
             migrationBuilder.CreateTable(
                 name: "PointOfInterestTranslations",
