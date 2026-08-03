@@ -1,4 +1,3 @@
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using VK.API.Extensions;
 using VK.Core.Entities;
@@ -19,7 +18,7 @@ public class TourAppService : ITourAppService
         _httpContextAccessor = httpContextAccessor;
     }
 
-    public async Task<IActionResult> GetToursAsync(string languageCode = LanguageConstants.Vietnamese)
+    public async Task<IReadOnlyList<TourListItemDto>> GetToursAsync(string languageCode = LanguageConstants.Vietnamese)
     {
         var normalizedLanguageCode = LocalizationHelper.NormalizeLanguageCode(languageCode);
 
@@ -60,10 +59,10 @@ public class TourAppService : ITourAppService
             return dto;
         }).ToList();
 
-        return new OkObjectResult(result);
+        return result;
     }
 
-    public async Task<IActionResult> GetTourByIdAsync(int tourId, string languageCode = LanguageConstants.Vietnamese)
+    public async Task<TourDetailDto?> GetTourByIdAsync(int tourId, string languageCode = LanguageConstants.Vietnamese)
     {
         var normalizedLanguageCode = LocalizationHelper.NormalizeLanguageCode(languageCode);
 
@@ -74,8 +73,7 @@ public class TourAppService : ITourAppService
             .ThenInclude(p => p.Translations)
             .FirstOrDefaultAsync(t => t.Id == tourId);
 
-        if (tour == null)
-            return new NotFoundObjectResult(new { message = "Tour không tồn tại" });
+        if (tour == null) return null;
 
         var baseUrl = CurrentBaseUrl();
 
@@ -115,7 +113,7 @@ public class TourAppService : ITourAppService
         };
 
         ApplyLocalizedFields(detail, tour, normalizedLanguageCode);
-        return new OkObjectResult(detail);
+        return detail;
     }
 
     private string CurrentBaseUrl()

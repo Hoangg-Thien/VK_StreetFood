@@ -30,13 +30,13 @@ public class TourAppServiceTests
         await context.SaveChangesAsync();
 
         // 1. Fallback (Vietnamese)
-        var resultVi = await service.GetToursAsync(languageCode: "vi");
-        var listVi = Assert.IsAssignableFrom<IEnumerable<TourListItemDto>>(((OkObjectResult)resultVi).Value);
+        var listVi = await service.GetToursAsync(languageCode: "vi");
+        Assert.NotNull(listVi);
         Assert.Equal("Default Tour", listVi.Single().Name);
 
         // 2. Exact Match (English)
-        var resultEn = await service.GetToursAsync(languageCode: "en");
-        var listEn = Assert.IsAssignableFrom<IEnumerable<TourListItemDto>>(((OkObjectResult)resultEn).Value);
+        var listEn = await service.GetToursAsync(languageCode: "en");
+        Assert.NotNull(listEn);
         Assert.Equal("English Tour", listEn.Single().Name);
         Assert.Equal("English Desc", listEn.Single().Description);
     }
@@ -64,9 +64,8 @@ public class TourAppServiceTests
         context.Tours.Add(tour);
         await context.SaveChangesAsync();
 
-        var result = await service.GetTourByIdAsync(tour.Id);
-        var ok = Assert.IsType<OkObjectResult>(result);
-        var dto = Assert.IsType<TourDetailDto>(ok.Value);
+        var dto = await service.GetTourByIdAsync(tour.Id);
+        Assert.NotNull(dto);
 
         Assert.Equal(2, dto.Points.Count);
         Assert.Equal("POI 1", dto.Points[0].Name); // SortOrder 1 comes first
