@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using VK.Core.Entities;
+using VK.Core.Exceptions;
 using VK.Core.Interfaces;
 using VK.Infrastructure.Data;
 
@@ -82,6 +83,9 @@ public class PoiManagementRepository : IPoiManagementRepository
 
     public async Task HardDeletePoiGraphAsync(int poiId, CancellationToken cancellationToken = default)
     {
+        if (poiId <= 0)
+            throw new EntityNotFoundException(nameof(PointOfInterest), poiId);
+
         await _context.VisitLogs
             .IgnoreQueryFilters()
             .Where(v => v.PointOfInterestId == poiId)

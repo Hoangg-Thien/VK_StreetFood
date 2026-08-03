@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using VK.Core.Exceptions;
 
 namespace VK.Core.Entities;
 
@@ -33,6 +34,18 @@ public class PointOfInterest : BaseEntity
     public int TriggerPriority { get; set; } = 50;
 
     public double? TriggerRadiusMeters { get; set; }
+
+    public void SetTriggerProfile(int priority, double? radiusMeters)
+    {
+        if (priority < 0 || priority > 1000)
+            throw new BusinessRuleViolationException("Độ ưu tiên kích hoạt (TriggerPriority) phải nằm trong khoảng từ 0 đến 1000.");
+
+        if (radiusMeters.HasValue && radiusMeters.Value <= 0)
+            throw new BusinessRuleViolationException("Bán kính kích hoạt (TriggerRadiusMeters) phải lớn hơn 0 mét.");
+
+        TriggerPriority = priority;
+        TriggerRadiusMeters = radiusMeters;
+    }
 
     // Navigation properties
     public virtual Category? Category { get; set; }

@@ -136,6 +136,9 @@ VK StreetFood follows a **layered architecture** with a clear dependency directi
 - **Dependency Injection:** all services, repositories, and the `DbContext` are registered in `Program.cs` via the built-in ASP.NET Core DI container, using constructor injection throughout. `AudioTaskManager` is deliberately registered as a **singleton** (rather than scoped) so that concurrent identical TTS requests across different HTTP requests can be deduplicated.
 - **Soft Deletes:** all domain entities inherit a shared `BaseEntity` (`Id`, `CreatedAt`, `UpdatedAt`, `IsDeleted`, `DeletedAt`), and EF Core global query filters (`HasQueryFilter`) automatically exclude soft-deleted rows from all queries.
 - **Two authentication models by design:** the REST API (consumed by the mobile app and any external client) uses stateless JWT bearer tokens; the MVC admin/owner portal uses server-side session state, since it is a traditional server-rendered application with its own login flow.
+- **Dual-Layer Error Handling Strategy:**
+  - **Application / Orchestration Layer:** Employs the **Result Pattern** via `ServiceResult<T>` for anticipated business and validation outcomes (e.g., entity conflicts, invalid credentials, resource not found from search/filters). This avoids the performance overhead of exception stack-trace allocation on normal request paths and provides explicit, predictable flow control in API controllers.
+  - **Domain & Infrastructure Invariants / Outer Safety Net:** Uses a strongly typed **Domain Exception Hierarchy** (`DomainException`, `EntityNotFoundException`, `BusinessRuleViolationException`, `ForbiddenOperationException`) to protect strict domain invariants. Any escaping domain exceptions or unexpected runtime failures are intercepted at the HTTP boundary by `GlobalExceptionMiddleware`, which maps them to standard HTTP status codes (`404 NotFound`, `400 BadRequest`, `403 Forbidden`, `500 InternalServerError`) without leaking stack traces or internal implementation details.
 
 ---
 
@@ -237,7 +240,7 @@ The solution includes three test projects, executed with **xUnit**:
   - *Integration tests* (`Integration/`) — full HTTP-pipeline tests using `CustomWebApplicationFactory` (built on `Microsoft.AspNetCore.Mvc.Testing`) against a real SQLite-backed application instance, covering tourist registration/JWT issuance and analytics endpoints end to end.
 - **`VK.Web.Tests`** — MVC controller tests (`HomeControllerTests`, `OwnerControllerTests`) for the admin/owner portal.
 
-GitHub Actions automatically runs `VK.Core.Tests` and `VK.API.Tests` on every push and pull request to `main` (see [CI/CD](#8-cicd)).
+GitHub Actions automatically runs `VK.Core.Tests`, `VK.API.Tests` and `VK.Web.Tests` on every push and pull request to `main` (see [CI/CD](#8-cicd)).
 
 ```bash
 # Run all tests locally
@@ -257,6 +260,7 @@ A GitHub Actions workflow (`.github/workflows/dotnet.yml`) runs on every push an
 2. Sets up the .NET 10 SDK
 3. Runs `dotnet test` for `VK.Core.Tests`
 4. Runs `dotnet test` for `VK.API.Tests`
+5. Runs `dotnet test` for `VK.Web .Tests`
 
 Deployment is handled separately via **Render.com**, configured through `render.yaml`, which defines two Docker-based web services (`vk-api` and `vk-web`) built from `Dockerfile.api` and `Dockerfile.web` respectively, each with a health-check path and environment-variable-driven secrets. Deployment to Render triggers on push (`autoDeploy: true`) but is not currently wired as an explicit step inside the GitHub Actions workflow itself.
 
@@ -381,8 +385,9 @@ My contribution to this project centered on the API's authentication, authorizat
 - Added **request validation** using data annotations across request DTOs, relying on `[ApiController]`'s automatic model-state validation for consistent `400` responses.
 - Implemented **pagination** for POI listing (`PagedResponse<T>` and `GET /api/POI/paged`), including total-page and has-next/has-previous computation.
 - Extracted **shared security and utility infrastructure** into reusable helpers, including `LocalizationHelper` (language-code normalization and translation fallback) and `GeoHelper` (Haversine distance calculation), reducing duplication across application services.
-- Set up the **GitHub Actions CI pipeline** (`.github/workflows/dotnet.yml`) to automatically run the `VK.Core.Tests` and `VK.API.Tests` suites on every push and pull request to `main`.
+- Set up the **GitHub Actions CI pipeline** (`.github/workflows/dotnet.yml`) to automatically run the `VK.Core.Tests`, `VK.API.Tests` and `VK.Web.Tests` suites on every push and pull request to `main`.
 - Wrote **unit tests** for application services (`POIAppServiceTests`, `TourAppServiceTests`, `TouristAppServiceTests`, `AnalyticsAppServiceTests`) covering pagination, localization fallback, and distance-based filtering.
+- Architected a **dual-layer error handling strategy**: standardized expected business outcomes with `ServiceResult<T>` across application services while protecting domain invariants with a custom `DomainException` hierarchy and `GlobalExceptionMiddleware` (covered by dedicated unit tests).
 - Wrote **integration tests** using a custom `WebApplicationFactory` (`CustomWebApplicationFactory`) against a real HTTP pipeline and SQLite-backed database, verifying JWT issuance and end-to-end tourist/analytics endpoint behavior.
 - Wrote **controller tests** for the admin/owner MVC portal (`HomeControllerTests`, `OwnerControllerTests`).
 - **Refactored duplicated helper logic** — e.g., replacing ad-hoc language-code parsing and manual distance calculations scattered across services with the shared `LocalizationHelper` and `GeoHelper` utilities.
@@ -393,7 +398,7 @@ My contribution to this project centered on the API's authentication, authorizat
 
 Realistic, scoped improvements — not yet implemented:
 
-- **Refresh tokens(Admin only)** — Admin JWTs currently use a long, fixed expiry (365 days) with no revocation mechanism; a refresh-token flow would allow shorter-lived access tokens for the credential-based Admin login. Tourist JWTs are intentionally excluded — they're per-device tokens issued via anonymous registration (no login step to avoid repeating), so a short-lived-access + refresh pattern doesn't fit; a simple revocation flag on the Tourist record would be a better fit there if device-level blocking is ever needed.
+- **Refresh tokens (Admin only)** — Admin JWTs currently use a long, fixed expiry (365 days) with no revocation mechanism; a refresh-token flow would allow shorter-lived access tokens for the credential-based Admin login. Tourist JWTs are intentionally excluded — they're per-device tokens issued via anonymous registration (no login step to avoid repeating), so a short-lived-access + refresh pattern doesn't fit; a simple revocation flag on the Tourist record would be a better fit there if device-level blocking is ever needed.
 - **Rate limiting** — no rate limiting currently exists on authentication or registration endpoints.
 - **Redis cache** — POI/category listings are re-queried from PostgreSQL on every request; a cache layer would reduce database load for largely static data.
 - **Structured logging** — current logging uses `ILogger` with structured message templates, but there is no centralized log aggregation or distributed tracing (e.g., OpenTelemetry).
