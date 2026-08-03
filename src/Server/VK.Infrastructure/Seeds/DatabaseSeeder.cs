@@ -19,6 +19,7 @@ public static class DatabaseSeeder
 
         if (context.PointsOfInterest.Any())
         {
+            await EnsurePoiTriggerProfilesAsync(context);
             await EnsurePoiTranslationsAsync(context);
             await EnsureBaselineToursAsync(context);
             await EnsureTourTranslationsAsync(context);
@@ -66,7 +67,9 @@ public static class DatabaseSeeder
                 IsActive = true,
                 CategoryId = 4,
                 AverageRating = 0,
-                TotalRatings = 0
+                TotalRatings = 0,
+                TriggerPriority = 100,
+                TriggerRadiusMeters = 80
             },
 
             // 2. Ốc Vũ
@@ -81,7 +84,9 @@ public static class DatabaseSeeder
                 IsActive = true,
                 CategoryId = 1,
                 AverageRating = 4.5m,
-                TotalRatings = 0
+                TotalRatings = 0,
+                TriggerPriority = 70,
+                TriggerRadiusMeters = 55
             },
 
             // 3. Ốc Thảo
@@ -96,7 +101,9 @@ public static class DatabaseSeeder
                 IsActive = true,
                 CategoryId = 1,
                 AverageRating = 4.3m,
-                TotalRatings = 0
+                TotalRatings = 0,
+                TriggerPriority = 68,
+                TriggerRadiusMeters = 55
             },
 
             // 4. Ốc Sáu Nở
@@ -111,7 +118,9 @@ public static class DatabaseSeeder
                 IsActive = true,
                 CategoryId = 1,
                 AverageRating = 4.4m,
-                TotalRatings = 0
+                TotalRatings = 0,
+                TriggerPriority = 66,
+                TriggerRadiusMeters = 55
             },
 
             // 5. Ốc Oanh (Michelin Bib Gourmand)
@@ -126,7 +135,9 @@ public static class DatabaseSeeder
                 IsActive = true,
                 CategoryId = 1,
                 AverageRating = 4.8m,
-                TotalRatings = 0
+                TotalRatings = 0,
+                TriggerPriority = 85,
+                TriggerRadiusMeters = 60
             },
 
             // 6. A Fat Hot Pot
@@ -141,7 +152,9 @@ public static class DatabaseSeeder
                 IsActive = true,
                 CategoryId = 2,
                 AverageRating = 4.2m,
-                TotalRatings = 0
+                TotalRatings = 0,
+                TriggerPriority = 62,
+                TriggerRadiusMeters = 60
             },
 
             // 7. Chilli Lẩu Nướng
@@ -156,7 +169,9 @@ public static class DatabaseSeeder
                 IsActive = true,
                 CategoryId = 2,
                 AverageRating = 4.1m,
-                TotalRatings = 0
+                TotalRatings = 0,
+                TriggerPriority = 60,
+                TriggerRadiusMeters = 60
             },
 
             // 8. Alo Quán
@@ -171,7 +186,9 @@ public static class DatabaseSeeder
                 IsActive = true,
                 CategoryId = 1,
                 AverageRating = 4.3m,
-                TotalRatings = 0
+                TotalRatings = 0,
+                TriggerPriority = 58,
+                TriggerRadiusMeters = 55
             },
 
             // 9. Ốc Đào 2
@@ -186,7 +203,9 @@ public static class DatabaseSeeder
                 IsActive = true,
                 CategoryId = 1,
                 AverageRating = 4.4m,
-                TotalRatings = 0
+                TotalRatings = 0,
+                TriggerPriority = 64,
+                TriggerRadiusMeters = 55
             },
 
             // 10. Lãng Quán
@@ -201,7 +220,9 @@ public static class DatabaseSeeder
                 IsActive = true,
                 CategoryId = 2,
                 AverageRating = 4.2m,
-                TotalRatings = 0
+                TotalRatings = 0,
+                TriggerPriority = 56,
+                TriggerRadiusMeters = 60
             },
 
             // 11. Ớt Xiêm Quán
@@ -216,7 +237,9 @@ public static class DatabaseSeeder
                 IsActive = true,
                 CategoryId = 2,
                 AverageRating = 4.3m,
-                TotalRatings = 0
+                TotalRatings = 0,
+                TriggerPriority = 57,
+                TriggerRadiusMeters = 55
             },
 
             // 12. Bún Cá Châu Đốc
@@ -231,7 +254,9 @@ public static class DatabaseSeeder
                 IsActive = true,
                 CategoryId = 3,
                 AverageRating = 4.5m,
-                TotalRatings = 0
+                TotalRatings = 0,
+                TriggerPriority = 54,
+                TriggerRadiusMeters = 50
             }
         };
 
@@ -855,5 +880,47 @@ public static class DatabaseSeeder
             "[SECURITY] Default admin user seeded ({Email}). " +
             "Change the password immediately via POST /api/Auth/login then update the account.",
             adminEmail);
+    }
+
+    private static async Task EnsurePoiTriggerProfilesAsync(VKStreetFoodDbContext context)
+    {
+        var pois = await context.PointsOfInterest
+            .Where(p => !p.IsDeleted)
+            .ToListAsync();
+
+        var profiles = new Dictionary<string, (int Priority, double? Radius)>
+        {
+            ["Cổng chào Phố Ẩm thực Vĩnh Khánh"] = (100, 80),
+            ["Ốc Vũ"] = (70, 55),
+            ["Ốc Thảo"] = (68, 55),
+            ["Ốc Sáu Nở"] = (66, 55),
+            ["Ốc Oanh"] = (85, 60),
+            ["A Fat Hot Pot"] = (62, 60),
+            ["Chilli Lẩu Nướng Tự Chọn"] = (60, 60),
+            ["Alo Quán – Seafood & Beer"] = (58, 55),
+            ["Ốc Đào 2"] = (64, 55),
+            ["Lãng Quán"] = (56, 60),
+            ["Ớt Xiêm Quán"] = (57, 55),
+            ["Bún Cá Châu Đốc Dì Tư"] = (54, 50)
+        };
+
+        var modified = false;
+        foreach (var poi in pois)
+        {
+            if (profiles.TryGetValue(poi.Name, out var profile))
+            {
+                if (poi.TriggerPriority != profile.Priority || poi.TriggerRadiusMeters != profile.Radius)
+                {
+                    poi.TriggerPriority = profile.Priority;
+                    poi.TriggerRadiusMeters = profile.Radius;
+                    modified = true;
+                }
+            }
+        }
+
+        if (modified)
+        {
+            await context.SaveChangesAsync();
+        }
     }
 }
