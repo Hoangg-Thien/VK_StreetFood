@@ -60,20 +60,21 @@ public class HomeController : Controller
     {
         try
         {
-            var configAdminEmail = _config["AdminAuth:Email"];
-            if (string.IsNullOrWhiteSpace(configAdminEmail)) configAdminEmail = "admin@vkstreetfood.vn";
-            var configAdminPassword = _config["AdminAuth:Password"];
-            if (string.IsNullOrWhiteSpace(configAdminPassword)) configAdminPassword = "Admin@2026";
+            email = email?.Trim() ?? string.Empty;
+            password = password ?? string.Empty;
+
+            var configAdminEmail = (_config["AdminAuth:Email"] ?? "admin@vkstreetfood.vn").Trim();
+            var configAdminPassword = _config["AdminAuth:Password"] ?? "Admin@2026";
 
             // 1. Direct AdminAuth match
-            if (string.Equals(email?.Trim(), configAdminEmail.Trim(), StringComparison.OrdinalIgnoreCase) &&
-                password == configAdminPassword)
+            if (string.Equals(email, configAdminEmail, StringComparison.OrdinalIgnoreCase) &&
+                (password == configAdminPassword || password == configAdminPassword.Trim()))
             {
                 User? adminUser = null;
                 try
                 {
                     adminUser = await _userRepository.Query()
-                        .FirstOrDefaultAsync(u => !u.IsDeleted && u.Email == configAdminEmail);
+                        .FirstOrDefaultAsync(u => !u.IsDeleted && u.Email.ToLower() == configAdminEmail.ToLower());
                 }
                 catch
                 {
@@ -100,11 +101,11 @@ public class HomeController : Controller
             // 2. Database user authentication
             var user = await _userRepository.Query()
                 .Include(u => u.Vendor)
-                .FirstOrDefaultAsync(u => !u.IsDeleted && u.Email == email);
+                .FirstOrDefaultAsync(u => !u.IsDeleted && u.Email.ToLower() == email.ToLower());
 
             if (user != null && !string.IsNullOrWhiteSpace(user.PasswordHash) && PasswordHasher.Verify(password, user.PasswordHash))
             {
-                if (user.Role == "Admin")
+                if (string.Equals(user.Role, "Admin", StringComparison.OrdinalIgnoreCase))
                 {
                     HttpContext.Session.SetString("UserLoggedIn", "true");
                     HttpContext.Session.SetString("UserRole", "admin");
@@ -119,7 +120,7 @@ public class HomeController : Controller
 
                     return RedirectToAction("Index", "Dashboard");
                 }
-                else if (user.Role == "poi_owner")
+                else if (string.Equals(user.Role, "poi_owner", StringComparison.OrdinalIgnoreCase))
                 {
                     if (!user.IsVerified)
                     {

@@ -904,14 +904,11 @@ public static class DatabaseSeeder
             }
             else
             {
-                if (user.Role != "Admin" || !user.IsVerified || string.IsNullOrWhiteSpace(user.PasswordHash))
+                if (user.Role != "Admin" || !user.IsVerified || string.IsNullOrWhiteSpace(user.PasswordHash) || !PasswordHasher.Verify(adminAccount.Password, user.PasswordHash))
                 {
                     user.Role = "Admin";
                     user.IsVerified = true;
-                    if (string.IsNullOrWhiteSpace(user.PasswordHash))
-                    {
-                        user.PasswordHash = hash;
-                    }
+                    user.PasswordHash = hash;
                     modified = true;
                 }
             }
