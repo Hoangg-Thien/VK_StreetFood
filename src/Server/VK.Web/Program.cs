@@ -94,17 +94,19 @@ if (!app.Environment.IsEnvironment("Testing"))
 {
     _ = Task.Run(async () =>
     {
-        await Task.Delay(TimeSpan.FromSeconds(2));
+        // Web does NOT run MigrateAsync — schema migrations are owned exclusively by the API service.
+        // We wait longer to give the API service time to complete its migrations first.
+        await Task.Delay(TimeSpan.FromSeconds(15));
         try
         {
             using var scope = app.Services.CreateScope();
             var context = scope.ServiceProvider.GetRequiredService<VKStreetFoodDbContext>();
-            await DatabaseSeeder.InitializeAndSeedAsync(context);
+            await DatabaseSeeder.SeedAsync(context);
         }
         catch (Exception ex)
         {
             var logger = app.Services.GetRequiredService<ILogger<Program>>();
-            logger.LogWarning(ex, "Background database seeding skipped (DB unreachable).");
+            logger.LogWarning(ex, "Background database seeding skipped (DB unreachable or schema not ready).");
         }
     });
 }
