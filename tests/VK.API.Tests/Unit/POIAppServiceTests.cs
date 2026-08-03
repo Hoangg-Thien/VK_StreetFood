@@ -177,6 +177,45 @@ public class POIAppServiceTests
         Assert.Equal("Street Food", categories.First().Name);
     }
 
+    [Fact]
+    public async Task POIAppService_MapsTriggerPriorityAndTriggerRadiusMeters_FromDatabaseEntity()
+    {
+        using var context = CreateContext();
+        var service = CreateService(context);
+
+        var poi = new PointOfInterest
+        {
+            Name = "Oc Oanh Test",
+            Description = "Delicious snails",
+            Latitude = 10.7608,
+            Longitude = 106.7032,
+            Address = "534 Vinh Khanh",
+            IsActive = true,
+            TriggerPriority = 85,
+            TriggerRadiusMeters = 60.5
+        };
+        context.PointsOfInterest.Add(poi);
+        await context.SaveChangesAsync();
+
+        // Test GetAllPOIsAsync
+        var allList = await service.GetAllPOIsAsync();
+        var allItem = Assert.Single(allList);
+        Assert.Equal(85, allItem.Priority);
+        Assert.Equal(60.5, allItem.TriggerRadiusMeters);
+
+        // Test GetNearbyPOIsAsync
+        var nearbyList = await service.GetNearbyPOIsAsync(10.7608, 106.7032, 1.0);
+        var nearbyItem = Assert.Single(nearbyList);
+        Assert.Equal(85, nearbyItem.Priority);
+        Assert.Equal(60.5, nearbyItem.TriggerRadiusMeters);
+
+        // Test GetPOIByIdAsync
+        var detail = await service.GetPOIByIdAsync(poi.Id);
+        Assert.NotNull(detail);
+        Assert.Equal(85, detail.Priority);
+        Assert.Equal(60.5, detail.TriggerRadiusMeters);
+    }
+
     private static POIAppService CreateService(VKStreetFoodDbContext context)
     {
         var accessor = new HttpContextAccessor { HttpContext = new DefaultHttpContext() };
