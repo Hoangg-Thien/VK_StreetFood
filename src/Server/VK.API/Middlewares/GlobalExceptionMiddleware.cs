@@ -1,5 +1,6 @@
 using System.Net;
 using System.Text.Json;
+using VK.Core.Exceptions;
 
 namespace VK.API.Middlewares;
 
@@ -31,17 +32,24 @@ public class GlobalExceptionMiddleware
 
     private static Task HandleExceptionAsync(HttpContext context, Exception exception, IWebHostEnvironment env)
     {
+        var (statusCode, message) = exception switch
+        {
+            EntityNotFoundException nf => (StatusCodes.Status404NotFound, nf.Message),
+            BusinessRuleViolationException br => (StatusCodes.Status400BadRequest, br.Message),
+            ForbiddenOperationException fo => (StatusCodes.Status403Forbidden, fo.Message),
+            _ => (StatusCodes.Status500InternalServerError, "An internal server error occurred.")
+        };
+
         context.Response.ContentType = "application/json";
-        context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
+        context.Response.StatusCode = statusCode;
 
         var response = new
         {
-            StatusCode = context.Response.StatusCode,
-            Message = "An internal server error occurred.",
-            Detailed = env.IsDevelopment() ? exception.Message : null
+            StatusCode = statusCode,
+            Message = message,
+            Detailed = env.IsDevelopment() && statusCode == 500 ? exception.Message : null
         };
 
-        var jsonResponse = JsonSerializer.Serialize(response);
-        return context.Response.WriteAsync(jsonResponse);
+    return context.Response.WriteAsync(JsonSerializer.Serialize(response));
     }
 }
