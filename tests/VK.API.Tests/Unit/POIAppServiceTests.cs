@@ -34,12 +34,12 @@ public class POIAppServiceTests
         });
         await context.SaveChangesAsync();
 
-        var resultVi = await service.GetAllPOIsAsync(languageCode: "vi");
-        var listVi = Assert.IsAssignableFrom<IEnumerable<POIListItemDto>>(((OkObjectResult)resultVi).Value);
+        var listVi = await service.GetAllPOIsAsync(languageCode: "vi");
+        Assert.NotNull(listVi);
         Assert.Equal("Default Name", listVi.Single().Name);
 
-        var resultEn = await service.GetAllPOIsAsync(languageCode: "en");
-        var listEn = Assert.IsAssignableFrom<IEnumerable<POIListItemDto>>(((OkObjectResult)resultEn).Value);
+        var listEn = await service.GetAllPOIsAsync(languageCode: "en");
+        Assert.NotNull(listEn);
         Assert.Equal("English Name", listEn.Single().Name);
     }
 
@@ -63,9 +63,8 @@ public class POIAppServiceTests
         }
         await context.SaveChangesAsync();
 
-        var result = await service.GetPagedPOIsAsync(pageNumber: 2, pageSize: 10, languageCode: "en");
-        var ok = Assert.IsType<OkObjectResult>(result);
-        var paged = Assert.IsType<PagedResponse<POIListItemDto>>(ok.Value);
+        var paged = await service.GetPagedPOIsAsync(pageNumber: 2, pageSize: 10, languageCode: "en");
+        Assert.NotNull(paged);
 
         Assert.Equal(5, paged.Items.Count());
         Assert.Equal(15, paged.TotalCount);
@@ -85,9 +84,8 @@ public class POIAppServiceTests
         context.PointsOfInterest.Add(new PointOfInterest { Name = "Far", Latitude = 10.1, Longitude = 106.1, IsActive = true });
         await context.SaveChangesAsync();
 
-        var result = await service.GetNearbyPOIsAsync(latitude: 10.0, longitude: 106.0, radiusKm: 2.0);
-        var ok = Assert.IsType<OkObjectResult>(result);
-        var response = Assert.IsAssignableFrom<IEnumerable<POIListItemDto>>(ok.Value);
+        var response = await service.GetNearbyPOIsAsync(latitude: 10.0, longitude: 106.0, radiusKm: 2.0);
+        Assert.NotNull(response);
 
         Assert.Single(response);
         Assert.Equal("Close", response.First().Name);

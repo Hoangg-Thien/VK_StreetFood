@@ -355,7 +355,7 @@ public class AnalyticsAppService : IAnalyticsAppService
         // Không lọc theo POI vì Tourist không có POI
 
         var points = await query
-            .Select(t => new { Lat = Math.Round(t.LastLatitude.Value, 4), Lng = Math.Round(t.LastLongitude.Value, 4) })
+            .Select(t => new { Lat = Math.Round(t.LastLatitude!.Value, 4), Lng = Math.Round(t.LastLongitude!.Value, 4) })
             .ToListAsync();
 
         var grouped = points

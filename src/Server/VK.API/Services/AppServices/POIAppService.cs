@@ -1,4 +1,3 @@
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using VK.API.Extensions;
 using VK.Core.Entities;
@@ -45,7 +44,7 @@ public class POIAppService : IPOIAppService
         _httpContextAccessor = httpContextAccessor;
     }
 
-    public async Task<IActionResult> GetAllPOIsAsync(
+    public async Task<IReadOnlyList<POIListItemDto>> GetAllPOIsAsync(
         int? categoryId = null,
         string? search = null,
         string languageCode = LanguageConstants.Vietnamese)
@@ -104,10 +103,10 @@ public class POIAppService : IPOIAppService
             poi.TriggerRadiusMeters = profile.TriggerRadiusMeters;
         }
 
-        return new OkObjectResult(pois);
+        return pois;
     }
 
-    public async Task<IActionResult> GetPagedPOIsAsync(
+    public async Task<PagedResponse<POIListItemDto>> GetPagedPOIsAsync(
         int pageNumber = 1,
         int pageSize = 50,
         int? categoryId = null,
@@ -168,16 +167,16 @@ public class POIAppService : IPOIAppService
             poi.TriggerRadiusMeters = profile.TriggerRadiusMeters;
         }
 
-        return new OkObjectResult(new PagedResponse<POIListItemDto>
+        return new PagedResponse<POIListItemDto>
         {
             Items = pois,
             TotalCount = totalCount,
             PageNumber = pageNumber,
             PageSize = pageSize
-        });
+        };
     }
 
-    public async Task<IActionResult> GetNearbyPOIsAsync(double latitude, double longitude, double radiusKm = 1.0, string languageCode = LanguageConstants.Vietnamese)
+    public async Task<IReadOnlyList<POIListItemDto>> GetNearbyPOIsAsync(double latitude, double longitude, double radiusKm = 1.0, string languageCode = LanguageConstants.Vietnamese)
     {
         var normalizedLanguageCode = LocalizationHelper.NormalizeLanguageCode(languageCode);
 
@@ -224,10 +223,10 @@ public class POIAppService : IPOIAppService
         _logger.LogInformation("Found {Count} POIs within {Radius}km of ({Lat}, {Lng})",
             nearbyPois.Count, radiusKm, latitude, longitude);
 
-        return new OkObjectResult(nearbyPois);
+        return nearbyPois;
     }
 
-    public async Task<IActionResult> GetPOIByIdAsync(int id, string languageCode = LanguageConstants.Vietnamese)
+    public async Task<POIDetailDto?> GetPOIByIdAsync(int id, string languageCode = LanguageConstants.Vietnamese)
     {
         var normalizedLanguageCode = LocalizationHelper.NormalizeLanguageCode(languageCode);
 
@@ -241,8 +240,7 @@ public class POIAppService : IPOIAppService
             .Include(p => p.Ratings)
             .FirstOrDefaultAsync(p => p.Id == id && !p.IsDeleted);
 
-        if (poi == null)
-            return new NotFoundObjectResult(new { message = "POI không tồn tại" });
+        if (poi == null) return null;
 
         var audio = poi.AudioContents.FirstOrDefault(a => a.LanguageCode == normalizedLanguageCode)
                ?? poi.AudioContents.FirstOrDefault(a => a.LanguageCode == LanguageConstants.Vietnamese);
@@ -302,10 +300,10 @@ public class POIAppService : IPOIAppService
         };
 
         LocalizationHelper.ApplyLocalizedPoiFields(response, poi, normalizedLanguageCode);
-        return new OkObjectResult(response);
+        return response;
     }
 
-    public async Task<IActionResult> GetCategoriesAsync()
+    public async Task<IReadOnlyList<CategoryDto>> GetCategoriesAsync()
     {
         var categories = await _categoryRepository.Query()
             .Where(c => !c.IsDeleted && c.IsActive)
@@ -319,7 +317,7 @@ public class POIAppService : IPOIAppService
             })
             .ToListAsync();
 
-        return new OkObjectResult(categories);
+        return categories;
     }
 
     private string CurrentBaseUrl()
