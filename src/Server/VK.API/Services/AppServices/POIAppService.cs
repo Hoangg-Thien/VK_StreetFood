@@ -15,23 +15,6 @@ public class POIAppService : IPOIAppService
     private readonly ILogger<POIAppService> _logger;
     private readonly IHttpContextAccessor _httpContextAccessor;
 
-    private static readonly IReadOnlyDictionary<int, (int Priority, double? TriggerRadiusMeters)> PoiTriggerProfiles
-        = new Dictionary<int, (int Priority, double? TriggerRadiusMeters)>
-        {
-            [1] = (100, 80),
-            [2] = (70, 55),
-            [3] = (68, 55),
-            [4] = (66, 55),
-            [5] = (85, 60),
-            [6] = (62, 60),
-            [7] = (60, 60),
-            [8] = (58, 55),
-            [9] = (64, 55),
-            [10] = (56, 60),
-            [11] = (57, 55),
-            [12] = (54, 50)
-        };
-
     public POIAppService(
         IRepository<PointOfInterest> poiRepository,
         IRepository<Category> categoryRepository,
@@ -86,7 +69,9 @@ public class POIAppService : IPOIAppService
                 AverageRating = p.AverageRating,
                 TotalRatings = p.TotalRatings,
                 Category = p.Category?.Name ?? string.Empty,
-                Tags = p.Tags.Select(t => t.Name).ToList()
+                Tags = p.Tags.Select(t => t.Name).ToList(),
+                Priority = p.TriggerPriority,
+                TriggerRadiusMeters = p.TriggerRadiusMeters
             };
 
             LocalizationHelper.ApplyLocalizedPoiFields(dto, p, normalizedLanguageCode);
@@ -98,9 +83,6 @@ public class POIAppService : IPOIAppService
         foreach (var poi in pois)
         {
             poi.ImageUrl = PrependBase(baseUrl, poi.ImageUrl);
-            var profile = GetTriggerProfile(poi.POIId);
-            poi.Priority = profile.Priority;
-            poi.TriggerRadiusMeters = profile.TriggerRadiusMeters;
         }
 
         return pois;
@@ -151,7 +133,9 @@ public class POIAppService : IPOIAppService
                 AverageRating = p.AverageRating,
                 TotalRatings = p.TotalRatings,
                 Category = p.Category?.Name ?? string.Empty,
-                Tags = p.Tags.Select(t => t.Name).ToList()
+                Tags = p.Tags.Select(t => t.Name).ToList(),
+                Priority = p.TriggerPriority,
+                TriggerRadiusMeters = p.TriggerRadiusMeters
             };
 
             LocalizationHelper.ApplyLocalizedPoiFields(dto, p, normalizedLanguageCode);
@@ -162,9 +146,6 @@ public class POIAppService : IPOIAppService
         foreach (var poi in pois)
         {
             poi.ImageUrl = PrependBase(baseUrl, poi.ImageUrl);
-            var profile = GetTriggerProfile(poi.POIId);
-            poi.Priority = profile.Priority;
-            poi.TriggerRadiusMeters = profile.TriggerRadiusMeters;
         }
 
         return new PagedResponse<POIListItemDto>
@@ -209,8 +190,8 @@ public class POIAppService : IPOIAppService
                 Category = x.Poi.Category?.Name ?? string.Empty,
                 Tags = x.Poi.Tags.Select(t => t.Name).ToList(),
                 DistanceKm = x.Distance,
-                Priority = GetTriggerProfile(x.Poi.Id).Priority,
-                TriggerRadiusMeters = GetTriggerProfile(x.Poi.Id).TriggerRadiusMeters
+                Priority = x.Poi.TriggerPriority,
+                TriggerRadiusMeters = x.Poi.TriggerRadiusMeters
             })
             .ToList();
 
@@ -258,8 +239,8 @@ public class POIAppService : IPOIAppService
             TotalRatings = poi.TotalRatings,
             Category = poi.Category?.Name ?? string.Empty,
             Tags = poi.Tags.Select(t => t.Name).ToList(),
-            Priority = GetTriggerProfile(poi.Id).Priority,
-            TriggerRadiusMeters = GetTriggerProfile(poi.Id).TriggerRadiusMeters,
+            Priority = poi.TriggerPriority,
+            TriggerRadiusMeters = poi.TriggerRadiusMeters,
             Audio = audio != null ? new AudioContentDto
             {
                 AudioId = audio.Id,
@@ -342,9 +323,4 @@ public class POIAppService : IPOIAppService
         if (string.IsNullOrWhiteSpace(baseUrl)) return path;
         return baseUrl + path;
     }
-
-    private static (int Priority, double? TriggerRadiusMeters) GetTriggerProfile(int poiId)
-        => PoiTriggerProfiles.TryGetValue(poiId, out var profile)
-            ? profile
-            : (0, null);
 }

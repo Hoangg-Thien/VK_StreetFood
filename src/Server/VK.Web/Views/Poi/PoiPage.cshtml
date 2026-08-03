@@ -178,7 +178,7 @@ Uri.EscapeDataString(sharedQrTargetUrl);
                             <td>
                                 <div style="display:flex;gap:6px;">
                                     <button class="action-btn edit"
-                                            onclick='openEditModal(@poi.Id, @Html.Raw(System.Text.Json.JsonSerializer.Serialize(poi.Name)), @Html.Raw(System.Text.Json.JsonSerializer.Serialize(poi.Description)), @Html.Raw(System.Text.Json.JsonSerializer.Serialize(poi.Address)), @poi.Latitude, @poi.Longitude, "@poi.IsActive.ToString().ToLower()", @(poi.CategoryId.HasValue ? poi.CategoryId.ToString() : "null"), @Html.Raw(System.Text.Json.JsonSerializer.Serialize(poi.ImageUrl ?? "")))'
+                                            onclick='openEditModal(@poi.Id, @Html.Raw(System.Text.Json.JsonSerializer.Serialize(poi.Name)), @Html.Raw(System.Text.Json.JsonSerializer.Serialize(poi.Description)), @Html.Raw(System.Text.Json.JsonSerializer.Serialize(poi.Address)), @poi.Latitude, @poi.Longitude, "@poi.IsActive.ToString().ToLower()", @(poi.CategoryId.HasValue ? poi.CategoryId.ToString() : "null"), @Html.Raw(System.Text.Json.JsonSerializer.Serialize(poi.ImageUrl ?? "")), @poi.TriggerPriority, @(poi.TriggerRadiusMeters.HasValue ? poi.TriggerRadiusMeters.Value.ToString(System.Globalization.CultureInfo.InvariantCulture) : "null"))'
                                             title="Chỉnh sửa">
                                         <i class="fa-solid fa-pen"></i>
                                     </button>
@@ -281,6 +281,16 @@ Uri.EscapeDataString(sharedQrTargetUrl);
                                 }
                             </select>
                         </div>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                            <div class="form-group">
+                                <label class="form-label">Độ ưu tiên kích hoạt (Priority)</label>
+                                <input type="number" name="TriggerPriority" class="form-control-admin" value="50" min="0" max="1000" placeholder="50" />
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Bán kính kích hoạt (mét)</label>
+                                <input type="number" name="TriggerRadiusMeters" step="0.1" class="form-control-admin" placeholder="Mặc định nếu để trống (VD: 55)" />
+                            </div>
+                        </div>
                         <div class="form-group">
                             <label class="form-label">Ảnh địa điểm</label>
                             <div id="addImgPreviewWrap" style="margin-bottom:10px;display:none;">
@@ -361,6 +371,16 @@ Uri.EscapeDataString(sharedQrTargetUrl);
                                         <option value="@cat.Id">@cat.Name</option>
                                     }
                                 </select>
+                            </div>
+                            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                                <div class="form-group">
+                                    <label class="form-label">Độ ưu tiên kích hoạt (Priority)</label>
+                                    <input type="number" name="TriggerPriority" id="editPoiPriority" class="form-control-admin" min="0" max="1000" placeholder="50" />
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Bán kính kích hoạt (mét)</label>
+                                    <input type="number" name="TriggerRadiusMeters" id="editPoiRadius" step="0.1" class="form-control-admin" placeholder="Mặc định nếu để trống" />
+                                </div>
                             </div>
                             <div class="form-group">
                                 <label class="form-label">Ảnh địa điểm</label>
@@ -517,7 +537,7 @@ Uri.EscapeDataString(sharedQrTargetUrl);
                             openModal('addPoiModal');
                         }
 
-                        function openEditModal(id, name, desc, addr, lat, lng, isActive, categoryId, imageUrl) {
+                        function openEditModal(id, name, desc, addr, lat, lng, isActive, categoryId, imageUrl, triggerPriority, triggerRadiusMeters) {
                             document.getElementById('editPoiId').value = id;
                             document.getElementById('editPoiName').value = name;
                             document.getElementById('editPoiDesc').value = desc;
@@ -526,6 +546,8 @@ Uri.EscapeDataString(sharedQrTargetUrl);
                             document.getElementById('editPoiLng').value = lng;
                             document.getElementById('editIsActive').checked = isActive === 'true';
                             document.getElementById('editPoiCategory').value = categoryId ?? '';
+                            document.getElementById('editPoiPriority').value = triggerPriority ?? 50;
+                            document.getElementById('editPoiRadius').value = (triggerRadiusMeters !== null && triggerRadiusMeters !== undefined) ? triggerRadiusMeters : '';
 
                             // Reset file input và pending file
                             _pendingImgFile = null;

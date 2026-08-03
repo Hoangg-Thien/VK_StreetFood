@@ -484,6 +484,12 @@ namespace VK.Infrastructure.Migrations
                     b.Property<int>("TotalRatings")
                         .HasColumnType("integer");
 
+                    b.Property<int>("TriggerPriority")
+                        .HasColumnType("integer");
+
+                    b.Property<double?>("TriggerRadiusMeters")
+                        .HasColumnType("double precision");
+
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 

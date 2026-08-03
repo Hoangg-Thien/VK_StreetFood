@@ -238,6 +238,8 @@ public class PoiController : Controller
             existing.IsActive = model.IsActive;
             existing.CategoryId = model.CategoryId;
             existing.ImageUrl = model.ImageUrl;
+            existing.TriggerPriority = model.TriggerPriority;
+            existing.TriggerRadiusMeters = model.TriggerRadiusMeters;
 
             await EnsureDefaultTranslationsAsync(
                 existing.Id,

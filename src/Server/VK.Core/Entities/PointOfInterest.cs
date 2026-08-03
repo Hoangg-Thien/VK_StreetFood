@@ -30,6 +30,10 @@ public class PointOfInterest : BaseEntity
 
     public int TotalRatings { get; set; } = 0;
 
+    public int TriggerPriority { get; set; } = 50;
+
+    public double? TriggerRadiusMeters { get; set; }
+
     // Navigation properties
     public virtual Category? Category { get; set; }
     public virtual ICollection<AudioContent> AudioContents { get; set; } = new List<AudioContent>();
