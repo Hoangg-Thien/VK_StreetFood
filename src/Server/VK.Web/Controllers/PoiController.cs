@@ -119,17 +119,20 @@ public class PoiController : Controller
                 return RedirectToAction(nameof(Index));
             }
 
-            await _poiManagementRepository.AddPoiAsync(model);
-            await _unitOfWork.SaveChangesAsync();
+            await _unitOfWork.ExecuteInTransactionAsync(async () =>
+            {
+                await _poiManagementRepository.AddPoiAsync(model);
+                await _unitOfWork.SaveChangesAsync();
 
-            await EnsureDefaultTranslationsAsync(
-                model.Id,
-                model.Name,
-                model.Description,
-                model.Address,
-                updateVietnamese: true);
+                await EnsureDefaultTranslationsAsync(
+                    model.Id,
+                    model.Name,
+                    model.Description,
+                    model.Address,
+                    updateVietnamese: true);
 
-            await _unitOfWork.SaveChangesAsync();
+                await _unitOfWork.SaveChangesAsync();
+            });
 
             TempData["Success"] = "Thêm địa điểm thành công!";
         }

@@ -78,14 +78,17 @@ public class TourController : AdminBaseController
                 Status = NormalizeStatus(input.Status)
             };
 
-            await _tourManagementRepository.AddTourAsync(tour);
-            await _unitOfWork.SaveChangesAsync();
-            await EnsureDefaultTranslationsAsync(
-                tour.Id,
-                tour.Name,
-                tour.Description,
-                updateVietnamese: true);
-            await SyncTourPointsAsync(tour.Id, input.POIIds);
+            await _unitOfWork.ExecuteInTransactionAsync(async () =>
+            {
+                await _tourManagementRepository.AddTourAsync(tour);
+                await _unitOfWork.SaveChangesAsync();
+                await EnsureDefaultTranslationsAsync(
+                    tour.Id,
+                    tour.Name,
+                    tour.Description,
+                    updateVietnamese: true);
+                await SyncTourPointsAsync(tour.Id, input.POIIds);
+            });
 
             TempData["Success"] = "Tạo tour thành công!";
         }
@@ -129,13 +132,16 @@ public class TourController : AdminBaseController
             tour.EstimatedDurationMinutes = input.EstimatedDurationMinutes;
             tour.Status = NormalizeStatus(input.Status);
 
-            await EnsureDefaultTranslationsAsync(
-                tour.Id,
-                tour.Name,
-                tour.Description,
-                updateVietnamese: true);
+            await _unitOfWork.ExecuteInTransactionAsync(async () =>
+            {
+                await EnsureDefaultTranslationsAsync(
+                    tour.Id,
+                    tour.Name,
+                    tour.Description,
+                    updateVietnamese: true);
 
-            await SyncTourPointsAsync(tour.Id, input.POIIds);
+                await SyncTourPointsAsync(tour.Id, input.POIIds);
+            });
 
             TempData["Success"] = "Cập nhật tour thành công!";
         }

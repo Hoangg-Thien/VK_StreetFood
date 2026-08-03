@@ -240,51 +240,52 @@ public class HomeController : Controller
                 return RedirectToAction(nameof(OwnerRegister));
             }
 
-            var vendor = await _vendorRepository.Query()
-                .FirstOrDefaultAsync(v => v.PointOfInterestId == poi.Id && !v.IsDeleted);
-
-            if (vendor == null)
+            await _unitOfWork.ExecuteInTransactionAsync(async () =>
             {
-                vendor = new Vendor
+                var vendor = await _vendorRepository.Query()
+                    .FirstOrDefaultAsync(v => v.PointOfInterestId == poi.Id && !v.IsDeleted);
+
+                if (vendor == null)
                 {
-                    Name = poi.Name,
-                    Description = poi.Description,
-                    ContactPerson = fullName,
-                    PhoneNumber = phoneNumber,
+                    vendor = new Vendor
+                    {
+                        Name = poi.Name,
+                        Description = poi.Description,
+                        ContactPerson = fullName,
+                        PhoneNumber = phoneNumber,
+                        Email = email,
+                        PointOfInterestId = poi.Id,
+                        ImageUrl = poi.ImageUrl,
+                        IsActive = false
+                    };
+                    await _vendorRepository.AddAsync(vendor);
+                }
+
+                var user = new User
+                {
                     Email = email,
-                    PointOfInterestId = poi.Id,
-                    ImageUrl = poi.ImageUrl,
-                    IsActive = false
+                    FullName = fullName,
+                    Role = "poi_owner",
+                    PasswordHash = PasswordHasher.Hash(password),
+                    IsVerified = false,
+                    Vendor = vendor
                 };
-                await _vendorRepository.AddAsync(vendor);
+                await _userRepository.AddAsync(user);
+
+                await _ownerRegistrationRepository.AddAsync(new PoiOwnerRegistration
+                {
+                    User = user,
+                    PointOfInterestId = poi.Id,
+                    Vendor = vendor,
+                    ShopName = poi.Name,
+                    ShopAddress = poi.Address,
+                    ContactPhone = phoneNumber,
+                    Notes = notes,
+                    Status = "pending"
+                });
+
                 await _unitOfWork.SaveChangesAsync();
-            }
-
-            var user = new User
-            {
-                Email = email,
-                FullName = fullName,
-                Role = "poi_owner",
-                PasswordHash = PasswordHasher.Hash(password),
-                IsVerified = false,
-                VendorId = vendor.Id
-            };
-            await _userRepository.AddAsync(user);
-            await _unitOfWork.SaveChangesAsync();
-
-            await _ownerRegistrationRepository.AddAsync(new PoiOwnerRegistration
-            {
-                UserId = user.Id,
-                PointOfInterestId = poi.Id,
-                VendorId = vendor.Id,
-                ShopName = poi.Name,
-                ShopAddress = poi.Address,
-                ContactPhone = phoneNumber,
-                Notes = notes,
-                Status = "pending"
             });
-
-            await _unitOfWork.SaveChangesAsync();
 
             TempData["OwnerRegisterSuccess"] = "Đăng ký thành công. Vui lòng chờ admin duyệt tài khoản chủ quán.";
             return RedirectToAction(nameof(OwnerRegister));
