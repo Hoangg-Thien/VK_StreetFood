@@ -376,7 +376,7 @@ Update the API base URL in the mobile app's service configuration to point at yo
 
 ## 13. Implementation Highlights
 
-My contribution to this project centered on the API's authentication, authorization, and security infrastructure, along with its automated testing and CI setup:
+This project was built entirely by me, covering the mobile app, backend API, admin portal, and database design end-to-end.
 
 - Implemented **JWT bearer authentication** for the REST API, including token generation for both tourist and admin flows (`JwtTokenService`) and full `TokenValidationParameters` configuration (issuer, audience, lifetime, signing key validation).
 - Implemented **role-based authorization**, including the `AdminOnly` policy and `[Authorize(Roles = "Admin")]` protection on sensitive endpoints (audio generation, analytics, offline package management).
